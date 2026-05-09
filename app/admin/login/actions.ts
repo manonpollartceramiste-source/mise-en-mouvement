@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import {
   getSupabaseServer,
+  isAuthorizedAdmin,
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
 
@@ -19,13 +20,18 @@ export async function signIn(formData: FormData) {
   }
 
   const supabase = await getSupabaseServer();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
     redirect(`/admin/login?error=${encodeURIComponent(error.message)}`);
+  }
+
+  if (!isAuthorizedAdmin(data.user?.email ?? null)) {
+    await supabase.auth.signOut();
+    redirect("/admin/login?error=unauthorized");
   }
 
   redirect("/admin");
