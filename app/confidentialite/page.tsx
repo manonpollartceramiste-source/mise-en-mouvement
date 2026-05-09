@@ -1,0 +1,48 @@
+import type { Metadata } from "next";
+import { LegalLayout } from "@/app/components/ui/LegalLayout";
+import { loadLegal } from "@/lib/content/legal.server";
+
+export const metadata: Metadata = {
+  title: "Politique de confidentialité",
+  description:
+    "Politique de confidentialité et traitement des données du cabinet Mise en Mouvement.",
+};
+
+export const dynamic = "force-dynamic";
+
+export default async function ConfidentialitePage() {
+  const legal = await loadLegal();
+  return (
+    <LegalLayout
+      eyebrow="Vie privée"
+      title="Politique de confidentialité"
+    >
+      <p>
+        {legal.cabinetName} accorde une grande importance à la protection de
+        vos données personnelles. Cette politique précise les données que nous
+        collectons, leur usage et vos droits.
+      </p>
+
+      <h2>Données collectées</h2>
+      <p>{legal.privacyDataCollected}</p>
+
+      <h2>Finalités</h2>
+      <p>{legal.privacyPurposes}</p>
+
+      <h2>Sous-traitants</h2>
+      <p>{legal.privacySubprocessors}</p>
+
+      <h2>Durée de conservation</h2>
+      <p>{legal.privacyRetention}</p>
+
+      <h2>Vos droits</h2>
+      <p>
+        {legal.privacyRights}{" "}
+        <a href={`mailto:${legal.contactEmail}`}>{legal.contactEmail}</a>.
+      </p>
+
+      <h2>Cookies</h2>
+      <p>{legal.privacyCookies}</p>
+    </LegalLayout>
+  );
+}

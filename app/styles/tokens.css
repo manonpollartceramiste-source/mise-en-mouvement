@@ -1,0 +1,18 @@
+:root {
+  --color-sand-50: #f7f2e8;
+  --color-sand-100: #ede3d0;
+  --color-sand-200: #d9cdb6;
+  --color-taupe-300: #beb09c;
+  --color-taupe-400: #a89a89;
+  --color-taupe-500: #8c7e6e;
+  --color-taupe-600: #6e6353;
+  --color-taupe-700: #4f463b;
+  --color-taupe-800: #3d352c;
+  --color-ink-900: #1a1815;
+  --color-ink-950: #0f0e0c;
+
+  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 200ms;
+  --duration-base: 400ms;
+  --duration-slow: 700ms;
+}
