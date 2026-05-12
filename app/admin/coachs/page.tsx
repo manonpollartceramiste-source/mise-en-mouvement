@@ -91,6 +91,19 @@ export default async function AdminCoachsPage({
             type="url"
             placeholder="https://pay.sumup.com/..."
           />
+          <Field
+            label="SIRET (mentions légales, optionnel)"
+            name="siret"
+          />
+          <Field
+            label="Rôle légal / activité (mentions légales, optionnel)"
+            name="legalRole"
+          />
+          <Field
+            label="Email professionnel (mentions légales, optionnel)"
+            name="proEmail"
+            type="email"
+          />
           <div className="md:col-span-2">
             <Checkbox label="Coach actif (visible côté public)" name="active" defaultChecked />
           </div>
@@ -174,6 +187,22 @@ function CoachEditor({
           name="sumupUrl"
           type="url"
           defaultValue={coach.sumupUrl ?? ""}
+        />
+        <Field
+          label="SIRET (mentions légales, optionnel)"
+          name="siret"
+          defaultValue={coach.siret ?? ""}
+        />
+        <Field
+          label="Rôle légal / activité (mentions légales, optionnel)"
+          name="legalRole"
+          defaultValue={coach.legalRole ?? ""}
+        />
+        <Field
+          label="Email professionnel (mentions légales, optionnel)"
+          name="proEmail"
+          type="email"
+          defaultValue={coach.proEmail ?? ""}
         />
         <div className="md:col-span-2">
           <Checkbox

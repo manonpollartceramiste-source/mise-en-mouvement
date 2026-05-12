@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser, isSupabaseConfigured } from "@/lib/supabase/server";
+import { loadSettings } from "@/lib/content/settings.server";
 import { signOut } from "./login/actions";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,12 @@ type Section = {
 };
 
 const sections: Section[] = [
+  {
+    id: "parametres",
+    label: "Paramètres généraux",
+    description: "Identité, contact, réseaux, CTA, footer",
+    href: "/admin/parametres",
+  },
   {
     id: "offres",
     label: "Offres",
@@ -85,6 +92,8 @@ export default async function AdminDashboard() {
     redirect("/admin/login");
   }
 
+  const settings = await loadSettings();
+
   return (
     <main className="min-h-screen bg-sand-50">
       <header className="border-b border-taupe-300/30 bg-white">
@@ -94,7 +103,7 @@ export default async function AdminDashboard() {
               Espace admin
             </p>
             <h1 className="mt-1 font-serif text-2xl text-ink-900">
-              Mise en Mouvement
+              {settings.companyName}
             </h1>
           </div>
           <div className="flex items-center gap-4">

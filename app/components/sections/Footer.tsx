@@ -4,24 +4,23 @@ import { Container } from "@/app/components/ui/Container";
 import { nav } from "@/lib/content/site";
 import { loadImages } from "@/lib/content/images.server";
 import { getLogoSrc } from "@/lib/content/images";
-import { loadLegal } from "@/lib/content/legal.server";
 import { loadTexts } from "@/lib/content/texts.server";
-
-const footerTagline =
-  "Coaching sportif premium, réathlétisation, pilates.";
+import { loadSettings } from "@/lib/content/settings.server";
+import { formatCopyright } from "@/lib/content/settings";
 
 const allLinks = [{ href: "/", label: "Accueil" }, ...nav];
 
 export async function Footer() {
-  const [images, legal, texts] = await Promise.all([
+  const [images, texts, settings] = await Promise.all([
     loadImages(),
-    loadLegal(),
     loadTexts(),
+    loadSettings(),
   ]);
   const logoSrc = getLogoSrc(images);
-  const year = new Date().getFullYear();
-  const email = legal.contactEmail;
-  const siteName = texts.siteName;
+  const email = settings.email;
+  const siteName = settings.companyName || texts.siteName;
+  const footerTagline = settings.footerText;
+  const copyrightLine = formatCopyright(settings.copyright, siteName);
   return (
     <footer className="mt-auto border-t border-taupe-300/30 bg-sand-100/50">
       <Container className="py-8">
@@ -78,10 +77,10 @@ export async function Footer() {
               {email}
             </a>
             <Link
-              href="/reservation"
+              href={settings.ctaUrl}
               className="inline-flex items-center gap-2 rounded-full bg-taupe-700 px-4 py-2 text-sm font-medium text-sand-50 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:bg-taupe-800"
             >
-              Réserver
+              {settings.ctaText}
               <span aria-hidden>→</span>
             </Link>
           </div>
@@ -89,7 +88,7 @@ export async function Footer() {
 
         {/* Ligne du bas */}
         <div className="mt-6 flex flex-col gap-2 border-t border-taupe-300/30 pt-4 text-xs text-taupe-500 md:flex-row md:items-center md:justify-between">
-          <p>© {year} {siteName}</p>
+          <p>{copyrightLine}</p>
           <div className="flex gap-5">
             <Link
               href="/mentions-legales"

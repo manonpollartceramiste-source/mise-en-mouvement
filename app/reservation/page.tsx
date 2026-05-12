@@ -7,6 +7,8 @@ import { FadeIn } from "@/app/components/motion/FadeIn";
 import { ReservationFlow } from "@/app/components/reservation/ReservationFlow";
 import { loadActiveCoaches } from "@/lib/content/coaches.server";
 import { loadOffers } from "@/lib/content/offers.server";
+import { loadTexts } from "@/lib/content/texts.server";
+import { textOrDefault } from "@/lib/content/texts";
 
 export const metadata: Metadata = {
   title: "Réservation",
@@ -25,9 +27,10 @@ export default async function ReservationPage({
   const offerParam = typeof params.offre === "string" ? params.offre : undefined;
   const coachParam = typeof params.coach === "string" ? params.coach : undefined;
 
-  const [offers, coaches] = await Promise.all([
+  const [offers, coaches, texts] = await Promise.all([
     loadOffers(),
     loadActiveCoaches(),
+    loadTexts(),
   ]);
   const initialCoach = coaches.some((c) => c.id === coachParam)
     ? coachParam
@@ -41,20 +44,21 @@ export default async function ReservationPage({
           <Container>
             <FadeIn>
               <p className="text-sm uppercase tracking-[0.25em] text-taupe-500">
-                Réservation
+                {textOrDefault(texts, "reservationEyebrow")}
               </p>
             </FadeIn>
             <FadeIn delay={0.1}>
               <h1 className="mt-6 max-w-3xl font-serif text-5xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl">
-                Réservez votre
+                {textOrDefault(texts, "reservationTitle1")}
                 <br />
-                <span className="italic text-taupe-600">première séance.</span>
+                <span className="italic text-taupe-600">
+                  {textOrDefault(texts, "reservationTitle2")}
+                </span>
               </h1>
             </FadeIn>
             <FadeIn delay={0.2}>
               <p className="mt-8 max-w-xl text-lg leading-relaxed text-taupe-700">
-                Trois étapes : choisissez votre coach, votre formule, votre
-                créneau. Le paiement se fait après confirmation.
+                {textOrDefault(texts, "reservationIntro")}
               </p>
             </FadeIn>
           </Container>

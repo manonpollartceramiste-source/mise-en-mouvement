@@ -1,24 +1,27 @@
 import type { Metadata } from "next";
 import { LegalLayout } from "@/app/components/ui/LegalLayout";
 import { loadLegal } from "@/lib/content/legal.server";
+import { loadSettings } from "@/lib/content/settings.server";
 
 export const metadata: Metadata = {
   title: "Politique de confidentialité",
   description:
-    "Politique de confidentialité et traitement des données du cabinet Mise en Mouvement.",
+    "Politique de confidentialité et traitement des données du cabinet.",
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function ConfidentialitePage() {
-  const legal = await loadLegal();
+  const [legal, settings] = await Promise.all([loadLegal(), loadSettings()]);
+  const cabinetName = settings.companyName || legal.cabinetName;
+  const contactEmail = settings.email || legal.contactEmail;
   return (
     <LegalLayout
       eyebrow="Vie privée"
       title="Politique de confidentialité"
     >
       <p>
-        {legal.cabinetName} accorde une grande importance à la protection de
+        {cabinetName} accorde une grande importance à la protection de
         vos données personnelles. Cette politique précise les données que nous
         collectons, leur usage et vos droits.
       </p>
@@ -38,7 +41,7 @@ export default async function ConfidentialitePage() {
       <h2>Vos droits</h2>
       <p>
         {legal.privacyRights}{" "}
-        <a href={`mailto:${legal.contactEmail}`}>{legal.contactEmail}</a>.
+        <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
       </p>
 
       <h2>Cookies</h2>

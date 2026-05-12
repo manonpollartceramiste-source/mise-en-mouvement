@@ -34,3 +34,13 @@ body {
   background: var(--color-taupe-300);
   color: var(--color-ink-950);
 }
+
+/* Italic d'accent dans les grands titres serif : Cormorant Garamond Italic
+   (les "f" et "j" de Fraunces italic rendaient mal). */
+.font-serif .italic,
+.font-serif em,
+.font-serif i {
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+}

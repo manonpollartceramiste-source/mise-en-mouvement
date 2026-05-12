@@ -8,12 +8,15 @@ import { Reveal } from "@/app/components/motion/Reveal";
 import { Button } from "@/app/components/ui/Button";
 import { TestimonialCard } from "@/app/components/ui/TestimonialCard";
 import { testimonials } from "@/lib/content/testimonials";
+import { loadSettings } from "@/lib/content/settings.server";
 
-export const metadata: Metadata = {
-  title: "Avis clients",
-  description:
-    "Ils nous ont fait confiance et partagent leur expérience du cabinet Mise en Mouvement.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await loadSettings();
+  return {
+    title: "Avis clients",
+    description: `Ils nous ont fait confiance et partagent leur expérience du cabinet ${settings.companyName}.`,
+  };
+}
 
 export default function AvisPage() {
   return (

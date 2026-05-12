@@ -8,7 +8,12 @@ import {
 } from "@/lib/content/texts";
 import { saveContentKey } from "@/lib/supabase/content";
 
-const REVALIDATE_PATHS = ["/", "/admin/contenus"];
+const REVALIDATE_PATHS = [
+  "/",
+  "/contact",
+  "/reservation",
+  "/admin/contenus",
+];
 
 function fail(reason: string): never {
   redirect(`/admin/contenus?error=${encodeURIComponent(reason)}`);
@@ -30,5 +35,5 @@ export async function saveTexts(formData: FormData) {
 
   const res = await saveContentKey("site_texts", parsed.data, REVALIDATE_PATHS);
   if (!res.ok) fail(res.error);
-  done("Textes enregistrés.");
+  done("Modifications enregistrées.");
 }

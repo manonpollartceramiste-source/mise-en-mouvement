@@ -12,26 +12,11 @@ import { type Coach } from "@/lib/content/coaches";
 import { loadActiveCoaches } from "@/lib/content/coaches.server";
 import { testimonials } from "@/lib/content/testimonials";
 import { loadTexts } from "@/lib/content/texts.server";
-import type { SiteTexts } from "@/lib/content/texts";
+import { textOrDefault, type SiteTexts } from "@/lib/content/texts";
 import { loadImages } from "@/lib/content/images.server";
 import type { SiteImages } from "@/lib/content/images";
 import { loadActivePopup } from "@/lib/content/popups.server";
 import { PopupBanner } from "@/app/components/popup/PopupBanner";
-
-const piliers = [
-  {
-    title: "Reprise sans douleur",
-    text: "Une approche progressive, sans impact, pour reconstruire la mobilité et la force en profondeur.",
-  },
-  {
-    title: "Suivi personnalisé",
-    text: "Un programme conçu pour vous, ajusté à votre niveau, votre histoire et vos objectifs.",
-  },
-  {
-    title: "Cadre premium et calme",
-    text: "Un espace haut de gamme, jamais intimidant, où chacun trouve sa place dès la première séance.",
-  },
-];
 
 export default async function Home() {
   const [coaches, texts, images, popup] = await Promise.all([
@@ -46,9 +31,9 @@ export default async function Home() {
       <main className="flex-1">
         <Hero texts={texts} heroImage={images.hero} />
         <Approche texts={texts} />
-        <CoachsPreview coaches={coaches} images={images} />
-        <Piliers />
-        <AvisPreview />
+        <CoachsPreview coaches={coaches} images={images} texts={texts} />
+        <Piliers texts={texts} />
+        <AvisPreview texts={texts} />
         <CTAFinal texts={texts} />
       </main>
       <Footer />
@@ -65,7 +50,7 @@ function Hero({
   heroImage: string | null;
 }) {
   const metas = [texts.heroMeta1, texts.heroMeta2, texts.heroMeta3].filter(
-    (m) => m.trim().length > 0,
+    (m) => m && m.trim().length > 0,
   );
   const showImage = Boolean(heroImage);
   return (
@@ -83,31 +68,31 @@ function Hero({
             <FadeIn>
               <p className="inline-flex items-center gap-3 text-sm uppercase tracking-[0.25em] text-taupe-500">
                 <span className="h-px w-8 bg-taupe-400" />
-                {texts.heroEyebrow}
+                {textOrDefault(texts, "heroEyebrow")}
               </p>
             </FadeIn>
             <FadeIn delay={0.1}>
               <h1 className="mt-6 max-w-3xl font-serif text-5xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl md:text-7xl">
-                {texts.heroTitleLead}
+                {textOrDefault(texts, "heroTitleLead")}
                 <br />
                 <span className="italic text-taupe-600">
-                  {texts.heroTitleAccent}
+                  {textOrDefault(texts, "heroTitleAccent")}
                 </span>
                 {texts.heroTitleTrail}
               </h1>
             </FadeIn>
             <FadeIn delay={0.2}>
               <p className="mt-8 max-w-xl text-lg leading-relaxed text-taupe-700">
-                {texts.heroSubtitle}
+                {textOrDefault(texts, "heroSubtitle")}
               </p>
             </FadeIn>
             <FadeIn delay={0.3}>
               <div className="mt-10 flex flex-wrap gap-4">
                 <Button href="/reservation" variant="primary">
-                  Réserver une séance
+                  {textOrDefault(texts, "heroCtaPrimary")}
                 </Button>
                 <Button href="/offres" variant="secondary">
-                  Découvrir les offres
+                  {textOrDefault(texts, "heroCtaSecondary")}
                 </Button>
               </div>
             </FadeIn>
@@ -148,17 +133,17 @@ function Approche({ texts }: { texts: SiteTexts }) {
       <Container>
         <Reveal>
           <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
-            {texts.approcheEyebrow}
+            {textOrDefault(texts, "approcheEyebrow")}
           </p>
         </Reveal>
         <Reveal delay={0.1}>
           <h2 className="mt-6 max-w-3xl font-serif text-3xl leading-tight text-ink-900 sm:text-4xl md:text-5xl">
-            {texts.approcheTitle}
+            {textOrDefault(texts, "approcheTitle")}
           </h2>
         </Reveal>
         <Reveal delay={0.2}>
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-taupe-700">
-            {texts.approcheBody}
+            {textOrDefault(texts, "approcheBody")}
           </p>
         </Reveal>
       </Container>
@@ -169,9 +154,11 @@ function Approche({ texts }: { texts: SiteTexts }) {
 function CoachsPreview({
   coaches,
   images,
+  texts,
 }: {
   coaches: Coach[];
   images: SiteImages;
+  texts: SiteTexts;
 }) {
   return (
     <Section>
@@ -180,14 +167,14 @@ function CoachsPreview({
           <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
-                Vos coachs
+                {textOrDefault(texts, "coachsPreviewEyebrow")}
               </p>
               <h2 className="mt-4 font-serif text-3xl leading-tight text-ink-900 sm:text-4xl">
-                Deux expertises complémentaires.
+                {textOrDefault(texts, "coachsPreviewTitle")}
               </h2>
             </div>
             <Button href="/coachs" variant="ghost">
-              Voir leurs parcours →
+              {textOrDefault(texts, "coachsPreviewCta")}
             </Button>
           </div>
         </Reveal>
@@ -203,20 +190,34 @@ function CoachsPreview({
   );
 }
 
-function Piliers() {
+function Piliers({ texts }: { texts: SiteTexts }) {
+  const items = [
+    {
+      title: textOrDefault(texts, "pilier1Title"),
+      text: textOrDefault(texts, "pilier1Body"),
+    },
+    {
+      title: textOrDefault(texts, "pilier2Title"),
+      text: textOrDefault(texts, "pilier2Body"),
+    },
+    {
+      title: textOrDefault(texts, "pilier3Title"),
+      text: textOrDefault(texts, "pilier3Body"),
+    },
+  ];
   return (
     <Section className="border-t border-taupe-300/30 bg-sand-100/40">
       <Container>
         <Reveal>
           <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
-            Ce qui nous distingue
+            {textOrDefault(texts, "piliersEyebrow")}
           </p>
           <h2 className="mt-4 max-w-2xl font-serif text-3xl leading-tight text-ink-900 sm:text-4xl">
-            Trois principes, tenus à chaque séance.
+            {textOrDefault(texts, "piliersTitle")}
           </h2>
         </Reveal>
         <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {piliers.map((p, i) => (
+          {items.map((p, i) => (
             <Reveal key={p.title} delay={i * 0.1}>
               <div className="flex h-full flex-col gap-4 rounded-3xl border border-taupe-300/30 bg-sand-50 p-8">
                 <span className="font-serif text-3xl text-taupe-400">
@@ -235,7 +236,7 @@ function Piliers() {
   );
 }
 
-function AvisPreview() {
+function AvisPreview({ texts }: { texts: SiteTexts }) {
   return (
     <Section>
       <Container>
@@ -243,14 +244,14 @@ function AvisPreview() {
           <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
-                Ils nous ont fait confiance
+                {textOrDefault(texts, "avisPreviewEyebrow")}
               </p>
               <h2 className="mt-4 font-serif text-3xl leading-tight text-ink-900 sm:text-4xl">
-                Quelques retours.
+                {textOrDefault(texts, "avisPreviewTitle")}
               </h2>
             </div>
             <Button href="/avis" variant="ghost">
-              Tous les avis →
+              {textOrDefault(texts, "avisPreviewCta")}
             </Button>
           </div>
         </Reveal>
@@ -274,14 +275,14 @@ function CTAFinal({ texts }: { texts: SiteTexts }) {
           <div className="flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
             <div className="max-w-xl">
               <h2 className="font-serif text-3xl leading-tight text-ink-900 sm:text-4xl">
-                {texts.ctaFinalTitle}
+                {textOrDefault(texts, "ctaFinalTitle")}
               </h2>
               <p className="mt-4 text-base leading-relaxed text-taupe-700">
-                {texts.ctaFinalBody}
+                {textOrDefault(texts, "ctaFinalBody")}
               </p>
             </div>
             <Button href="/reservation" variant="primary">
-              Réserver une séance
+              {textOrDefault(texts, "ctaFinalButton")}
             </Button>
           </div>
         </Reveal>

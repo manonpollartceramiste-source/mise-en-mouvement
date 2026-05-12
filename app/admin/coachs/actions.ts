@@ -13,6 +13,7 @@ const REVALIDATE_PATHS = [
   "/",
   "/coachs",
   "/reservation",
+  "/mentions-legales",
   "/admin/coachs",
 ];
 
@@ -54,6 +55,9 @@ export async function coachAction(formData: FormData) {
     }
 
     const sumupRaw = String(formData.get("sumupUrl") ?? "").trim();
+    const siretRaw = String(formData.get("siret") ?? "").trim();
+    const legalRoleRaw = String(formData.get("legalRole") ?? "").trim();
+    const proEmailRaw = String(formData.get("proEmail") ?? "").trim();
     const candidate: Coach = {
       id,
       name: String(formData.get("name") ?? "").trim(),
@@ -66,6 +70,9 @@ export async function coachAction(formData: FormData) {
       calcomUrl: String(formData.get("calcomUrl") ?? "").trim(),
       sumupUrl: sumupRaw === "" ? null : sumupRaw,
       active: formData.get("active") === "on",
+      siret: siretRaw,
+      legalRole: legalRoleRaw,
+      proEmail: proEmailRaw,
     };
 
     const parsed = coachSchema.safeParse(candidate);

@@ -22,7 +22,13 @@ type SearchParams = Promise<{ saved?: string; error?: string }>;
 const longFields: (keyof SiteTexts)[] = [
   "heroSubtitle",
   "approcheBody",
+  "pilier1Body",
+  "pilier2Body",
+  "pilier3Body",
   "ctaFinalBody",
+  "contactIntro",
+  "contactBookingText",
+  "reservationIntro",
 ];
 
 export default async function AdminContenusPage({

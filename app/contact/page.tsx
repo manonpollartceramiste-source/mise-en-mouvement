@@ -9,13 +9,53 @@ import { ContactForm } from "./ContactForm";
 import { loadOffer } from "@/lib/content/offers.server";
 import { loadHours } from "@/lib/content/hours.server";
 import { dayLabels } from "@/lib/content/hours";
-import { loadLegal } from "@/lib/content/legal.server";
+import { loadSettings } from "@/lib/content/settings.server";
+import { loadTexts } from "@/lib/content/texts.server";
+import { textOrDefault } from "@/lib/content/texts";
 
 export const metadata: Metadata = {
   title: "Contact",
   description:
     "Une question, un projet sur mesure ? Écrivez-nous, nous vous répondons sous 24 h.",
 };
+
+function InstagramIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M15 8h2.5V4.5h-2.5c-2 0-3.5 1.5-3.5 3.5v2H9v3.5h2.5V21H15v-7.5h2.5L18 10h-3V8c0-.6.4-1 .8-1Z" />
+    </svg>
+  );
+}
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
@@ -30,7 +70,17 @@ export default async function ContactPage({
   const prefilledSubject = offer
     ? `Demande de devis — ${offer.name}`
     : undefined;
-  const [hours, legal] = await Promise.all([loadHours(), loadLegal()]);
+  const [hours, settings, texts] = await Promise.all([
+    loadHours(),
+    loadSettings(),
+    loadTexts(),
+  ]);
+  const fullAddress = [
+    settings.address,
+    [settings.postalCode, settings.city].filter(Boolean).join(" "),
+  ]
+    .filter((s) => s.trim().length > 0)
+    .join("\n");
 
   return (
     <>
@@ -40,21 +90,21 @@ export default async function ContactPage({
           <Container>
             <FadeIn>
               <p className="text-sm uppercase tracking-[0.25em] text-taupe-500">
-                Contact
+                {textOrDefault(texts, "contactEyebrow")}
               </p>
             </FadeIn>
             <FadeIn delay={0.1}>
               <h1 className="mt-6 max-w-3xl font-serif text-5xl leading-[1.05] tracking-tight text-ink-900 sm:text-6xl">
-                Une question,
+                {textOrDefault(texts, "contactTitle1")}
                 <br />
-                <span className="italic text-taupe-600">un projet sur mesure ?</span>
+                <span className="italic text-taupe-600">
+                  {textOrDefault(texts, "contactTitle2")}
+                </span>
               </h1>
             </FadeIn>
             <FadeIn delay={0.2}>
               <p className="mt-8 max-w-xl text-lg leading-relaxed text-taupe-700">
-                Écrivez-nous : nous vous répondons sous 24 h ouvrées. Pour les
-                programmes 4/8/12 semaines ou Premium, indiquez vos objectifs et
-                vos disponibilités.
+                {textOrDefault(texts, "contactIntro")}
               </p>
             </FadeIn>
           </Container>
@@ -73,23 +123,90 @@ export default async function ContactPage({
                       Email
                     </p>
                     <a
-                      href={`mailto:${legal.contactEmail}`}
+                      href={`mailto:${settings.email}`}
                       className="mt-2 block font-serif text-xl text-ink-900 hover:text-taupe-700"
                     >
-                      {legal.contactEmail}
+                      {settings.email}
                     </a>
                   </div>
+                  {settings.phone.trim().length > 0 && (
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
+                        Téléphone
+                      </p>
+                      <a
+                        href={`tel:${settings.phone.replace(/\s+/g, "")}`}
+                        className="mt-2 block text-base text-ink-900 hover:text-taupe-700"
+                      >
+                        {settings.phone}
+                      </a>
+                    </div>
+                  )}
+                  {fullAddress.length > 0 && (
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
+                        Adresse
+                      </p>
+                      <p
+                        className="mt-2 whitespace-pre-line text-base text-ink-900"
+                      >
+                        {fullAddress}
+                      </p>
+                      {settings.googleMapsUrl.trim().length > 0 && (
+                        <a
+                          href={settings.googleMapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-block text-sm text-taupe-700 underline hover:text-ink-900"
+                        >
+                          Voir sur Google Maps →
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {(settings.instagramUrl.trim().length > 0 ||
+                    settings.facebookUrl.trim().length > 0) && (
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
+                        Réseaux
+                      </p>
+                      <div className="mt-2 flex items-center gap-3 text-taupe-700">
+                        {settings.instagramUrl.trim().length > 0 && (
+                          <a
+                            href={settings.instagramUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Instagram"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-taupe-300/50 transition-colors hover:border-taupe-500 hover:text-ink-900"
+                          >
+                            <InstagramIcon />
+                          </a>
+                        )}
+                        {settings.facebookUrl.trim().length > 0 && (
+                          <a
+                            href={settings.facebookUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Facebook"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-taupe-300/50 transition-colors hover:border-taupe-500 hover:text-ink-900"
+                          >
+                            <FacebookIcon />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
-                      Délai de réponse
+                      {textOrDefault(texts, "contactDelayLabel")}
                     </p>
                     <p className="mt-2 text-base text-ink-900">
-                      Sous 24 h ouvrées
+                      {textOrDefault(texts, "contactDelayValue")}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
-                      Horaires d’ouverture
+                      {textOrDefault(texts, "contactHoursLabel")}
                     </p>
                     <ul className="mt-2 space-y-1 text-sm text-taupe-700">
                       {hours.map((d) => (
@@ -109,11 +226,10 @@ export default async function ContactPage({
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
-                      Réservation directe
+                      {textOrDefault(texts, "contactBookingLabel")}
                     </p>
                     <p className="mt-2 text-sm leading-relaxed text-taupe-700">
-                      Pour les séances et cartes, vous pouvez réserver en
-                      ligne sans passer par ce formulaire.
+                      {textOrDefault(texts, "contactBookingText")}
                     </p>
                   </div>
                 </aside>

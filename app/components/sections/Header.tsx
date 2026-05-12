@@ -5,11 +5,16 @@ import { nav } from "@/lib/content/site";
 import { loadImages } from "@/lib/content/images.server";
 import { getLogoSrc } from "@/lib/content/images";
 import { loadTexts } from "@/lib/content/texts.server";
+import { loadSettings } from "@/lib/content/settings.server";
 
 export async function Header() {
-  const [images, texts] = await Promise.all([loadImages(), loadTexts()]);
+  const [images, texts, settings] = await Promise.all([
+    loadImages(),
+    loadTexts(),
+    loadSettings(),
+  ]);
   const logoSrc = getLogoSrc(images);
-  const siteName = texts.siteName;
+  const siteName = settings.companyName || texts.siteName;
 
   return (
     <header className="sticky top-0 z-40 border-b border-taupe-300/30 bg-sand-50/85 backdrop-blur-md">
@@ -43,11 +48,11 @@ export async function Header() {
         </nav>
 
         <Button
-          href="/reservation"
+          href={settings.ctaUrl}
           variant="primary"
           className="hidden md:inline-flex"
         >
-          Réserver
+          {settings.ctaText}
         </Button>
       </Container>
     </header>

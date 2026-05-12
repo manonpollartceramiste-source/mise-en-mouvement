@@ -9,7 +9,10 @@ import {
 
 export async function loadTexts(): Promise<SiteTexts> {
   const value = await readContentKey("site_texts");
-  if (!value) return defaultTexts;
-  const parsed = siteTextsSchema.safeParse(value);
+  if (!value || typeof value !== "object") return defaultTexts;
+
+  // Merge defaults so newly-added keys are filled in for older records.
+  const merged = { ...defaultTexts, ...(value as Record<string, unknown>) };
+  const parsed = siteTextsSchema.safeParse(merged);
   return parsed.success ? parsed.data : defaultTexts;
 }

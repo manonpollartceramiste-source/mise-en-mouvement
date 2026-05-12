@@ -14,6 +14,12 @@ export type Coach = {
   sumupUrl: string | null;
   /** Coach actif (visible côté public). Default true. */
   active: boolean;
+  /** SIRET pour les mentions légales (facultatif). */
+  siret?: string;
+  /** Rôle légal / activité affiché dans les mentions légales (facultatif). */
+  legalRole?: string;
+  /** Email professionnel facultatif affiché dans les mentions légales. */
+  proEmail?: string;
 };
 
 export const coachSchema = z.object({
@@ -28,6 +34,9 @@ export const coachSchema = z.object({
   calcomUrl: z.url(),
   sumupUrl: z.string().nullable().default(null),
   active: z.boolean().default(true),
+  siret: z.string().optional(),
+  legalRole: z.string().optional(),
+  proEmail: z.string().optional(),
 }) satisfies z.ZodType<Coach>;
 
 export const coachArraySchema = z.array(coachSchema);
