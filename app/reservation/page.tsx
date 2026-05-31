@@ -9,6 +9,7 @@ import { loadActiveCoaches } from "@/lib/content/coaches.server";
 import { loadOffers } from "@/lib/content/offers.server";
 import { loadTexts } from "@/lib/content/texts.server";
 import { textOrDefault } from "@/lib/content/texts";
+import { FormattedText } from "@/app/components/ui/FormattedText";
 
 export const metadata: Metadata = {
   title: "Réservation",
@@ -57,9 +58,11 @@ export default async function ReservationPage({
               </h1>
             </FadeIn>
             <FadeIn delay={0.2}>
-              <p className="mt-8 max-w-xl text-lg leading-relaxed text-taupe-700">
-                {textOrDefault(texts, "reservationIntro")}
-              </p>
+              <FormattedText
+                text={textOrDefault(texts, "reservationIntro")}
+                topGap="mt-8"
+                className="max-w-xl text-lg leading-relaxed text-taupe-700"
+              />
             </FadeIn>
           </Container>
         </Section>

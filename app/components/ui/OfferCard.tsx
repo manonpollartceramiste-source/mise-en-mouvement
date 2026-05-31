@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Offer } from "@/lib/content/offers";
+import { FormattedText } from "./FormattedText";
 
 type OfferCardProps = {
   offer: Offer;
@@ -33,13 +34,12 @@ export function OfferCard({ offer }: OfferCardProps) {
       )}
 
       <h3 className="font-serif text-2xl">{offer.name}</h3>
-      <p
-        className={`mt-2 text-sm ${
-          offer.highlight ? "text-sand-200" : "text-taupe-600"
-        }`}
-      >
-        {offer.description}
-      </p>
+      <FormattedText
+        text={offer.description}
+        topGap="mt-2"
+        className={`text-sm ${offer.highlight ? "text-sand-200" : "text-taupe-600"}`}
+        paraGap="mt-2"
+      />
 
       <div className="mt-6">
         <p className="font-serif text-3xl">{offer.priceLabel}</p>

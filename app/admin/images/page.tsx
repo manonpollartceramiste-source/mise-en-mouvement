@@ -10,7 +10,9 @@ import { AdminShell, FlashMessages } from "../_components/AdminShell";
 import { FileField, SubmitButton } from "../_components/Fields";
 import {
   clearImage,
+  uploadBackground,
   uploadCoachPhoto,
+  uploadGalleryPhoto,
   uploadHero,
   uploadLogo,
 } from "./actions";
@@ -41,38 +43,82 @@ export default async function AdminImagesPage({
   ]);
   const params = await searchParams;
 
+  const gallerySlots: Array<{ key: string; label: string; hint: string }> = [
+    { key: "cabinet-1", label: "Cabinet — photo 1", hint: "Vue d'ensemble du cabinet, accueil, salle." },
+    { key: "cabinet-2", label: "Cabinet — photo 2", hint: "Détail d'équipement ou espace de travail." },
+    { key: "cabinet-3", label: "Cabinet — photo 3", hint: "Ambiance lumière, rangement, décoration." },
+    { key: "ambiance-1", label: "Ambiance — photo 1", hint: "Photo de séance ou exercice en action." },
+    { key: "ambiance-2", label: "Ambiance — photo 2", hint: "Posture, mouvement, bilan ou stretching." },
+    { key: "ambiance-3", label: "Ambiance — photo 3", hint: "Portrait ou moment de coaching." },
+  ];
+
   return (
     <AdminShell
-      title="Images"
-      intro="Logo, photo de hero et photos des coachs. Format max 5 Mo. Si aucun fichier n’est uploadé, le site utilise l’image bundlée par défaut."
+      title="Médias & Photos"
+      intro="Gérez toutes les images du site : logo, hero, arrière-plan premium, galerie cabinet et photos coachs. Format max 5 Mo. Les images sont affichées automatiquement avec des effets premium."
     >
       <FlashMessages saved={params.saved} error={params.error} />
 
-      <div className="space-y-8">
+      <div className="space-y-10">
+
+        {/* ── Identité visuelle ─────────────────────────────────── */}
+        <SectionTitle title="Identité visuelle" />
+
         <ImageSlot
           title="Logo du site"
-          hint="Affiché dans le header et le footer. PNG ou SVG recommandé."
+          hint="Affiché dans le header et le footer. PNG ou SVG recommandé. Dimensions conseillées : 220×80 px minimum."
           currentUrl={images.logo}
           fallback="/logo.png"
           uploadAction={uploadLogo}
           slotId="logo"
         />
 
+        {/* ── Images de mise en scène ──────────────────────────── */}
+        <SectionTitle title="Images de mise en scène" />
+
         <ImageSlot
-          title="Image du hero (optionnelle)"
-          hint="Pas encore intégrée à l’accueil — sera utilisée plus tard."
+          title="Image hero (côté droit de l'accueil)"
+          hint="Affichée à droite du titre principal sur desktop. Format portrait recommandé : 880×1100 px. Ratio 4/5."
           currentUrl={images.hero}
           uploadAction={uploadHero}
           slotId="hero"
         />
 
+        <ImageSlot
+          title="Arrière-plan premium"
+          hint="Intégrée en fond de page avec opacité réduite, flou doux et dégradé sable. Visible mais discrète. Toute belle photo d'ambiance convient (1920×1080 px minimum)."
+          currentUrl={images.background}
+          uploadAction={uploadBackground}
+          slotId="background"
+          badge="Nouveau"
+        />
+
+        {/* ── Galerie cabinet & ambiance ───────────────────────── */}
+        <SectionTitle title="Galerie — Cabinet & Ambiance" description="Ces photos apparaissent dans une mini galerie sur la page d'accueil (si au moins 1 photo est activée). Ratio 4/5 recommandé, 800×1000 px minimum." />
+
+        {gallerySlots.map((slot) => (
+          <ImageSlot
+            key={slot.key}
+            title={slot.label}
+            hint={slot.hint}
+            currentUrl={images.gallery[slot.key] ?? null}
+            uploadAction={uploadGalleryPhoto}
+            extraFields={<input type="hidden" name="gallerySlot" value={slot.key} />}
+            slotId={`gallery:${slot.key}`}
+            badge="Galerie"
+          />
+        ))}
+
+        {/* ── Photos coachs ────────────────────────────────────── */}
+        <SectionTitle title="Photos des coachs" description="Remplace l'avatar initiales sur les pages /coachs et l'accueil. Format carré recommandé : 600×600 px. La photo est affichée en cercle." />
+
         {coaches.map((coach) => (
           <ImageSlot
             key={coach.id}
             title={`Photo de ${coach.name}`}
-            hint={`Remplace l’avatar avec initiales sur les pages /coachs et /.`}
+            hint={`Affiché en cercle sur les cartes coach et la page /coachs. Format carré 600×600 px recommandé.`}
             currentUrl={images.coaches[coach.id] ?? null}
-            uploadAction={uploadCoachPhoto.bind(null)}
+            uploadAction={uploadCoachPhoto}
             extraFields={
               <input type="hidden" name="coachId" value={coach.id} />
             }
@@ -84,6 +130,23 @@ export default async function AdminImagesPage({
   );
 }
 
+function SectionTitle({
+  title,
+  description,
+}: {
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div className="border-b border-taupe-300/30 pb-3 pt-4">
+      <h2 className="font-serif text-2xl text-ink-900">{title}</h2>
+      {description && (
+        <p className="mt-1 text-sm text-taupe-500">{description}</p>
+      )}
+    </div>
+  );
+}
+
 function ImageSlot({
   title,
   hint,
@@ -92,6 +155,7 @@ function ImageSlot({
   uploadAction,
   slotId,
   extraFields,
+  badge,
 }: {
   title: string;
   hint: string;
@@ -100,12 +164,20 @@ function ImageSlot({
   uploadAction: (formData: FormData) => Promise<void>;
   slotId: string;
   extraFields?: React.ReactNode;
+  badge?: string;
 }) {
   const displayed = currentUrl ?? fallback ?? null;
   return (
     <article className="rounded-2xl border border-taupe-300/40 bg-white p-6">
       <header className="mb-4 flex items-baseline justify-between gap-4">
-        <h2 className="font-serif text-xl text-ink-900">{title}</h2>
+        <div className="flex items-center gap-3">
+          <h3 className="font-serif text-xl text-ink-900">{title}</h3>
+          {badge && (
+            <span className="rounded-full bg-sand-100 px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-taupe-600">
+              {badge}
+            </span>
+          )}
+        </div>
         {currentUrl && (
           <form action={clearImage}>
             <input type="hidden" name="slot" value={slotId} />
@@ -121,16 +193,20 @@ function ImageSlot({
       <p className="text-sm text-taupe-600">{hint}</p>
 
       <div className="mt-5 grid items-center gap-6 md:grid-cols-[160px_1fr]">
-        <div className="flex h-32 w-32 items-center justify-center rounded-2xl border border-taupe-300/40 bg-sand-100/40">
+        <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-2xl border border-taupe-300/40 bg-sand-100/40">
           {displayed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={displayed}
               alt=""
-              className="h-full w-full object-contain"
+              className="h-full w-full object-cover"
             />
           ) : (
-            <span className="text-xs text-taupe-500">Aucune image</span>
+            <span className="text-center text-xs text-taupe-500">
+              Aucune
+              <br />
+              image
+            </span>
           )}
         </div>
         <form action={uploadAction} className="space-y-4">

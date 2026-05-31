@@ -12,6 +12,7 @@ import { dayLabels } from "@/lib/content/hours";
 import { loadSettings } from "@/lib/content/settings.server";
 import { loadTexts } from "@/lib/content/texts.server";
 import { textOrDefault } from "@/lib/content/texts";
+import { FormattedText } from "@/app/components/ui/FormattedText";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -103,9 +104,11 @@ export default async function ContactPage({
               </h1>
             </FadeIn>
             <FadeIn delay={0.2}>
-              <p className="mt-8 max-w-xl text-lg leading-relaxed text-taupe-700">
-                {textOrDefault(texts, "contactIntro")}
-              </p>
+              <FormattedText
+                text={textOrDefault(texts, "contactIntro")}
+                topGap="mt-8"
+                className="max-w-xl text-lg leading-relaxed text-taupe-700"
+              />
             </FadeIn>
           </Container>
         </Section>
@@ -228,9 +231,11 @@ export default async function ContactPage({
                     <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
                       {textOrDefault(texts, "contactBookingLabel")}
                     </p>
-                    <p className="mt-2 text-sm leading-relaxed text-taupe-700">
-                      {textOrDefault(texts, "contactBookingText")}
-                    </p>
+                    <FormattedText
+                      text={textOrDefault(texts, "contactBookingText")}
+                      topGap="mt-2"
+                      className="text-sm leading-relaxed text-taupe-700"
+                    />
                   </div>
                 </aside>
               </Reveal>

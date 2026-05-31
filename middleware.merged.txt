@@ -1,0 +1,1 @@
+// Cabinet OS auth logic has been merged into proxy.ts (Next.js 16 uses proxy.ts only)

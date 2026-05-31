@@ -69,6 +69,12 @@ const sections: Section[] = [
     href: "/admin/popups",
   },
   {
+    id: "avis",
+    label: "Avis clients",
+    description: "Témoignages, notes, ordre d'affichage",
+    href: "/admin/avis",
+  },
+  {
     id: "clients",
     label: "Clients",
     description: "Demandes reçues, suivi des statuts",
@@ -79,6 +85,18 @@ const sections: Section[] = [
     label: "Mentions légales",
     description: "Identité, hébergeur, confidentialité",
     href: "/admin/mentions-legales",
+  },
+  {
+    id: "os-coachs",
+    label: "Coachs — Cabinet OS",
+    description: "Inviter, gérer les coachs et leurs liens Cal.com / SumUp",
+    href: "/admin/os-coachs",
+  },
+  {
+    id: "os-clients",
+    label: "Clients — Cabinet OS",
+    description: "Inviter les clients et les rattacher à un coach",
+    href: "/admin/os-clients",
   },
 ];
 

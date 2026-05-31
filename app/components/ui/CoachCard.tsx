@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Coach } from "@/lib/content/coaches";
+import { FormattedText } from "./FormattedText";
 
 type CoachCardProps = {
   coach: Coach;
@@ -22,9 +23,12 @@ export function CoachCard({
           {coach.diploma}
         </p>
       </div>
-      <p className="mt-5 text-base leading-relaxed text-taupe-700">
-        {coach.bio}
-      </p>
+      <FormattedText
+        text={coach.bio}
+        topGap="mt-5"
+        className="text-base leading-relaxed text-taupe-700"
+        paraGap="mt-3"
+      />
       {variant === "full" && (
         <ul className="mt-6 space-y-2">
           {coach.highlights.map((h) => (
@@ -58,16 +62,14 @@ function CoachAvatar({
 }) {
   if (photoUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={photoUrl}
-        alt=""
-        className="h-24 w-24 rounded-full object-cover shadow-inner"
-      />
+      <div className="img-coach-circle h-24 w-24 shrink-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={photoUrl} alt="" loading="lazy" />
+      </div>
     );
   }
   return (
-    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-taupe-300 to-taupe-500 font-serif text-3xl text-sand-50 shadow-inner">
+    <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-taupe-300 to-taupe-500 font-serif text-3xl text-sand-50 shadow-[inset_0_-8px_20px_rgba(0,0,0,0.15)]">
       {initials}
     </div>
   );

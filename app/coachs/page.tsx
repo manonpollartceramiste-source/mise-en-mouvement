@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/app/components/ui/Container";
+import { FormattedText } from "@/app/components/ui/FormattedText";
 import { Section } from "@/app/components/ui/Section";
 import { Header } from "@/app/components/sections/Header";
 import { Footer } from "@/app/components/sections/Footer";
@@ -61,12 +62,10 @@ export default async function CoachsPage() {
                 >
                   <div className="flex justify-center">
                     {photo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={photo}
-                        alt={coach.name}
-                        className="h-72 w-72 rounded-full object-cover shadow-[inset_0_-30px_60px_rgba(0,0,0,0.15)]"
-                      />
+                      <div className="img-coach-circle h-72 w-72">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={photo} alt={coach.name} loading="lazy" />
+                      </div>
                     ) : (
                       <div className="flex h-72 w-72 items-center justify-center rounded-full bg-gradient-to-br from-taupe-300 to-taupe-600 font-serif text-7xl text-sand-50 shadow-[inset_0_-30px_60px_rgba(0,0,0,0.15)]">
                         {coach.initials}
@@ -86,9 +85,12 @@ export default async function CoachsPage() {
                     <p className="mt-2 text-xs uppercase tracking-wider text-taupe-500">
                       {coach.diploma}
                     </p>
-                    <p className="mt-6 text-base leading-relaxed text-taupe-700">
-                      {coach.bio}
-                    </p>
+                    <FormattedText
+                      text={coach.bio}
+                      topGap="mt-6"
+                      className="text-base leading-relaxed text-taupe-700"
+                      paraGap="mt-3"
+                    />
                     <ul className="mt-6 space-y-2">
                       {coach.highlights.map((h) => (
                         <li

@@ -8,32 +8,38 @@ import { Reveal } from "@/app/components/motion/Reveal";
 import { HeroDecor } from "@/app/components/motion/HeroDecor";
 import { CoachCard } from "@/app/components/ui/CoachCard";
 import { TestimonialCard } from "@/app/components/ui/TestimonialCard";
+import { PremiumBackground } from "@/app/components/ui/PremiumBackground";
+import { FormattedText } from "@/app/components/ui/FormattedText";
 import { type Coach } from "@/lib/content/coaches";
 import { loadActiveCoaches } from "@/lib/content/coaches.server";
-import { testimonials } from "@/lib/content/testimonials";
+import { type Testimonial } from "@/lib/content/testimonials";
+import { loadVisibleTestimonials } from "@/lib/content/testimonials.server";
 import { loadTexts } from "@/lib/content/texts.server";
 import { textOrDefault, type SiteTexts } from "@/lib/content/texts";
 import { loadImages } from "@/lib/content/images.server";
-import type { SiteImages } from "@/lib/content/images";
+import { getGalleryPhotos, type SiteImages } from "@/lib/content/images";
 import { loadActivePopup } from "@/lib/content/popups.server";
 import { PopupBanner } from "@/app/components/popup/PopupBanner";
 
 export default async function Home() {
-  const [coaches, texts, images, popup] = await Promise.all([
+  const [coaches, texts, images, popup, visibleAvis] = await Promise.all([
     loadActiveCoaches(),
     loadTexts(),
     loadImages(),
     loadActivePopup("home"),
+    loadVisibleTestimonials(),
   ]);
   return (
     <>
+      <PremiumBackground src={images.background} />
       <Header />
       <main className="flex-1">
         <Hero texts={texts} heroImage={images.hero} />
         <Approche texts={texts} />
         <CoachsPreview coaches={coaches} images={images} texts={texts} />
+        <GalerieAmbiance images={images} />
         <Piliers texts={texts} />
-        <AvisPreview texts={texts} />
+        <AvisPreview texts={texts} testimonials={visibleAvis} />
         <CTAFinal texts={texts} />
       </main>
       <Footer />
@@ -82,9 +88,11 @@ function Hero({
               </h1>
             </FadeIn>
             <FadeIn delay={0.2}>
-              <p className="mt-8 max-w-xl text-lg leading-relaxed text-taupe-700">
-                {textOrDefault(texts, "heroSubtitle")}
-              </p>
+              <FormattedText
+                text={textOrDefault(texts, "heroSubtitle")}
+                topGap="mt-8"
+                className="max-w-xl text-lg leading-relaxed text-taupe-700"
+              />
             </FadeIn>
             <FadeIn delay={0.3}>
               <div className="mt-10 flex flex-wrap gap-4">
@@ -111,13 +119,32 @@ function Hero({
           </div>
           {showImage && heroImage && (
             <FadeIn delay={0.2}>
-              <div className="overflow-hidden rounded-3xl border border-taupe-300/40 bg-sand-100/40 shadow-[0_30px_80px_-30px_rgba(78,70,59,0.35)]">
+              <div className="group relative overflow-hidden rounded-3xl shadow-[0_40px_100px_-30px_rgba(78,70,59,0.45)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={heroImage}
                   alt=""
-                  className="aspect-[4/5] w-full object-cover"
+                  className="aspect-[4/5] w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
+                  loading="eager"
                 />
+                {/* Voile dégradé en bas pour fondre avec le fond */}
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, transparent 60%, rgba(247,242,232,0.55) 100%)",
+                  }}
+                />
+                {/* Bords latéraux fondus */}
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(to right, rgba(247,242,232,0.18) 0%, transparent 12%, transparent 88%, rgba(247,242,232,0.18) 100%)",
+                  }}
+                />
+                {/* Anneau subtil */}
+                <div className="pointer-events-none absolute inset-0 rounded-3xl ring-1 ring-inset ring-taupe-300/30" />
               </div>
             </FadeIn>
           )}
@@ -142,9 +169,11 @@ function Approche({ texts }: { texts: SiteTexts }) {
           </h2>
         </Reveal>
         <Reveal delay={0.2}>
-          <p className="mt-6 max-w-2xl text-base leading-relaxed text-taupe-700">
-            {textOrDefault(texts, "approcheBody")}
-          </p>
+          <FormattedText
+            text={textOrDefault(texts, "approcheBody")}
+            topGap="mt-6"
+            className="max-w-2xl text-base leading-relaxed text-taupe-700"
+          />
         </Reveal>
       </Container>
     </Section>
@@ -224,9 +253,10 @@ function Piliers({ texts }: { texts: SiteTexts }) {
                   0{i + 1}
                 </span>
                 <h3 className="font-serif text-xl text-ink-900">{p.title}</h3>
-                <p className="text-base leading-relaxed text-taupe-700">
-                  {p.text}
-                </p>
+                <FormattedText
+                  text={p.text}
+                  className="text-base leading-relaxed text-taupe-700"
+                />
               </div>
             </Reveal>
           ))}
@@ -236,7 +266,15 @@ function Piliers({ texts }: { texts: SiteTexts }) {
   );
 }
 
-function AvisPreview({ texts }: { texts: SiteTexts }) {
+function AvisPreview({
+  texts,
+  testimonials,
+}: {
+  texts: SiteTexts;
+  testimonials: Testimonial[];
+}) {
+  if (testimonials.length === 0) return null;
+  const preview = testimonials.slice(0, 2);
   return (
     <Section>
       <Container>
@@ -256,9 +294,53 @@ function AvisPreview({ texts }: { texts: SiteTexts }) {
           </div>
         </Reveal>
         <div className="grid gap-6 md:grid-cols-2">
-          {testimonials.map((t, i) => (
-            <Reveal key={t.author} delay={i * 0.1}>
+          {preview.map((t, i) => (
+            <Reveal key={i} delay={i * 0.1}>
               <TestimonialCard testimonial={t} />
+            </Reveal>
+          ))}
+        </div>
+      </Container>
+    </Section>
+  );
+}
+
+function GalerieAmbiance({ images }: { images: SiteImages }) {
+  const cabinetPhotos = getGalleryPhotos(images, "cabinet-");
+  const ambiancePhotos = getGalleryPhotos(images, "ambiance-");
+  const allPhotos = [...cabinetPhotos, ...ambiancePhotos].slice(0, 6);
+
+  if (allPhotos.length === 0) return null;
+
+  return (
+    <Section className="border-t border-taupe-300/30">
+      <Container>
+        <Reveal>
+          <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
+            Le cabinet
+          </p>
+          <h2 className="mt-4 max-w-xl font-serif text-3xl leading-tight text-ink-900 sm:text-4xl">
+            Un espace pensé{" "}
+            <span className="italic text-taupe-600">pour votre progression.</span>
+          </h2>
+        </Reveal>
+        <div
+          className={`mt-10 grid gap-4 ${
+            allPhotos.length === 1
+              ? "grid-cols-1 max-w-xs"
+              : allPhotos.length === 2
+                ? "grid-cols-2"
+                : allPhotos.length <= 4
+                  ? "grid-cols-2 md:grid-cols-4"
+                  : "grid-cols-2 md:grid-cols-3"
+          }`}
+        >
+          {allPhotos.map((url, i) => (
+            <Reveal key={url} delay={i * 0.07}>
+              <div className="img-gallery-card aspect-[4/5]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" loading="lazy" />
+              </div>
             </Reveal>
           ))}
         </div>
@@ -277,9 +359,11 @@ function CTAFinal({ texts }: { texts: SiteTexts }) {
               <h2 className="font-serif text-3xl leading-tight text-ink-900 sm:text-4xl">
                 {textOrDefault(texts, "ctaFinalTitle")}
               </h2>
-              <p className="mt-4 text-base leading-relaxed text-taupe-700">
-                {textOrDefault(texts, "ctaFinalBody")}
-              </p>
+              <FormattedText
+                text={textOrDefault(texts, "ctaFinalBody")}
+                topGap="mt-4"
+                className="text-base leading-relaxed text-taupe-700"
+              />
             </div>
             <Button href="/reservation" variant="primary">
               {textOrDefault(texts, "ctaFinalButton")}

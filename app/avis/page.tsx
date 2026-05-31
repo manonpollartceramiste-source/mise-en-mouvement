@@ -7,7 +7,7 @@ import { FadeIn } from "@/app/components/motion/FadeIn";
 import { Reveal } from "@/app/components/motion/Reveal";
 import { Button } from "@/app/components/ui/Button";
 import { TestimonialCard } from "@/app/components/ui/TestimonialCard";
-import { testimonials } from "@/lib/content/testimonials";
+import { loadVisibleTestimonials } from "@/lib/content/testimonials.server";
 import { loadSettings } from "@/lib/content/settings.server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -18,7 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function AvisPage() {
+export default async function AvisPage() {
+  const avis = await loadVisibleTestimonials();
+
   return (
     <>
       <Header />
@@ -40,26 +42,33 @@ export default function AvisPage() {
             <FadeIn delay={0.2}>
               <p className="mt-8 max-w-xl text-lg leading-relaxed text-taupe-700">
                 Quelques retours de personnes qui ont repris le sport avec nous.
-                D’autres témoignages arriveront au fil des saisons.
+                D'autres témoignages arriveront au fil des saisons.
               </p>
             </FadeIn>
           </Container>
         </Section>
 
-        <Section className="border-t border-taupe-300/30 pt-0">
+        {avis.length > 0 && (
+          <Section className="border-t border-taupe-300/30 pt-0">
+            <Container>
+              <div className="grid gap-6 md:grid-cols-2">
+                {avis.map((t, i) => (
+                  <Reveal key={i} delay={i * 0.1}>
+                    <TestimonialCard testimonial={t} />
+                  </Reveal>
+                ))}
+              </div>
+            </Container>
+          </Section>
+        )}
+
+        <Section className="border-t border-taupe-300/30">
           <Container>
-            <div className="grid gap-6 md:grid-cols-2">
-              {testimonials.map((t, i) => (
-                <Reveal key={t.author} delay={i * 0.1}>
-                  <TestimonialCard testimonial={t} />
-                </Reveal>
-              ))}
-            </div>
-            <Reveal delay={0.2}>
-              <div className="mt-16 flex flex-col items-center gap-6 text-center">
+            <Reveal>
+              <div className="flex flex-col items-center gap-6 text-center">
                 <p className="max-w-md text-base leading-relaxed text-taupe-700">
                   Envie de tester ? La première séance Découverte est à 25 €
-                  durant les deux premiers mois d’ouverture.
+                  durant les deux premiers mois d'ouverture.
                 </p>
                 <Button href="/reservation" variant="primary">
                   Réserver ma première séance

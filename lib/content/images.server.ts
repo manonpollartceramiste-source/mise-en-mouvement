@@ -11,10 +11,17 @@ import {
 /**
  * Cached per-request reader. Header & Footer call this on every page render
  * but the cache deduplicates within a single React server pass.
+ *
+ * Merges with defaultImages before parsing so that old stored blobs
+ * (missing background/gallery) don't break schema validation.
  */
 export const loadImages = cache(async (): Promise<SiteImages> => {
   const value = await readContentKey("images");
   if (!value) return defaultImages;
-  const parsed = siteImagesSchema.safeParse(value);
+  const merged =
+    typeof value === "object" && value !== null
+      ? { ...defaultImages, ...(value as Record<string, unknown>) }
+      : value;
+  const parsed = siteImagesSchema.safeParse(merged);
   return parsed.success ? parsed.data : defaultImages;
 });

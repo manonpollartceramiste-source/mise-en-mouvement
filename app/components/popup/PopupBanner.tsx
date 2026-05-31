@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useState, useSyncExternalStore } from "react";
 import type { Popup } from "@/lib/content/popups";
+import { FormattedText } from "@/app/components/ui/FormattedText";
 
 const STORAGE_PREFIX = "mem-popup-dismissed:";
 
@@ -73,9 +74,11 @@ export function PopupBanner({ popup }: { popup: Popup }) {
           <p className="pr-8 font-serif text-2xl leading-tight text-ink-900">
             {popup.title}
           </p>
-          <p className="mt-4 text-base leading-relaxed text-taupe-700">
-            {popup.body}
-          </p>
+          <FormattedText
+            text={popup.body}
+            topGap="mt-4"
+            className="text-base leading-relaxed text-taupe-700"
+          />
           {popup.ctaLabel && popup.ctaHref && (
             <a
               href={popup.ctaHref}

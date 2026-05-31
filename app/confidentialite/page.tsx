@@ -27,25 +27,25 @@ export default async function ConfidentialitePage() {
       </p>
 
       <h2>Données collectées</h2>
-      <p>{legal.privacyDataCollected}</p>
+      <p className="whitespace-pre-line">{legal.privacyDataCollected}</p>
 
       <h2>Finalités</h2>
-      <p>{legal.privacyPurposes}</p>
+      <p className="whitespace-pre-line">{legal.privacyPurposes}</p>
 
       <h2>Sous-traitants</h2>
-      <p>{legal.privacySubprocessors}</p>
+      <p className="whitespace-pre-line">{legal.privacySubprocessors}</p>
 
       <h2>Durée de conservation</h2>
-      <p>{legal.privacyRetention}</p>
+      <p className="whitespace-pre-line">{legal.privacyRetention}</p>
 
       <h2>Vos droits</h2>
-      <p>
+      <p className="whitespace-pre-line">
         {legal.privacyRights}{" "}
         <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
       </p>
 
       <h2>Cookies</h2>
-      <p>{legal.privacyCookies}</p>
+      <p className="whitespace-pre-line">{legal.privacyCookies}</p>
     </LegalLayout>
   );
 }

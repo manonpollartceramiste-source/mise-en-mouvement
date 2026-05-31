@@ -40,10 +40,14 @@ function extFromMime(mime: string): string {
   return "bin";
 }
 
-async function uploadAndPersist(
-  slot: "logo" | "hero" | { coach: string },
-  file: File,
-): Promise<void> {
+type Slot =
+  | "logo"
+  | "hero"
+  | "background"
+  | { coach: string }
+  | { gallery: string };
+
+async function uploadAndPersist(slot: Slot, file: File): Promise<void> {
   if (!isSupabaseConfigured()) fail("Supabase non configuré.");
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
@@ -54,7 +58,11 @@ async function uploadAndPersist(
 
   const ext = extFromMime(file.type);
   const slotKey =
-    typeof slot === "string" ? slot : `coach-${slot.coach}`;
+    typeof slot === "string"
+      ? slot
+      : "coach" in slot
+        ? `coach-${slot.coach}`
+        : `gallery-${slot.gallery}`;
   const path = `${slotKey}-${Date.now()}.${ext}`;
 
   const supabase = await getSupabaseServer();
@@ -77,10 +85,18 @@ async function uploadAndPersist(
     next = { ...current, logo: publicUrl };
   } else if (slot === "hero") {
     next = { ...current, hero: publicUrl };
-  } else {
+  } else if (slot === "background") {
+    next = { ...current, background: publicUrl };
+  } else if (typeof slot === "object" && "coach" in slot) {
     next = {
       ...current,
       coaches: { ...current.coaches, [slot.coach]: publicUrl },
+    };
+  } else {
+    const gallerySlot = (slot as { gallery: string }).gallery;
+    next = {
+      ...current,
+      gallery: { ...current.gallery, [gallerySlot]: publicUrl },
     };
   }
 
@@ -105,12 +121,26 @@ export async function uploadHero(formData: FormData) {
   await uploadAndPersist("hero", file);
 }
 
+export async function uploadBackground(formData: FormData) {
+  const file = formData.get("file");
+  if (!(file instanceof File)) fail("Fichier manquant.");
+  await uploadAndPersist("background", file);
+}
+
 export async function uploadCoachPhoto(formData: FormData) {
   const coachId = String(formData.get("coachId") ?? "").trim();
   if (!coachId) fail("Coach manquant.");
   const file = formData.get("file");
   if (!(file instanceof File)) fail("Fichier manquant.");
   await uploadAndPersist({ coach: coachId }, file);
+}
+
+export async function uploadGalleryPhoto(formData: FormData) {
+  const gallerySlot = String(formData.get("gallerySlot") ?? "").trim();
+  if (!gallerySlot) fail("Slot galerie manquant.");
+  const file = formData.get("file");
+  if (!(file instanceof File)) fail("Fichier manquant.");
+  await uploadAndPersist({ gallery: gallerySlot }, file);
 }
 
 export async function clearImage(formData: FormData) {
@@ -122,13 +152,22 @@ export async function clearImage(formData: FormData) {
   const current: SiteImages = await loadImages();
   let next: SiteImages = { ...defaultImages, ...current };
 
-  if (slot === "logo") next = { ...current, logo: null };
-  else if (slot === "hero") next = { ...current, hero: null };
-  else if (slot.startsWith("coach:")) {
+  if (slot === "logo") {
+    next = { ...current, logo: null };
+  } else if (slot === "hero") {
+    next = { ...current, hero: null };
+  } else if (slot === "background") {
+    next = { ...current, background: null };
+  } else if (slot.startsWith("coach:")) {
     const coachId = slot.slice("coach:".length);
     const { [coachId]: _omit, ...rest } = current.coaches;
     void _omit;
     next = { ...current, coaches: rest };
+  } else if (slot.startsWith("gallery:")) {
+    const galleryKey = slot.slice("gallery:".length);
+    const { [galleryKey]: _omit, ...rest } = current.gallery;
+    void _omit;
+    next = { ...current, gallery: rest };
   } else {
     fail("Slot inconnu.");
   }

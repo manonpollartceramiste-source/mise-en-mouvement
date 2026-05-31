@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { FaqItem } from "@/lib/content/faq";
+import { FormattedText } from "./FormattedText";
 
 type FAQItemProps = {
   item: FaqItem;
@@ -45,9 +46,13 @@ export function FAQItem({ item, defaultOpen = false }: FAQItemProps) {
             }}
             className="overflow-hidden"
           >
-            <p className="pb-6 pr-14 text-base leading-relaxed text-taupe-700">
-              {item.answer}
-            </p>
+            <div className="pb-6 pr-14">
+              <FormattedText
+                text={item.answer}
+                className="text-base leading-relaxed text-taupe-700"
+                paraGap="mt-3"
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

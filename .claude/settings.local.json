@@ -4,7 +4,31 @@
       "Bash(npx tsc *)",
       "Bash(npx next *)",
       "Bash(npx eslint *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "PowerShell(Rename-Item *)",
+      "Bash(npm install *)",
+      "Bash(node -e ' *)",
+      "Bash(taskkill /PID 12416 /F)",
+      "PowerShell(Stop-Process *)",
+      "Bash(curl -s http://localhost:3000/ -o /dev/null -w \"HTTP %{http_code}\")",
+      "Bash(curl -s http://localhost:3001/ -o /dev/null -w \"HTTP %{http_code}\")",
+      "Bash(curl -s -L http://localhost:3000/os/login -o /dev/null -w \"os/login: %{http_code}\\\\n\")",
+      "Bash(curl -s -L http://localhost:3000/os/client -o /dev/null -w \"os/client: %{http_code}\\\\n\")",
+      "Bash(curl -s -L http://localhost:3000/os/coach -o /dev/null -w \"os/coach: %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:3000/os/client -L)",
+      "Bash(curl -s http://localhost:3000/os/coach -L)",
+      "Bash(curl -s http://localhost:3000/os/client/evolution)",
+      "PowerShell(Get-Process *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(taskkill *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\manon\\\\site-pro\\\\site-premium\\\\supabase\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(type tailwind.config.ts)",
+      "Bash(type tailwind.config.js)",
+      "Bash(findstr -i \"animate\\\\|framer\\\\|motion\")",
+      "Bash(Get-Content \"C:\\\\Users\\\\manon\\\\site-pro\\\\site-premium\\\\package.json\")",
+      "Bash(Select-String \"animate|framer|motion\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\manon\\\\site-pro\\\\site-premium\\\\app\" -Filter \"page.tsx\" -Recurse)"
     ]
   }
 }

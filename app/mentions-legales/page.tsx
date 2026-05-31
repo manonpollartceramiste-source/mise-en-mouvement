@@ -35,7 +35,7 @@ export default async function MentionsLegalesPage() {
       </p>
 
       <h2>Éditeur du site</h2>
-      <p>{legal.editorIntro}</p>
+      <p className="whitespace-pre-line">{legal.editorIntro}</p>
       {coachesToRender
         ? coachesToRender.map((c) => {
             const role = (c.legalRole ?? "").trim() || c.role;
