@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Favicon Preview — Mise en Mouvement</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f0ece4; color: #1a1410; padding: 40px 32px; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .sub { font-size: 13px; color: #7a6e62; margin-bottom: 40px; }
+  section { margin-bottom: 48px; }
+  h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #7a6e62; margin-bottom: 16px; border-bottom: 1px solid #d4c9b8; padding-bottom: 8px; }
+
+  /* Sizes grid */
+  .sizes { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+  .size-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .size-item img { display: block; image-rendering: pixelated; }
+  .size-item .label { font-size: 11px; color: #7a6e62; }
+
+  /* Chrome tab mock */
+  .tab-bar { background: #dee1e6; padding: 8px 12px 0; border-radius: 8px 8px 0 0; display: flex; align-items: flex-end; gap: 4px; width: 480px; }
+  .tab { background: #f1f3f4; border-radius: 8px 8px 0 0; padding: 8px 16px 8px 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #1a1410; flex: 1; max-width: 240px; position: relative; }
+  .tab::after { content: '✕'; position: absolute; right: 8px; color: #7a6e62; font-size: 10px; }
+  .tab-favicon { width: 16px; height: 16px; image-rendering: pixelated; }
+  .tab-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+  .tab-empty { width: 72px; height: 36px; border-radius: 8px 8px 0 0; background: #dee1e6; }
+  .browser-bar { background: #f1f3f4; padding: 8px 12px; border: 1px solid #dadce0; border-radius: 0 0 4px 4px; width: 480px; display: flex; align-items: center; gap: 8px; }
+  .url-bar { background: white; border: 1px solid #dadce0; border-radius: 20px; flex: 1; padding: 5px 14px; font-size: 13px; color: #555; }
+
+  /* Background tests */
+  .bg-grid { display: flex; gap: 16px; flex-wrap: wrap; }
+  .bg-swatch { padding: 20px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .bg-swatch img { width: 48px; height: 48px; image-rendering: pixelated; }
+  .bg-swatch .bg-label { font-size: 11px; color: #7a6e62; }
+
+  /* 512 preview */
+  .big-preview { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+  .big-img { border-radius: 10px; overflow: hidden; }
+</style>
+</head>
+<body>
+
+<h1>Favicon Preview — Mise en Mouvement</h1>
+<p class="sub">Aperçu local uniquement · Pas de commit · Pas de push</p>
+
+<section>
+  <h2>Toutes les tailles</h2>
+  <div class="sizes">
+    <div class="size-item">
+      <img src="/favicon.ico" width="16" height="16" alt="16px">
+      <span class="label">16×16</span>
+    </div>
+    <div class="size-item">
+      <img src="/favicon.ico" width="24" height="24" alt="24px">
+      <span class="label">24×24</span>
+    </div>
+    <div class="size-item">
+      <img src="/favicon.ico" width="32" height="32" alt="32px">
+      <span class="label">32×32</span>
+    </div>
+    <div class="size-item">
+      <img src="/favicon.ico" width="48" height="48" alt="48px">
+      <span class="label">48×48</span>
+    </div>
+    <div class="size-item">
+      <img src="/apple-icon.png" width="64" height="64" alt="apple 180px scaled">
+      <span class="label">64px (apple-icon)</span>
+    </div>
+    <div class="size-item">
+      <img src="/apple-icon.png" width="180" height="180" alt="180px">
+      <span class="label">180×180</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Simulation onglet Chrome</h2>
+  <div class="tab-bar">
+    <div class="tab">
+      <img class="tab-favicon" src="/favicon.ico" alt="favicon">
+      <span class="tab-title">Mise en Mouvement</span>
+    </div>
+    <div class="tab-empty"></div>
+    <div class="tab-empty"></div>
+  </div>
+  <div class="browser-bar">
+    <span style="color:#555;font-size:12px">←  →  ↻</span>
+    <div class="url-bar">miseonmouvement.fr</div>
+  </div>
+</section>
+
+<section>
+  <h2>Test sur différents fonds</h2>
+  <div class="bg-grid">
+    <div class="bg-swatch" style="background:#ffffff;">
+      <img src="/favicon.ico" width="48" height="48" alt="">
+      <span class="bg-label">Blanc</span>
+    </div>
+    <div class="bg-swatch" style="background:#f0ece4;">
+      <img src="/favicon.ico" width="48" height="48" alt="">
+      <span class="bg-label">Sable (fond site)</span>
+    </div>
+    <div class="bg-swatch" style="background:#d8ccba;">
+      <img src="/favicon.ico" width="48" height="48" alt="">
+      <span class="bg-label">Taupe (fond favicon)</span>
+    </div>
+    <div class="bg-swatch" style="background:#3d3530;">
+      <img src="/favicon.ico" width="48" height="48" alt="">
+      <span class="bg-label">Sombre</span>
+    </div>
+    <div class="bg-swatch" style="background:#dee1e6;">
+      <img src="/favicon.ico" width="48" height="48" alt="">
+      <span class="bg-label">Gris Chrome</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Icon 512×512 (PWA / App Store)</h2>
+  <div class="big-preview">
+    <div class="big-img">
+      <img src="/icon.png" width="128" height="128" alt="icon 128px">
+    </div>
+    <div class="big-img">
+      <img src="/icon.png" width="256" height="256" alt="icon 256px">
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Apple Touch Icon (180×180)</h2>
+  <div style="display:flex;gap:24px;align-items:flex-end;">
+    <div style="background:#f1f1f1;border-radius:38px;overflow:hidden;width:80px;height:80px;">
+      <img src="/apple-icon.png" width="80" height="80" alt="">
+    </div>
+    <div style="background:#f1f1f1;border-radius:38px;overflow:hidden;width:120px;height:120px;">
+      <img src="/apple-icon.png" width="120" height="120" alt="">
+    </div>
+    <div style="background:#f1f1f1;border-radius:38px;overflow:hidden;width:180px;height:180px;">
+      <img src="/apple-icon.png" width="180" height="180" alt="">
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
