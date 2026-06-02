@@ -3,6 +3,7 @@ import { loadSettings } from "@/lib/content/settings.server";
 import { loadImages } from "@/lib/content/images.server";
 import { generateBilanHtml, type BilanPdfData } from "@/lib/pdf/bilan-html";
 import type { AssessmentTestEntry } from "@/lib/os/types";
+import QRCode from "qrcode";
 
 // ─── Route config ─────────────────────────────────────────────────────────────
 
@@ -114,6 +115,15 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
     })
     .filter(Boolean) as BilanPdfData["tests"];
 
+  const appointmentUrl = coachProfile.calcom_url || null;
+  const qrCodeDataUrl = appointmentUrl
+    ? await QRCode.toDataURL(appointmentUrl, {
+        margin: 1,
+        width: 132,
+        color: { dark: "#1E1812", light: "#F5EFE5" },
+      }).catch(() => null)
+    : null;
+
   const data: BilanPdfData = {
     clientName, cabinetName, logoSrc, hasCustomLogo,
     contactLine, addressLine, dateStr,
@@ -139,9 +149,26 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
     painEvolution:      assessment.pain_evolution,
     oldInjuries:        assessment.old_injuries,
     operations:         assessment.operations,
-    coachName:          coachProfile.display_name,
-    coachSignature:     assessment.coach_signature,
-    clientSignature:    assessment.client_signature,
+    coachName:     coachProfile.display_name,
+    coachRole:     null,
+    coachPhotoSrc: coachProfile.avatar_url,
+    qrCodeDataUrl,
+    bodyComposition: {
+      weightKg:    assessment.weight_kg    ?? null,
+      fatPct:      assessment.fat_pct      ?? null,
+      musclePct:   assessment.muscle_pct   ?? null,
+      waterPct:    assessment.water_pct    ?? null,
+      boneMassKg:  assessment.bone_mass_kg ?? null,
+      visceralFat: assessment.visceral_fat ?? null,
+      bmrKcal:     assessment.bmr_kcal     ?? null,
+      metabolicAge: assessment.metabolic_age ?? null,
+      segArmRight: assessment.seg_arm_right_kg ?? null,
+      segArmLeft:  assessment.seg_arm_left_kg  ?? null,
+      segLegRight: assessment.seg_leg_right_kg ?? null,
+      segLegLeft:  assessment.seg_leg_left_kg  ?? null,
+      segTrunk:    assessment.seg_trunk_kg     ?? null,
+    },
+    zonePriorities: assessment.zone_priorities as Record<string, "forte" | "surveillance" | "ras"> | null,
   };
 
   const slug = clientName
