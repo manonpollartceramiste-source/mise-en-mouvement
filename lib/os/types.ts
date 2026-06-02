@@ -139,8 +139,10 @@ export type ClientGoal = {
 
 export type AssessmentTestEntry = {
   score: 0 | 1 | 2;
+  score10?: number | null;
   observation: string;
   note: string;
+  zone?: string;
 };
 
 export type MovementAssessment = {
@@ -152,6 +154,21 @@ export type MovementAssessment = {
   stress_score: number | null;
   sleep_score: number | null;
   pain_score: number | null;
+  // Composition corporelle — migration 0008 (colonnes optionnelles)
+  weight_kg?: number | null;
+  fat_pct?: number | null;
+  muscle_pct?: number | null;
+  water_pct?: number | null;
+  bone_mass_kg?: number | null;
+  visceral_fat?: number | null;
+  bmr_kcal?: number | null;
+  metabolic_age?: number | null;
+  // Masse musculaire segmentaire — migration 0010
+  seg_arm_right_kg?: number | null;
+  seg_arm_left_kg?: number | null;
+  seg_leg_right_kg?: number | null;
+  seg_leg_left_kg?: number | null;
+  seg_trunk_kg?: number | null;
   main_goal: string | null;
   concrete_goal: string | null;
   old_injuries: string | null;
@@ -175,9 +192,10 @@ export type MovementAssessment = {
   important_notes: string | null;
   next_action: string | null;
   pain_evolution: string | null;
-  coach_signature: string | null;
-  client_signature: string | null;
-  photos: Record<string, string> | null;
+  // Zones prioritaires — migration 0009
+  zone_priorities?: Record<string, "forte" | "surveillance" | "ras"> | null;
+  // Notes par axe — migration 0011
+  axis_notes?: Record<string, string> | null;
   created_at: string;
   updated_at: string;
 };

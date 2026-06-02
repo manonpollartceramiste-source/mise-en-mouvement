@@ -18,6 +18,19 @@ type FormState = {
   stress_score: number | null;
   sleep_score: number | null;
   pain_score: number | null;
+  weight_kg: number | null;
+  fat_pct: number | null;
+  muscle_pct: number | null;
+  water_pct: number | null;
+  bone_mass_kg: number | null;
+  visceral_fat: number | null;
+  bmr_kcal: number | null;
+  metabolic_age: number | null;
+  seg_arm_right_kg: number | null;
+  seg_arm_left_kg: number | null;
+  seg_leg_right_kg: number | null;
+  seg_leg_left_kg: number | null;
+  seg_trunk_kg: number | null;
   main_goal: string;
   concrete_goal: string;
   old_injuries: string;
@@ -35,14 +48,14 @@ type FormState = {
   movement_tests: Tests;
   daily_limitations: BoolMap;
   recommendations: BoolMap;
+  zone_priorities: ZonePriorityMap;
+  axis_notes: Record<string, string>;
   frequency: "1x/semaine" | "2x/semaine" | "3x/semaine" | null;
   motivation: "faible" | "moyenne" | "forte" | null;
   engagement: "débutant" | "régulier" | "très motivé" | null;
   important_notes: string;
   next_action: string;
   pain_evolution: string;
-  coach_signature: string;
-  client_signature: string;
 };
 
 // ─── Constantes ──────────────────────────────────────────────
@@ -101,11 +114,117 @@ const RECOMMENDATIONS = [
   { key: "gestion_douleur", label: "Gestion douleur" },
 ];
 
+type ZonePriority = "forte" | "surveillance" | "ras";
+type ZonePriorityMap = Record<string, ZonePriority>;
+
+const BODY_ZONES = [
+  { key: "cervicales",        label: "Ceinture cervicale" },
+  { key: "dos_haut",          label: "Ceinture scapulaire" },
+  { key: "epaules",           label: "Épaules" },
+  { key: "pectoraux",         label: "Pectoraux" },
+  { key: "grand_dorsal",      label: "Grand dorsal" },
+  { key: "lombaires",         label: "Lombaires" },
+  { key: "sangle_abdominale", label: "Sangle abdominale" },
+  { key: "bassin",            label: "Bassin" },
+  { key: "hanches",           label: "Hanches" },
+  { key: "fessiers",          label: "Fessiers" },
+  { key: "quadriceps",        label: "Quadriceps" },
+  { key: "ischio_jambiers",   label: "Ischio-jambiers" },
+  { key: "mollets",           label: "Mollets" },
+  { key: "chevilles",         label: "Chevilles" },
+  { key: "pieds",             label: "Pieds" },
+] as const;
+
+const ZONE_PRIORITIES: { value: ZonePriority; label: string; active: string; inactive: string }[] = [
+  {
+    value: "forte",
+    label: "Priorité",
+    active: "bg-red-500/90 border-red-500 text-white",
+    inactive: "border-taupe-200 bg-white text-taupe-500 hover:bg-red-50 hover:border-red-300",
+  },
+  {
+    value: "surveillance",
+    label: "Surveillance",
+    active: "bg-amber-500/90 border-amber-500 text-white",
+    inactive: "border-taupe-200 bg-white text-taupe-500 hover:bg-amber-50 hover:border-amber-300",
+  },
+  {
+    value: "ras",
+    label: "RAS",
+    active: "bg-emerald-500/90 border-emerald-500 text-white",
+    inactive: "border-taupe-200 bg-white text-taupe-500 hover:bg-emerald-50 hover:border-emerald-300",
+  },
+];
+
+type CompositionFieldKey = "weight_kg" | "fat_pct" | "muscle_pct" | "water_pct" | "bone_mass_kg" | "visceral_fat" | "bmr_kcal" | "metabolic_age";
+
+const COMPOSITION_FIELDS: Array<{
+  key: CompositionFieldKey;
+  label: string;
+  unit: string;
+  step: string;
+  placeholder: string;
+}> = [
+  { key: "weight_kg",     label: "Masse",                    unit: "kg",   step: "0.1",  placeholder: "72,5" },
+  { key: "fat_pct",       label: "Masse grasse",             unit: "%",    step: "0.1",  placeholder: "18,5" },
+  { key: "muscle_pct",    label: "Masse musculaire",         unit: "%",    step: "0.1",  placeholder: "42,0" },
+  { key: "water_pct",     label: "Masse hydrique",           unit: "%",    step: "0.1",  placeholder: "58,0" },
+  { key: "bone_mass_kg",  label: "Densité minérale osseuse", unit: "kg",   step: "0.01", placeholder: "3,20" },
+  { key: "visceral_fat",  label: "Graisse viscérale",        unit: "",     step: "0.1",  placeholder: "8" },
+  { key: "bmr_kcal",      label: "Métabolisme basal",        unit: "kcal", step: "1",    placeholder: "1650" },
+  { key: "metabolic_age", label: "Âge métabolique",          unit: "ans",  step: "1",    placeholder: "35" },
+];
+
+type SegmentalFieldKey = "seg_arm_right_kg" | "seg_arm_left_kg" | "seg_leg_right_kg" | "seg_leg_left_kg" | "seg_trunk_kg";
+
+const SEGMENTAL_FIELDS: Array<{ key: SegmentalFieldKey; label: string }> = [
+  { key: "seg_arm_right_kg", label: "Bras droit" },
+  { key: "seg_arm_left_kg",  label: "Bras gauche" },
+  { key: "seg_leg_right_kg", label: "Jambe droite" },
+  { key: "seg_leg_left_kg",  label: "Jambe gauche" },
+  { key: "seg_trunk_kg",     label: "Tronc" },
+];
+
+const AXES = [
+  {
+    key:     "mobility_score"     as const,
+    noteKey: "mobilite",
+    label:   "Mobilité",
+    desc:    "Amplitude articulaire, souplesse, qualité du mouvement global",
+  },
+  {
+    key:     "stability_score"    as const,
+    noteKey: "stabilite",
+    label:   "Stabilité",
+    desc:    "Gainage, contrôle moteur, équilibre statique et dynamique",
+  },
+  {
+    key:     "strength_score"     as const,
+    noteKey: "force",
+    label:   "Force",
+    desc:    "Force musculaire fonctionnelle, capacité de résistance à l'effort",
+  },
+  {
+    key:     "posture_score"      as const,
+    noteKey: "posture",
+    label:   "Posture",
+    desc:    "Alignement corporel, position neutre, gestion des compensations",
+  },
+  {
+    key:     "coordination_score" as const,
+    noteKey: "coordination",
+    label:   "Coordination",
+    desc:    "Qualité de pattern moteur, timing, enchaînement des mouvements",
+  },
+] as const;
+
 const SECTIONS = [
-  { id: "subjectif", label: "Subjectif" },
-  { id: "mode-vie", label: "Mode de vie" },
+  { id: "subjectif",   label: "Subjectif" },
+  { id: "composition", label: "Compo." },
+  { id: "mode-vie",    label: "Mode de vie" },
+  { id: "zones",       label: "Zones" },
   { id: "tests", label: "Tests" },
-  { id: "scores", label: "Scores" },
+  { id: "scores", label: "Synthèse" },
   { id: "limitations", label: "Limitations" },
   { id: "recommandations", label: "Reco." },
   { id: "programme", label: "Programme" },
@@ -416,6 +535,34 @@ function TextInput({
   );
 }
 
+function NumberInput({
+  value,
+  onChange,
+  placeholder,
+  step = "any",
+}: {
+  value: number | null;
+  onChange: (v: number | null) => void;
+  placeholder?: string;
+  step?: string;
+}) {
+  return (
+    <input
+      type="number"
+      inputMode="decimal"
+      value={value ?? ""}
+      onChange={(e) => {
+        const raw = e.target.value;
+        onChange(raw === "" ? null : parseFloat(raw));
+      }}
+      placeholder={placeholder}
+      step={step}
+      min={0}
+      className="w-full rounded-2xl border border-taupe-200/70 bg-sand-50/60 px-5 py-3.5 text-base text-ink-900 placeholder-taupe-400 transition-colors focus:border-taupe-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-taupe-500/20"
+    />
+  );
+}
+
 // ─── Composant principal ──────────────────────────────────────
 
 export function BilanForm({
@@ -436,7 +583,7 @@ export function BilanForm({
     Object.fromEntries(
       MOVEMENT_TESTS.map(({ key }) => [
         key,
-        { score: 1 as const, observation: "", note: "" },
+        { score: 1 as const, score10: null, observation: "", note: "", zone: "" },
       ]),
     );
 
@@ -447,6 +594,19 @@ export function BilanForm({
     stress_score: null,
     sleep_score: null,
     pain_score: null,
+    weight_kg: null,
+    fat_pct: null,
+    muscle_pct: null,
+    water_pct: null,
+    bone_mass_kg: null,
+    visceral_fat: null,
+    bmr_kcal: null,
+    metabolic_age: null,
+    seg_arm_right_kg: null,
+    seg_arm_left_kg: null,
+    seg_leg_right_kg: null,
+    seg_leg_left_kg: null,
+    seg_trunk_kg: null,
     main_goal: "",
     concrete_goal: "",
     old_injuries: "",
@@ -464,23 +624,29 @@ export function BilanForm({
     movement_tests: initTests(),
     daily_limitations: {},
     recommendations: {},
+    zone_priorities: {},
+    axis_notes: {},
     frequency: null,
     motivation: null,
     engagement: null,
     important_notes: "",
     next_action: "",
     pain_evolution: "",
-    coach_signature: "",
-    client_signature: "",
   });
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  const setTest = (
+  const setAxisNote = (noteKey: string, value: string) =>
+    setForm((prev) => ({
+      ...prev,
+      axis_notes: { ...prev.axis_notes, [noteKey]: value },
+    }));
+
+  const setTest = <K extends keyof AssessmentTestEntry>(
     testKey: string,
-    field: keyof AssessmentTestEntry,
-    value: AssessmentTestEntry[typeof field],
+    field: K,
+    value: AssessmentTestEntry[K],
   ) =>
     setForm((prev) => ({
       ...prev,
@@ -508,13 +674,24 @@ export function BilanForm({
     }
     setError(null);
     startTransition(async () => {
+      // Colonnes issues de migrations postérieures à la table initiale :
+      // envoyées uniquement si non nulles pour éviter les erreurs "column not found"
+      const {
+        axis_notes,
+        weight_kg, fat_pct, muscle_pct, water_pct,
+        bone_mass_kg, visceral_fat, bmr_kcal, metabolic_age,
+        seg_arm_right_kg, seg_arm_left_kg,
+        seg_leg_right_kg, seg_leg_left_kg,
+        seg_trunk_kg,
+        zone_priorities,
+        ...restForm
+      } = form;
       const result = await createAssessmentAction({
-        ...form,
+        ...restForm,
         assessed_at: new Date(form.assessed_at).toISOString(),
         movement_tests: Object.keys(form.movement_tests).length ? form.movement_tests : null,
         daily_limitations: Object.keys(form.daily_limitations).length ? form.daily_limitations : null,
         recommendations: Object.keys(form.recommendations).length ? form.recommendations : null,
-        photos: null,
         main_goal: form.main_goal || null,
         concrete_goal: form.concrete_goal || null,
         old_injuries: form.old_injuries || null,
@@ -525,8 +702,25 @@ export function BilanForm({
         important_notes: form.important_notes || null,
         next_action: form.next_action || null,
         pain_evolution: form.pain_evolution || null,
-        coach_signature: form.coach_signature || null,
-        client_signature: form.client_signature || null,
+        // Migration 0008 — composition corporelle
+        ...(weight_kg     != null ? { weight_kg     } : {}),
+        ...(fat_pct       != null ? { fat_pct       } : {}),
+        ...(muscle_pct    != null ? { muscle_pct    } : {}),
+        ...(water_pct     != null ? { water_pct     } : {}),
+        ...(bone_mass_kg  != null ? { bone_mass_kg  } : {}),
+        ...(visceral_fat  != null ? { visceral_fat  } : {}),
+        ...(bmr_kcal      != null ? { bmr_kcal      } : {}),
+        ...(metabolic_age != null ? { metabolic_age } : {}),
+        // Migration 0009 — zones prioritaires
+        ...(Object.keys(zone_priorities).length > 0 ? { zone_priorities } : {}),
+        // Migration 0010 — masse segmentaire
+        ...(seg_arm_right_kg != null ? { seg_arm_right_kg } : {}),
+        ...(seg_arm_left_kg  != null ? { seg_arm_left_kg  } : {}),
+        ...(seg_leg_right_kg != null ? { seg_leg_right_kg } : {}),
+        ...(seg_leg_left_kg  != null ? { seg_leg_left_kg  } : {}),
+        ...(seg_trunk_kg     != null ? { seg_trunk_kg     } : {}),
+        // Migration 0011 — notes par axe
+        ...(Object.keys(axis_notes).length > 0 ? { axis_notes } : {}),
       });
       if (result.error) {
         setError(result.error);
@@ -667,9 +861,64 @@ export function BilanForm({
           </Card>
         </div>
 
-        {/* ── Section 2 : Mode de vie ─────────────────────────── */}
+        {/* ── Section 2 : Composition corporelle ────────────── */}
         <div>
-          <SectionTitle id="mode-vie">2. Mode de vie</SectionTitle>
+          <SectionTitle id="composition">2. Composition corporelle</SectionTitle>
+          <Card>
+            <p className="mb-6 text-sm text-taupe-500">
+              Saisir les mesures issues de l'impédancemètre. Les valeurs non renseignées n'apparaissent pas dans le rapport.
+            </p>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              {COMPOSITION_FIELDS.map((field) => (
+                <div key={field.key}>
+                  <div className="mb-2.5 flex items-baseline justify-between">
+                    <label className="text-base font-semibold text-ink-900">
+                      {field.label}
+                    </label>
+                    {field.unit && (
+                      <span className="text-sm font-medium text-taupe-400">{field.unit}</span>
+                    )}
+                  </div>
+                  <NumberInput
+                    value={form[field.key]}
+                    onChange={(v) => set(field.key, v)}
+                    placeholder={field.placeholder}
+                    step={field.step}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 border-t border-taupe-100 pt-6">
+              <p className="mb-5 text-sm font-semibold text-ink-900">
+                Masse musculaire segmentaire
+                <span className="ml-2 text-xs font-normal text-taupe-400">kg — optionnel</span>
+              </p>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {SEGMENTAL_FIELDS.map((field) => (
+                  <div key={field.key}>
+                    <div className="mb-2.5 flex items-baseline justify-between">
+                      <label className="text-base font-semibold text-ink-900">
+                        {field.label}
+                      </label>
+                      <span className="text-sm font-medium text-taupe-400">kg</span>
+                    </div>
+                    <NumberInput
+                      value={form[field.key]}
+                      onChange={(v) => set(field.key, v)}
+                      placeholder="0,00"
+                      step="0.01"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* ── Section 3 : Mode de vie ─────────────────────────── */}
+        <div>
+          <SectionTitle id="mode-vie">3. Mode de vie</SectionTitle>
           <div className="space-y-5">
             <Card>
               <div className="grid gap-5 sm:grid-cols-2">
@@ -785,9 +1034,68 @@ export function BilanForm({
           </div>
         </div>
 
-        {/* ── Section 3 : Tests de mouvement ─────────────────── */}
+        {/* ── Section zones prioritaires ─────────────────────── */}
         <div>
-          <SectionTitle id="tests">3. Tests de mouvement</SectionTitle>
+          <SectionTitle id="zones">Zones prioritaires à travailler</SectionTitle>
+          <Card>
+            <p className="mb-6 text-sm text-taupe-500">
+              Indiquer le niveau de priorité pour chaque zone corporelle. Les zones non cochées n'apparaissent pas dans le rapport.
+            </p>
+            <div className="space-y-3">
+              {BODY_ZONES.map((zone) => {
+                const current = form.zone_priorities[zone.key] as ZonePriority | undefined;
+                return (
+                  <div key={zone.key} className="flex items-center gap-4 rounded-2xl border border-taupe-100 bg-sand-50/40 px-5 py-3.5">
+                    <span className="w-36 shrink-0 text-base font-semibold text-ink-900">{zone.label}</span>
+                    <div className="flex flex-wrap gap-2">
+                      {ZONE_PRIORITIES.map((p) => (
+                        <button
+                          key={p.value}
+                          type="button"
+                          onClick={() =>
+                            setForm((prev) => {
+                              const next = { ...prev.zone_priorities };
+                              if (next[zone.key] === p.value) {
+                                delete next[zone.key];
+                              } else {
+                                next[zone.key] = p.value;
+                              }
+                              return { ...prev, zone_priorities: next };
+                            })
+                          }
+                          className={`rounded-xl border px-4 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                            current === p.value ? p.active : p.inactive
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                      {current && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm((prev) => {
+                              const next = { ...prev.zone_priorities };
+                              delete next[zone.key];
+                              return { ...prev, zone_priorities: next };
+                            })
+                          }
+                          className="rounded-xl border border-taupe-200 px-3 py-2 text-xs text-taupe-400 transition-all hover:border-taupe-400 active:scale-95"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+
+        {/* ── Section 4 : Tests de mouvement ─────────────────── */}
+        <div>
+          <SectionTitle id="tests">4. Tests de mouvement</SectionTitle>
           <div className="grid gap-5 lg:grid-cols-2">
             {MOVEMENT_TESTS.map((test) => {
               const entry = form.movement_tests[test.key];
@@ -815,6 +1123,12 @@ export function BilanForm({
                     ))}
                   </div>
 
+                  <PremiumScoreRow
+                    label="Score /10"
+                    value={entry.score10 ?? null}
+                    onChange={(v) => setTest(test.key, "score10", v)}
+                  />
+
                   <div className="space-y-3">
                     <div>
                       <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
@@ -838,6 +1152,16 @@ export function BilanForm({
                         rows={2}
                       />
                     </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
+                        Zone concernée
+                      </label>
+                      <TextInput
+                        value={entry.zone ?? ""}
+                        onChange={(v) => setTest(test.key, "zone", v)}
+                        placeholder="Hanches, épaules, lombaires…"
+                      />
+                    </div>
                   </div>
                 </Card>
               );
@@ -845,41 +1169,96 @@ export function BilanForm({
           </div>
         </div>
 
-        {/* ── Section 4 : Scores d'évaluation ────────────────── */}
+        {/* ── Section 5 : Synthèse fonctionnelle ─────────────── */}
         <div>
-          <SectionTitle id="scores">4. Scores d'évaluation</SectionTitle>
-          <Card>
-            <div className="space-y-7">
-              <PremiumStepper label="Mobilité" value={form.mobility_score} onChange={(v) => set("mobility_score", v)} max={20} />
-              <div className="h-px bg-taupe-100" />
-              <PremiumStepper label="Stabilité" value={form.stability_score} onChange={(v) => set("stability_score", v)} max={20} />
-              <div className="h-px bg-taupe-100" />
-              <PremiumStepper label="Force" value={form.strength_score} onChange={(v) => set("strength_score", v)} max={20} />
-              <div className="h-px bg-taupe-100" />
-              <PremiumStepper label="Posture" value={form.posture_score} onChange={(v) => set("posture_score", v)} max={20} />
-              <div className="h-px bg-taupe-100" />
-              <PremiumStepper label="Coordination" value={form.coordination_score} onChange={(v) => set("coordination_score", v)} max={20} />
+          <SectionTitle id="scores">5. Synthèse fonctionnelle</SectionTitle>
 
-              {/* Total score highlight */}
-              <div className="mt-2 flex items-center justify-between rounded-3xl bg-ink-900 px-7 py-5">
-                <div>
-                  <p className="text-sm font-medium text-sand-300">Score total automatique</p>
-                  <p className="text-xs text-sand-500">Somme des 5 scores /20</p>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-5xl font-bold tabular-nums ${scoreColor(totalScore)}`}>
-                    {totalScore}
-                  </span>
-                  <span className="text-lg font-normal text-sand-400">/100</span>
-                </div>
-              </div>
+          {/* Récapitulatif des tests */}
+          <div className="mb-6">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-taupe-400">
+              Récapitulatif des tests de mouvement
+            </p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {MOVEMENT_TESTS.map((test) => {
+                const entry = form.movement_tests[test.key];
+                const s10 = entry.score10;
+                return (
+                  <div
+                    key={test.key}
+                    className="flex flex-col items-center rounded-2xl border border-taupe-200/60 bg-white px-3 py-4 text-center shadow-sm"
+                  >
+                    <p className="mb-2 text-xs font-semibold leading-tight text-taupe-500">
+                      {test.label}
+                    </p>
+                    {s10 !== null && s10 !== undefined ? (
+                      <p className={`text-2xl font-bold tabular-nums leading-none ${scoreColor(s10 * 10)}`}>
+                        {s10}
+                        <span className="text-sm font-normal text-taupe-400">/10</span>
+                      </p>
+                    ) : (
+                      <p className="text-xl font-bold leading-none text-taupe-300">—</p>
+                    )}
+                    {entry.zone ? (
+                      <p className="mt-1.5 max-w-full truncate text-xs text-taupe-400">{entry.zone}</p>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
-          </Card>
+          </div>
+
+          {/* Cartes par axe */}
+          <div className="grid gap-5 lg:grid-cols-2">
+            {AXES.map((axis) => {
+              const stored = form[axis.key] as number | null;
+              const displayVal = stored !== null ? stored / 2 : null;
+              return (
+                <Card key={axis.key} className="flex flex-col gap-5">
+                  <div>
+                    <p className="text-base font-bold text-ink-900">{axis.label}</p>
+                    <p className="mt-1 text-sm text-taupe-400">{axis.desc}</p>
+                  </div>
+
+                  <PremiumScoreRow
+                    label="Score"
+                    value={displayVal}
+                    onChange={(v) => set(axis.key, v * 2)}
+                  />
+
+                  <div>
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
+                      Observation
+                    </label>
+                    <TextArea
+                      value={form.axis_notes[axis.noteKey] ?? ""}
+                      onChange={(v) => setAxisNote(axis.noteKey, v)}
+                      placeholder="Observation sur cet axe…"
+                      rows={2}
+                    />
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Score total */}
+          <div className="mt-5 flex items-center justify-between rounded-3xl bg-ink-900 px-7 py-5">
+            <div>
+              <p className="text-sm font-medium text-sand-300">Score total automatique</p>
+              <p className="text-xs text-sand-500">Somme des 5 axes</p>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className={`text-5xl font-bold tabular-nums ${scoreColor(totalScore)}`}>
+                {totalScore}
+              </span>
+              <span className="text-lg font-normal text-sand-400">/100</span>
+            </div>
+          </div>
         </div>
 
-        {/* ── Section 5 : Limitations quotidiennes ───────────── */}
+        {/* ── Section 6 : Limitations quotidiennes ───────────── */}
         <div>
-          <SectionTitle id="limitations">5. Limitations quotidiennes</SectionTitle>
+          <SectionTitle id="limitations">6. Limitations quotidiennes</SectionTitle>
           <Card>
             <p className="mb-5 text-sm text-taupe-500">Sélectionnez toutes les limitations que le client rapporte.</p>
             <ChipGrid
@@ -895,9 +1274,9 @@ export function BilanForm({
           </Card>
         </div>
 
-        {/* ── Section 6 : Recommandations ────────────────────── */}
+        {/* ── Section 7 : Recommandations ────────────────────── */}
         <div>
-          <SectionTitle id="recommandations">6. Recommandations</SectionTitle>
+          <SectionTitle id="recommandations">7. Recommandations</SectionTitle>
           <Card>
             <p className="mb-5 text-sm text-taupe-500">Axes de travail à prioriser pour ce client.</p>
             <ChipGrid
@@ -913,9 +1292,9 @@ export function BilanForm({
           </Card>
         </div>
 
-        {/* ── Section 7 : Programme ──────────────────────────── */}
+        {/* ── Section 8 : Programme ──────────────────────────── */}
         <div>
-          <SectionTitle id="programme">7. Programme recommandé</SectionTitle>
+          <SectionTitle id="programme">8. Programme recommandé</SectionTitle>
           <Card>
             <div className="space-y-7">
               <div>
@@ -960,9 +1339,9 @@ export function BilanForm({
           </Card>
         </div>
 
-        {/* ── Section 8 : Notes & suite ──────────────────────── */}
+        {/* ── Section 9 : Notes & suite ──────────────────────── */}
         <div>
-          <SectionTitle id="notes">8. Notes & suite</SectionTitle>
+          <SectionTitle id="notes">9. Notes & suite</SectionTitle>
           <Card>
             <div className="space-y-5">
               <div>
@@ -993,28 +1372,6 @@ export function BilanForm({
                 />
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <Label>Signature coach</Label>
-                  <TextInput
-                    value={form.coach_signature}
-                    onChange={(v) => set("coach_signature", v)}
-                    placeholder="Nom du coach"
-                  />
-                </div>
-                <div>
-                  <Label>Signature client</Label>
-                  <TextInput
-                    value={form.client_signature}
-                    onChange={(v) => set("client_signature", v)}
-                    placeholder="Nom du client"
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-dashed border-taupe-200 bg-sand-50/60 px-5 py-5 text-center text-sm text-taupe-400">
-                Photos (face, profil, squat, avant/après) — disponibles via l'espace fichiers
-              </div>
             </div>
           </Card>
         </div>

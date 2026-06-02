@@ -7,7 +7,7 @@ import {
   getProfileById,
 } from "@/lib/supabase/os-server";
 import { OsShell } from "@/app/os/_components/OsShell";
-import type { AssessmentTestEntry } from "@/lib/os/types";
+import type { AssessmentTestEntry, MovementAssessment } from "@/lib/os/types";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -23,6 +23,50 @@ const MOVEMENT_TESTS = [
   { key: "bras_au_dessus", label: "Bras au-dessus de la tête" },
   { key: "hip_hinge", label: "Hip hinge" },
 ];
+
+const COMPOSITION_FIELDS: Array<{ key: keyof MovementAssessment; label: string; unit: string; dec: number }> = [
+  { key: "weight_kg",     label: "Masse",                    unit: "kg",   dec: 1 },
+  { key: "fat_pct",       label: "Masse grasse",             unit: "%",    dec: 1 },
+  { key: "muscle_pct",    label: "Masse musculaire",         unit: "%",    dec: 1 },
+  { key: "water_pct",     label: "Masse hydrique",           unit: "%",    dec: 1 },
+  { key: "bone_mass_kg",  label: "Densité minérale osseuse", unit: "kg",   dec: 2 },
+  { key: "visceral_fat",  label: "Graisse viscérale",        unit: "",     dec: 0 },
+  { key: "bmr_kcal",      label: "Métabolisme basal",        unit: "kcal", dec: 0 },
+  { key: "metabolic_age", label: "Âge métabolique",          unit: "ans",  dec: 0 },
+];
+
+const SEGMENTAL_FIELDS: Array<{ key: keyof MovementAssessment; label: string }> = [
+  { key: "seg_arm_right_kg", label: "Bras droit" },
+  { key: "seg_arm_left_kg",  label: "Bras gauche" },
+  { key: "seg_leg_right_kg", label: "Jambe droite" },
+  { key: "seg_leg_left_kg",  label: "Jambe gauche" },
+  { key: "seg_trunk_kg",     label: "Tronc" },
+];
+
+const ZONE_LABELS: Record<string, string> = {
+  cervicales:        "Ceinture cervicale",
+  dos_haut:          "Ceinture scapulaire",
+  epaules:           "Épaules",
+  pectoraux:         "Pectoraux",
+  grand_dorsal:      "Grand dorsal",
+  lombaires:         "Lombaires",
+  sangle_abdominale: "Sangle abdominale",
+  bassin:            "Bassin",
+  hanches:           "Hanches",
+  fessiers:          "Fessiers",
+  quadriceps:        "Quadriceps",
+  ischio_jambiers:   "Ischio-jambiers",
+  mollets:           "Mollets",
+  chevilles:         "Chevilles",
+  pieds:             "Pieds",
+  genoux:            "Genoux",
+};
+
+const ZONE_CFG: Record<string, { bg: string; text: string }> = {
+  forte:        { bg: "bg-red-50",    text: "text-red-700" },
+  surveillance: { bg: "bg-amber-50",  text: "text-amber-700" },
+  ras:          { bg: "bg-emerald-50",text: "text-emerald-700" },
+};
 
 const LIMITATIONS: Record<string, string> = {
   rester_assis: "Rester assis longtemps",
@@ -314,21 +358,104 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
                     key={t.key}
                     className="rounded-2xl border border-taupe-300/40 bg-white p-4"
                   >
-                    <p className="mb-2 font-medium text-ink-900">{t.label}</p>
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <p className="font-medium text-ink-900">{t.label}</p>
+                      {entry.score10 !== null && entry.score10 !== undefined && (
+                        <span className="shrink-0 rounded-full bg-sand-100 px-2 py-0.5 text-xs font-bold text-taupe-600">
+                          {entry.score10}/10
+                        </span>
+                      )}
+                    </div>
                     <TestScoreBadge score={entry.score} />
+                    {entry.zone && (
+                      <p className="mt-2 text-xs text-taupe-500">
+                        <span className="font-medium">Zone : </span>
+                        {entry.zone}
+                      </p>
+                    )}
                     {entry.observation && (
-                      <p className="mt-2 text-xs text-taupe-600">
+                      <p className="mt-1 text-xs text-taupe-600">
                         <span className="font-medium">Observation : </span>
                         {entry.observation}
                       </p>
                     )}
                     {entry.note && (
                       <p className="mt-1 text-xs text-taupe-500">
-                        <span className="font-medium">Note : </span>
+                        <span className="font-medium">Note coach : </span>
                         {entry.note}
                       </p>
                     )}
                   </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Composition corporelle ── */}
+        {(COMPOSITION_FIELDS.some(f => (assessment[f.key] as number | null) !== null) ||
+          SEGMENTAL_FIELDS.some(f => (assessment[f.key] as number | null) !== null)) && (
+          <div className="rounded-2xl border border-taupe-300/40 bg-white p-5">
+            <p className="mb-4 text-sm font-medium uppercase tracking-wider text-taupe-400">
+              Composition corporelle
+            </p>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {COMPOSITION_FIELDS.map(({ key, label, unit, dec }) => {
+                const raw = assessment[key] as number | null;
+                if (raw === null || raw === undefined) return null;
+                const val = dec > 0 ? raw.toFixed(dec) : String(Math.round(raw));
+                return (
+                  <div key={key}>
+                    <p className="mb-0.5 text-xs text-taupe-500">{label}</p>
+                    <p className="text-lg font-bold text-ink-900">
+                      {val}{unit && <span className="ml-1 text-sm font-normal text-taupe-400">{unit}</span>}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            {SEGMENTAL_FIELDS.some(f => (assessment[f.key] as number | null) !== null) && (
+              <div className="mt-4 border-t border-taupe-100 pt-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-taupe-400">
+                  Masse musculaire segmentaire
+                </p>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  {SEGMENTAL_FIELDS.map(({ key, label }) => {
+                    const raw = assessment[key] as number | null;
+                    if (raw === null || raw === undefined) return null;
+                    return (
+                      <div key={key}>
+                        <p className="mb-0.5 text-xs text-taupe-500">{label}</p>
+                        <p className="text-lg font-bold text-ink-900">
+                          {raw.toFixed(2)}
+                          <span className="ml-1 text-sm font-normal text-taupe-400">kg</span>
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Zones prioritaires ── */}
+        {assessment.zone_priorities && Object.keys(assessment.zone_priorities).length > 0 && (
+          <div className="rounded-2xl border border-taupe-300/40 bg-white p-5">
+            <p className="mb-4 text-sm font-medium uppercase tracking-wider text-taupe-400">
+              Zones prioritaires
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(assessment.zone_priorities as Record<string, "forte" | "surveillance" | "ras">).map(([key, priority]) => {
+                const cfg = ZONE_CFG[priority] ?? { bg: "bg-sand-100", text: "text-taupe-600" };
+                const priorityLabel = priority === "forte" ? "Priorité" : priority === "surveillance" ? "Surveillance" : "RAS";
+                return (
+                  <span
+                    key={key}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${cfg.bg} ${cfg.text}`}
+                  >
+                    {ZONE_LABELS[key] ?? key} · {priorityLabel}
+                  </span>
                 );
               })}
             </div>
@@ -410,12 +537,39 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
           </div>
         )}
 
+        {/* ── Observations par axe ── */}
+        {assessment.axis_notes && Object.keys(assessment.axis_notes as Record<string, string>).length > 0 && (
+          <div className="rounded-2xl border border-taupe-300/40 bg-white p-5">
+            <p className="mb-4 text-sm font-medium uppercase tracking-wider text-taupe-400">
+              Observations par axe
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {(
+                [
+                  { key: "mobilite",     label: "Mobilité" },
+                  { key: "stabilite",    label: "Stabilité" },
+                  { key: "force",        label: "Force" },
+                  { key: "posture",      label: "Posture" },
+                  { key: "coordination", label: "Coordination" },
+                ] as const
+              ).map(({ key, label }) => {
+                const note = (assessment.axis_notes as Record<string, string>)[key];
+                if (!note) return null;
+                return (
+                  <div key={key}>
+                    <p className="mb-1 text-xs font-medium text-taupe-500">{label}</p>
+                    <p className="whitespace-pre-line text-sm text-ink-900">{note}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ── Notes & suite ── */}
         {(assessment.important_notes ||
           assessment.next_action ||
-          assessment.pain_evolution ||
-          assessment.coach_signature ||
-          assessment.client_signature) && (
+          assessment.pain_evolution) && (
           <div className="rounded-2xl border border-taupe-300/40 bg-white p-5">
             <p className="mb-4 text-sm font-medium uppercase tracking-wider text-taupe-400">
               Notes & suite
@@ -449,26 +603,6 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
                   <p className="whitespace-pre-line text-sm text-ink-900">
                     {assessment.pain_evolution}
                   </p>
-                </div>
-              )}
-              {(assessment.coach_signature || assessment.client_signature) && (
-                <div className="flex gap-6 pt-2">
-                  {assessment.coach_signature && (
-                    <div>
-                      <p className="mb-1 text-xs text-taupe-500">Coach</p>
-                      <p className="font-medium text-ink-900">
-                        {assessment.coach_signature}
-                      </p>
-                    </div>
-                  )}
-                  {assessment.client_signature && (
-                    <div>
-                      <p className="mb-1 text-xs text-taupe-500">Client</p>
-                      <p className="font-medium text-ink-900">
-                        {assessment.client_signature}
-                      </p>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
