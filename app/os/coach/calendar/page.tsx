@@ -7,6 +7,7 @@ import {
 } from "@/lib/supabase/os-server";
 import type { SessionWithClient } from "@/lib/supabase/os-server";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { loadCoaches } from "@/lib/content/coaches.server";
 import { OsShell } from "@/app/os/_components/OsShell";
 import { CalendarClient } from "./CalendarClient";
 
@@ -52,6 +53,13 @@ export default async function CoachCalendarPage({
   const isAdmin = profile.roles.includes("admin");
   const supabase = await getSupabaseServer();
 
+  // Récupère le calcomUrl depuis la fiche coach publique (source officielle = /admin/coachs).
+  // La table profiles.calcom_url est un cache optionnel ; on préfère la fiche publique
+  // liée via coach.osProfileId === profile.id.
+  const publicCoaches = await loadCoaches();
+  const linkedCoach = publicCoaches.find((c) => c.osProfileId === profile.id);
+  const calcomUrl = linkedCoach?.calcomUrl ?? profile.calcom_url ?? null;
+
   const [sessionsRes, clients] = await Promise.all([
     (() => {
       const q = supabase
@@ -86,7 +94,7 @@ export default async function CoachCalendarPage({
         </p>
       </div>
 
-      <CalComSection calcomUrl={profile.calcom_url} />
+      <CalComSection calcomUrl={calcomUrl} />
 
       <CalendarClient
         sessions={sessions}
