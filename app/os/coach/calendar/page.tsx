@@ -86,11 +86,81 @@ export default async function CoachCalendarPage({
         </p>
       </div>
 
+      <CalComSection calcomUrl={profile.calcom_url} />
+
       <CalendarClient
         sessions={sessions}
         clients={clients}
         weekStartISO={weekStartISO}
       />
     </OsShell>
+  );
+}
+
+// ─── Cal.com section ──────────────────────────────────────────────────────────
+//
+// Pour activer la synchronisation complète des rendez-vous Cal.com :
+//   1. Chaque coach génère une clé API dans : app.cal.com/settings/developer/api-keys
+//   2. Stocker la clé dans le profil OS (colonne calcom_api_key à ajouter)
+//   3. Appeler GET https://api.cal.com/v2/bookings avec Authorization: Bearer {key}
+//   4. Fusionner les bookings Cal.com avec les sessions Supabase dans le calendrier
+//
+// Une variable CAL_API_KEY globale ne suffit pas : Cal.com utilise des clés par compte.
+
+function CalComSection({ calcomUrl }: { calcomUrl: string | null }) {
+  if (!calcomUrl) {
+    return (
+      <div className="mb-6 rounded-2xl border border-taupe-300/40 bg-white p-5">
+        <p className="text-xs uppercase tracking-[0.25em] text-taupe-400">
+          Cal.com
+        </p>
+        <p className="mt-2 text-sm text-taupe-500">
+          Aucun lien Cal.com configuré pour ce compte. Contactez l&apos;administrateur
+          pour l&apos;ajouter dans votre profil.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6 overflow-hidden rounded-2xl border border-taupe-300/40 bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5">
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-taupe-400">
+            Cal.com
+          </p>
+          <p className="mt-0.5 font-serif text-lg text-ink-900">
+            Agenda de réservation
+          </p>
+          <p className="mt-1 text-xs text-taupe-400">
+            Synchronisation automatique non configurée — accédez directement à Cal.com.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <a
+            href="https://app.cal.com/bookings"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-sand-50 transition-colors hover:bg-taupe-800"
+          >
+            Voir mes rendez-vous ↗
+          </a>
+          <a
+            href={calcomUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-taupe-300/50 px-4 py-2 text-sm text-taupe-600 transition-colors hover:bg-sand-50 hover:text-ink-900"
+          >
+            Ma page de réservation ↗
+          </a>
+        </div>
+      </div>
+      <div className="border-t border-taupe-100 bg-sand-50/60 px-6 py-3">
+        <p className="text-xs text-taupe-400">
+          Les rendez-vous Cal.com ne sont pas encore visibles dans le calendrier ci-dessous.
+          Les séances créées manuellement ici sont enregistrées dans le Cabinet OS.
+        </p>
+      </div>
+    </div>
   );
 }
