@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { type Coach } from "@/lib/content/coaches";
 import {
@@ -177,7 +177,11 @@ export function ReservationFlow({
           <p className="mt-2 text-sm text-taupe-600">
             Sélectionnez la date et l’heure qui vous conviennent.
           </p>
-          <CalcomEmbed coach={selectedCoach} />
+          <CalcomEmbed
+                coach={selectedCoach}
+                coachId={coachId}
+                offerId={effectiveOfferId}
+              />
         </section>
       </div>
 
@@ -248,15 +252,71 @@ function Row({
   );
 }
 
-function CalcomEmbed({ coach }: { coach: Coach | undefined }) {
+function CalcomEmbed({
+  coach,
+  coachId,
+  offerId,
+}: {
+  coach: Coach | undefined;
+  coachId: string;
+  offerId: string;
+}) {
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      // Cal.com sends the event as a plain object or stringified JSON
+      let msg: Record<string, unknown> | null = null;
+      if (typeof e.data === "string") {
+        try {
+          msg = JSON.parse(e.data) as Record<string, unknown>;
+        } catch {
+          return;
+        }
+      } else if (e.data && typeof e.data === "object") {
+        msg = e.data as Record<string, unknown>;
+      }
+      if (!msg) return;
+
+      const type = msg.type as string | undefined;
+      if (type !== "bookingSuccessful" && type !== "rescheduleBookingSuccessful") return;
+
+      // Cal.com nests booking under data.booking, or data directly
+      const nested = msg.data as Record<string, unknown> | undefined;
+      const booking =
+        (nested?.booking as Record<string, unknown> | undefined) ??
+        (nested as Record<string, unknown> | undefined) ??
+        msg;
+
+      const params = new URLSearchParams();
+      if (coachId) params.set("coach", coachId);
+      if (offerId) params.set("offre", offerId);
+
+      const uid = booking?.uid as string | undefined;
+      if (uid) params.set("bookingUid", uid);
+
+      const attendees = booking?.attendees as
+        | Array<{ name?: string; email?: string }>
+        | undefined;
+      if (attendees?.[0]?.name) params.set("name", attendees[0].name);
+      if (attendees?.[0]?.email) params.set("email", attendees[0].email);
+
+      const startTime = booking?.startTime as string | undefined;
+      if (startTime) params.set("startTime", startTime);
+
+      window.location.href = `/reservation/confirmation?${params.toString()}`;
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [coachId, offerId]);
+
   if (!coach) {
     return (
       <div className="mt-6 rounded-2xl border border-dashed border-taupe-400/60 bg-sand-100/40 p-8 text-center">
         <p className="font-serif text-lg text-ink-900">
-          Sélectionnez d’abord votre coach
+          Sélectionnez d&apos;abord votre coach
         </p>
         <p className="mt-2 text-sm text-taupe-600">
-          Le calendrier de réservation s’affiche une fois le coach choisi.
+          Le calendrier de réservation s&apos;affiche une fois le coach choisi.
         </p>
       </div>
     );
