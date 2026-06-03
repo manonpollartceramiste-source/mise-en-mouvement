@@ -242,6 +242,20 @@ export async function getOsCoachesStatus(
   return result;
 }
 
+/** Trouve un profil OS par email (service role — contourne RLS). */
+export async function getOsProfileByEmail(
+  email: string,
+): Promise<Profile | null> {
+  const admin = getServiceClient();
+  const { data, error } = await admin
+    .from("profiles")
+    .select("*")
+    .eq("email", email.trim().toLowerCase())
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as Profile;
+}
+
 /** Renvoie l'invitation email OS (fonctionne si l'invitation n'est pas encore confirmée). */
 export async function resendOsInvite(
   email: string,

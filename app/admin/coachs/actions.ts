@@ -12,6 +12,7 @@ import {
   inviteOsCoach,
   updateOsProfile,
   resendOsInvite,
+  getOsProfileByEmail,
 } from "@/lib/supabase/admin-actions";
 
 const REVALIDATE_PATHS = [
@@ -157,6 +158,39 @@ export async function createOsAccountAction(formData: FormData) {
   if (!res.ok) fail(res.error);
 
   done(`Invitation OS envoyée à ${email}.`);
+}
+
+/** Rattache un compte OS existant à un coach public (sans créer ni inviter). */
+export async function linkExistingOsAccountAction(formData: FormData) {
+  const coachId = String(formData.get("coachId") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!coachId || !email) fail("Données manquantes.");
+
+  const all = await loadCoaches();
+  const coach = all.find((c) => c.id === coachId);
+  if (!coach) fail("Coach introuvable.");
+
+  const profile = await getOsProfileByEmail(email);
+  if (!profile) fail(`Aucun compte OS trouvé pour l'email « ${email} ».`);
+
+  const roles: string[] =
+    Array.isArray(profile.roles) && profile.roles.length > 0
+      ? profile.roles
+      : [profile.role];
+  if (!roles.includes("coach") && !roles.includes("admin")) {
+    fail("Ce compte OS n'a pas le rôle coach — rattachement refusé.");
+  }
+
+  const next = all.map((c) =>
+    c.id === coachId ? { ...c, email, osProfileId: profile.id } : c,
+  );
+  const valid = coachArraySchema.safeParse(next);
+  if (!valid.success) fail("Validation échouée.");
+  const res = await saveContentKey("coaches", valid.data, REVALIDATE_PATHS);
+  if (!res.ok) fail(res.error);
+
+  done(`Compte OS « ${profile.display_name} » rattaché avec succès.`);
 }
 
 /** Renvoie l'invitation OS à un coach (si invitation non encore confirmée). */

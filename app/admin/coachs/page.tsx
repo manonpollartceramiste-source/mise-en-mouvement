@@ -20,6 +20,7 @@ import {
 import {
   coachAction,
   createOsAccountAction,
+  linkExistingOsAccountAction,
   resendInviteAction,
   toggleOsAccessAction,
 } from "./actions";
@@ -324,26 +325,64 @@ function OsSection({
         <p className="mb-3 text-xs font-medium uppercase tracking-widest text-taupe-400">
           Accès Cabinet OS
         </p>
-        <p className="mb-4 text-sm text-taupe-500">
-          Ce coach n&apos;a pas encore de compte OS.
+        <p className="mb-5 text-sm text-taupe-500">
+          Ce coach n&apos;a pas encore de compte OS rattaché.
         </p>
-        <form
-          action={createOsAccountAction}
-          className="flex flex-wrap items-end gap-3"
-        >
-          <input type="hidden" name="coachId" value={coach.id} />
-          <div className="min-w-[220px] flex-1">
-            <Field
-              label="Email de connexion OS"
-              name="email"
-              type="email"
-              required
-              placeholder="coach@exemple.com"
-              defaultValue={coach.email ?? coach.proEmail ?? ""}
-            />
-          </div>
-          <SubmitButton>Créer l&apos;accès OS →</SubmitButton>
-        </form>
+
+        {/* Option 1 — nouveau compte */}
+        <div className="mb-5">
+          <p className="mb-2 text-xs font-medium text-ink-900">
+            Créer un nouveau compte (envoie une invitation par email)
+          </p>
+          <form
+            action={createOsAccountAction}
+            className="flex flex-wrap items-end gap-3"
+          >
+            <input type="hidden" name="coachId" value={coach.id} />
+            <div className="min-w-[220px] flex-1">
+              <Field
+                label="Email"
+                name="email"
+                type="email"
+                required
+                placeholder="coach@exemple.com"
+                defaultValue={coach.proEmail ?? ""}
+              />
+            </div>
+            <SubmitButton>Créer l&apos;accès OS →</SubmitButton>
+          </form>
+        </div>
+
+        {/* Séparateur */}
+        <div className="mb-5 flex items-center gap-3">
+          <div className="h-px flex-1 bg-taupe-200/60" />
+          <span className="text-xs text-taupe-400">ou</span>
+          <div className="h-px flex-1 bg-taupe-200/60" />
+        </div>
+
+        {/* Option 2 — rattacher un compte existant */}
+        <div>
+          <p className="mb-2 text-xs font-medium text-ink-900">
+            Rattacher un compte OS existant (sans envoyer d&apos;invitation)
+          </p>
+          <form
+            action={linkExistingOsAccountAction}
+            className="flex flex-wrap items-end gap-3"
+          >
+            <input type="hidden" name="coachId" value={coach.id} />
+            <div className="min-w-[220px] flex-1">
+              <Field
+                label="Email du compte OS existant"
+                name="email"
+                type="email"
+                required
+                placeholder="coach@exemple.com"
+                defaultValue={coach.email ?? ""}
+              />
+            </div>
+            <SubmitButton>Rattacher →</SubmitButton>
+          </form>
+        </div>
       </div>
     );
   }
