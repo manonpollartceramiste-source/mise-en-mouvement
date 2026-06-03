@@ -7,7 +7,6 @@ import type { EmbedEvent } from "@calcom/embed-react";
 import { type Coach } from "@/lib/content/coaches";
 import {
   isCoachAllowed,
-  resolveBookingLink,
   type Offer,
 } from "@/lib/content/offers";
 
@@ -51,41 +50,10 @@ export function ReservationFlow({
     return visibleOffers[0]?.id ?? "";
   }, [requestedOfferId, visibleOffers]);
 
-  const [error, setError] = useState<string | null>(null);
-
   const selectedOffer: Offer | undefined = bookableOffers.find(
     (o) => o.id === effectiveOfferId,
   );
   const selectedCoach: Coach | undefined = coaches.find((c) => c.id === coachId);
-
-  const resolved =
-    selectedOffer && selectedCoach
-      ? resolveBookingLink(selectedOffer, selectedCoach)
-      : { url: null, isPayment: false };
-  const bookingLink = resolved.url;
-  const isSumup = resolved.isPayment;
-  const ctaLabel = isSumup ? "Procéder au paiement" : "Réserver via Cal.com";
-
-  function handleCheckout() {
-    if (!selectedOffer || !selectedCoach) {
-      setError("Sélectionnez une offre et un coach.");
-      return;
-    }
-    if (!isCoachAllowed(selectedOffer, selectedCoach.id)) {
-      setError(
-        `${selectedCoach.name} n’assure pas cette offre. Choisissez un autre coach ou une autre offre.`,
-      );
-      return;
-    }
-    if (!bookingLink) {
-      setError(
-        "Aucun lien de réservation configuré pour ce duo offre/coach. Contactez-nous.",
-      );
-      return;
-    }
-    setError(null);
-    window.location.href = bookingLink;
-  }
 
   return (
     <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr]">
@@ -204,24 +172,9 @@ export function ReservationFlow({
               emphasis
             />
           </div>
-          <button
-            type="button"
-            onClick={handleCheckout}
-            disabled={!selectedOffer || !coachId}
-            className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-taupe-700 px-6 py-4 text-sm font-medium text-sand-50 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-taupe-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {ctaLabel}
-            <span aria-hidden>→</span>
-          </button>
-          {error && (
-            <p role="alert" className="mt-4 text-sm text-red-700">
-              {error}
-            </p>
-          )}
-          <p className="mt-4 text-xs leading-relaxed text-taupe-500">
-            {isSumup
-              ? "Paiement sécurisé. Vous serez redirigé vers la page de paiement après validation."
-              : "Vous serez redirigé vers le calendrier du coach pour finaliser votre réservation."}
+          <p className="mt-8 text-xs leading-relaxed text-taupe-500">
+            Vous pourrez choisir votre mode de règlement après confirmation
+            de votre réservation.
           </p>
         </motion.div>
       </aside>
