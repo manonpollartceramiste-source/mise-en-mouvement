@@ -34,8 +34,8 @@ const sections: Section[] = [
   },
   {
     id: "coachs",
-    label: "Coachs",
-    description: "Profils, bios, liens Cal.com",
+    label: "Coachs du site",
+    description: "Photos, bios, liens Cal.com et SumUp affichés sur le site",
     href: "/admin/coachs",
   },
   {
@@ -76,8 +76,8 @@ const sections: Section[] = [
   },
   {
     id: "clients",
-    label: "Clients",
-    description: "Demandes reçues, suivi des statuts",
+    label: "Demandes clients",
+    description: "Messages, demandes reçues et suivi des contacts",
     href: "/admin/clients",
   },
   {
@@ -88,14 +88,14 @@ const sections: Section[] = [
   },
   {
     id: "os-coachs",
-    label: "Coachs — Cabinet OS",
-    description: "Inviter, gérer les coachs et leurs liens Cal.com / SumUp",
+    label: "Comptes coachs OS",
+    description: "Créer les accès coachs et gérer leur connexion à /os/coach",
     href: "/admin/os-coachs",
   },
   {
     id: "os-clients",
-    label: "Clients — Cabinet OS",
-    description: "Inviter les clients et les rattacher à un coach",
+    label: "Comptes clients OS",
+    description: "Créer les clients, les rattacher à un coach et gérer leurs bilans",
     href: "/admin/os-clients",
   },
 ];

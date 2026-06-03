@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getAllOsCoaches } from "@/lib/supabase/admin-actions";
@@ -35,9 +36,18 @@ export default async function AdminOsCoachsPage({
 
   return (
     <AdminShell
-      title="Coachs — Cabinet OS"
+      title="Comptes coachs OS"
       intro="Invitez de nouveaux coachs par email. Ils reçoivent un lien pour définir leur mot de passe et accéder à l'espace coach."
     >
+      <div className="mb-8">
+        <Link
+          href="/os/coach"
+          target="_blank"
+          className="inline-flex items-center gap-2 rounded-full border border-taupe-300/50 bg-white px-5 py-2.5 text-sm font-medium text-ink-900 transition-all duration-300 hover:border-taupe-400/70 hover:shadow-sm"
+        >
+          Voir l&apos;espace coach <span aria-hidden>↗</span>
+        </Link>
+      </div>
       <FlashMessages saved={params.saved} error={params.error} />
 
       {coaches.length > 0 && (

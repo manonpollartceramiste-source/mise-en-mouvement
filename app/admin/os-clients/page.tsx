@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser, isSupabaseConfigured } from "@/lib/supabase/server";
 import {
@@ -46,9 +47,18 @@ export default async function AdminOsClientsPage({
 
   return (
     <AdminShell
-      title="Clients — Cabinet OS"
+      title="Comptes clients OS"
       intro="Invitez de nouveaux clients par email et rattachez-les à un coach."
     >
+      <div className="mb-8">
+        <Link
+          href="/os/client"
+          target="_blank"
+          className="inline-flex items-center gap-2 rounded-full border border-taupe-300/50 bg-white px-5 py-2.5 text-sm font-medium text-ink-900 transition-all duration-300 hover:border-taupe-400/70 hover:shadow-sm"
+        >
+          Voir l&apos;espace client <span aria-hidden>↗</span>
+        </Link>
+      </div>
       <FlashMessages saved={params.saved} error={params.error} />
 
       {clients.length > 0 && (
