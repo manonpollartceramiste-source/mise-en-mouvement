@@ -11,7 +11,12 @@ import {
   Textarea,
 } from "../_components/Fields";
 import type { Profile } from "@/lib/os/types";
-import { createCoachAction, updateCoachAction } from "./actions";
+import {
+  createCoachAction,
+  updateCoachAction,
+  setCoachPasswordAction,
+  resendCoachInviteAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -187,6 +192,48 @@ function CoachEditor({ coach }: { coach: Profile }) {
           <SubmitButton />
         </div>
       </form>
+
+      {/* ── Actions d'accès ── */}
+      <div className="mt-6 border-t border-taupe-200/40 pt-5 space-y-5">
+        {/* Renvoyer l'invitation email */}
+        <form action={resendCoachInviteAction} className="flex items-center gap-4">
+          <input type="hidden" name="email" value={coach.email} />
+          <div className="flex-1">
+            <p className="text-xs font-medium text-taupe-700">Renvoyer l&apos;invitation</p>
+            <p className="text-xs text-taupe-400">
+              Envoie un nouvel email d&apos;invitation pour que le coach définisse son mot de passe.
+            </p>
+          </div>
+          <SubmitButton>Renvoyer →</SubmitButton>
+        </form>
+
+        {/* Définir un mot de passe temporaire */}
+        <form action={setCoachPasswordAction} className="rounded-xl border border-amber-200/60 bg-amber-50/40 p-4 space-y-3">
+          <input type="hidden" name="id" value={coach.id} />
+          <div>
+            <p className="text-xs font-medium text-amber-900">
+              Définir / réinitialiser le mot de passe
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Choisissez un mot de passe temporaire et communiquez-le au coach par SMS / WhatsApp.
+            </p>
+          </div>
+          <div className="flex gap-3 items-end">
+            <label className="flex-1 block space-y-1.5">
+              <span className="text-xs uppercase tracking-wider text-taupe-500">Mot de passe temporaire</span>
+              <input
+                name="password"
+                type="text"
+                required
+                minLength={8}
+                placeholder="Min. 8 caractères"
+                className="w-full rounded-xl border border-taupe-300/50 bg-white px-3 py-2 text-sm text-ink-900 focus:border-taupe-600 focus:outline-none focus:ring-2 focus:ring-taupe-500/30"
+              />
+            </label>
+            <SubmitButton>Définir →</SubmitButton>
+          </div>
+        </form>
+      </div>
     </article>
   );
 }

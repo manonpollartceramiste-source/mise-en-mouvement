@@ -13,6 +13,7 @@ import {
   updateOsProfile,
   resendOsInvite,
   getOsProfileByEmail,
+  setOsUserPassword,
 } from "@/lib/supabase/admin-actions";
 
 const REVALIDATE_PATHS = [
@@ -201,6 +202,19 @@ export async function resendInviteAction(formData: FormData) {
   const result = await resendOsInvite(email);
   if (!result.ok) fail(result.error ?? "Erreur lors du renvoi.");
   done(`Invitation renvoyée à ${email}.`);
+}
+
+/** Définit ou réinitialise le mot de passe OS d'un coach (admin uniquement). */
+export async function setCoachPasswordAction(formData: FormData) {
+  const osProfileId = String(formData.get("osProfileId") ?? "").trim();
+  const password = String(formData.get("password") ?? "").trim();
+
+  if (!osProfileId) fail("Profil OS manquant.");
+  if (password.length < 8) fail("Le mot de passe doit contenir au moins 8 caractères.");
+
+  const result = await setOsUserPassword(osProfileId, password);
+  if (!result.ok) fail(result.error ?? "Erreur lors de la définition du mot de passe.");
+  done("Mot de passe défini. Communiquez-le au coach par SMS / WhatsApp.");
 }
 
 /** Active ou désactive l'accès OS d'un coach. */

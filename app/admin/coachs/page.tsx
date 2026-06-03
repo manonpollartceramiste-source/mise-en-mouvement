@@ -23,6 +23,7 @@ import {
   linkExistingOsAccountAction,
   resendInviteAction,
   toggleOsAccessAction,
+  setCoachPasswordAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -393,15 +394,15 @@ function OsSection({
   const badge = {
     pending: {
       cls: "bg-amber-50 text-amber-700",
-      label: "Invitation en attente",
+      label: "Invitation envoyée",
     },
     active: { cls: "bg-emerald-50 text-emerald-800", label: "Activé" },
     inactive: { cls: "bg-red-50 text-red-700", label: "Désactivé" },
   }[status];
 
   return (
-    <div className="border-t border-taupe-200/60 bg-sand-50/60 px-6 py-5">
-      <div className="mb-3 flex items-center justify-between gap-4">
+    <div className="border-t border-taupe-200/60 bg-sand-50/60 px-6 py-5 space-y-4">
+      <div className="flex items-center justify-between gap-4">
         <p className="text-xs font-medium uppercase tracking-widest text-taupe-400">
           Accès Cabinet OS
         </p>
@@ -412,20 +413,48 @@ function OsSection({
         </span>
       </div>
 
-      <p className="mb-4 text-sm text-taupe-600">{email}</p>
+      <p className="text-sm text-taupe-600">{email}</p>
 
+      {/* Définir / réinitialiser le mot de passe */}
+      <form action={setCoachPasswordAction} className="rounded-xl border border-amber-200/60 bg-amber-50/40 p-4 space-y-3">
+        <input type="hidden" name="osProfileId" value={coach.osProfileId} />
+        <div>
+          <p className="text-xs font-medium text-amber-900">
+            Définir / réinitialiser le mot de passe
+          </p>
+          <p className="mt-0.5 text-xs text-amber-700">
+            Communiquez ensuite ce mot de passe temporaire au coach par SMS / WhatsApp.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="min-w-[200px] flex-1 block space-y-1.5">
+            <span className="text-xs uppercase tracking-wider text-taupe-500">
+              Mot de passe temporaire
+            </span>
+            <input
+              name="password"
+              type="text"
+              required
+              minLength={8}
+              placeholder="Min. 8 caractères"
+              className="w-full rounded-xl border border-taupe-300/50 bg-white px-3 py-2 text-sm text-ink-900 focus:border-taupe-600 focus:outline-none focus:ring-2 focus:ring-taupe-500/30"
+            />
+          </label>
+          <SubmitButton>Définir →</SubmitButton>
+        </div>
+      </form>
+
+      {/* Autres actions */}
       <div className="flex flex-wrap gap-3">
-        {status === "pending" && (
-          <form action={resendInviteAction}>
-            <input type="hidden" name="email" value={email} />
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-full border border-taupe-300/50 px-4 py-2 text-xs font-medium text-ink-900 transition-all hover:border-taupe-400 hover:bg-sand-100"
-            >
-              Renvoyer l&apos;invitation
-            </button>
-          </form>
-        )}
+        <form action={resendInviteAction}>
+          <input type="hidden" name="email" value={email} />
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 rounded-full border border-taupe-300/50 px-4 py-2 text-xs font-medium text-ink-900 transition-all hover:border-taupe-400 hover:bg-sand-100"
+          >
+            Renvoyer l&apos;invitation
+          </button>
+        </form>
 
         <form action={toggleOsAccessAction}>
           <input type="hidden" name="osProfileId" value={coach.osProfileId} />

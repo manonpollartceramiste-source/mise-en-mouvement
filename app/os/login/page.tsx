@@ -17,6 +17,7 @@ const errorMessages: Record<string, string> = {
   "unauthorized": "Accès non autorisé. Contactez votre coach.",
   "unknown-role": "Rôle inconnu. Contactez l'administrateur.",
   "auth-error": "Identifiants incorrects.",
+  "lien_invalide": "Ce lien d'invitation est invalide ou a expiré. Demandez un renvoi de l'invitation.",
 };
 
 type SearchParams = Promise<{ error?: string; next?: string }>;

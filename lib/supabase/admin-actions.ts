@@ -42,9 +42,13 @@ export async function inviteOsUser(
 ): Promise<{ ok: boolean; error?: string }> {
   const admin = getServiceClient();
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const redirectTo = `${siteUrl}/auth/callback?next=/os/coach/activation`;
+
   const { data: inviteData, error: inviteError } =
     await admin.auth.admin.inviteUserByEmail(data.email, {
       data: { display_name: data.display_name, role: data.role },
+      redirectTo,
     });
 
   if (inviteError) return { ok: false, error: inviteError.message };
@@ -175,9 +179,13 @@ export async function inviteOsCoach(
 ): Promise<{ ok: boolean; userId?: string; error?: string }> {
   const admin = getServiceClient();
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const redirectTo = `${siteUrl}/auth/callback?next=/os/coach/activation`;
+
   const { data: inviteData, error: inviteError } =
     await admin.auth.admin.inviteUserByEmail(data.email, {
       data: { display_name: data.display_name, role: data.role },
+      redirectTo,
     });
 
   if (inviteError) return { ok: false, error: inviteError.message };
@@ -261,7 +269,20 @@ export async function resendOsInvite(
   email: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const admin = getServiceClient();
-  const { error } = await admin.auth.admin.inviteUserByEmail(email);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const redirectTo = `${siteUrl}/auth/callback?next=/os/coach/activation`;
+  const { error } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/** Définit ou réinitialise le mot de passe d'un utilisateur OS (service role). */
+export async function setOsUserPassword(
+  userId: string,
+  password: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = getServiceClient();
+  const { error } = await admin.auth.admin.updateUserById(userId, { password });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
