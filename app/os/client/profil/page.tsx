@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getOsProfileWithRole, getProfileById } from "@/lib/supabase/os-server";
-import { getSupabaseServer } from "@/lib/supabase/server";
 import { OsShell } from "@/app/os/_components/OsShell";
 import {
   OsField,
@@ -9,7 +8,6 @@ import {
   OsFlash,
 } from "@/app/os/_components/OsFields";
 import { updateProfileAction } from "./actions";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -29,17 +27,7 @@ export default async function ClientProfilPage({
 
   const { saved, error } = await searchParams;
 
-  const supabase = await getSupabaseServer();
-  const [coach, qRes] = await Promise.all([
-    profile.coach_id ? getProfileById(profile.coach_id) : null,
-    supabase
-      .from("questionnaires")
-      .select("id, status")
-      .eq("client_id", profile.id)
-      .maybeSingle(),
-  ]);
-
-  const questionnaire = qRes.data;
+  const coach = profile.coach_id ? await getProfileById(profile.coach_id) : null;
 
   return (
     <OsShell profile={profile} title="Mon profil">
@@ -103,45 +91,6 @@ export default async function ClientProfilPage({
           </div>
         )}
 
-        {/* Questionnaire */}
-        {questionnaire && (
-          <div
-            className={`rounded-2xl border p-5 ${
-              questionnaire.status === "en_attente"
-                ? "border-amber-300/60 bg-amber-50"
-                : questionnaire.status === "relu"
-                  ? "border-emerald-300/40 bg-emerald-50"
-                  : "border-taupe-300/40 bg-sand-50"
-            }`}
-          >
-            <p className="text-xs uppercase tracking-wider text-taupe-500">
-              Questionnaire découverte
-            </p>
-            {questionnaire.status === "en_attente" && (
-              <div className="mt-2 flex items-center justify-between">
-                <p className="text-sm text-amber-800">
-                  En attente de vos réponses
-                </p>
-                <Link
-                  href="/os/client/questionnaire"
-                  className="text-sm font-medium text-amber-800 hover:text-amber-900"
-                >
-                  Remplir →
-                </Link>
-              </div>
-            )}
-            {questionnaire.status === "soumis" && (
-              <p className="mt-2 text-sm text-taupe-700">
-                Envoyé · En attente de lecture par votre coach
-              </p>
-            )}
-            {questionnaire.status === "relu" && (
-              <p className="mt-2 text-sm text-emerald-800">
-                Lu par votre coach ✓
-              </p>
-            )}
-          </div>
-        )}
       </div>
     </OsShell>
   );

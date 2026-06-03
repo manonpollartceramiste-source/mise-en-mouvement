@@ -33,10 +33,7 @@ export default function RapportViewerClient({ id }: { id: string }) {
   }
 
   return (
-    <>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-
-      <div style={outer}>
+    <div style={outer}>
         {/* Barre supérieure */}
         <div style={topBar}>
           <button onClick={() => window.history.back()} style={btnGhost}>
@@ -63,24 +60,21 @@ export default function RapportViewerClient({ id }: { id: string }) {
           </div>
         )}
 
-        {/* Aperçu A4 */}
+        {/* Aperçu défilant — toutes les pages */}
         <div style={scroll}>
-          <div style={pageLabel}>Page 1 / 2</div>
           <div style={a4Wrap}>
-            <iframe src={previewUrl} style={iframeP1} title="Bilan — page 1" />
+            {/* Une seule iframe chargée une fois, toutes les pages défilent */}
+            <iframe
+              src={previewUrl}
+              style={iframeFull}
+              title="Bilan complet"
+            />
           </div>
-
-          <div style={pageLabel}>Page 2 / 2</div>
-          <div style={a4Wrap}>
-            <iframe src={previewUrl} style={iframeP2} title="Bilan — page 2" />
-          </div>
-
           <div style={hint}>
-            Aperçu en temps réel · Le PDF final est généré par Chrome via Playwright
+            Aperçu complet 3 pages (défilez pour voir toutes les pages) · Le PDF est généré par Chrome via Playwright
           </div>
         </div>
       </div>
-    </>
   );
 }
 
@@ -96,10 +90,11 @@ function DownloadIcon() {
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
 const outer: React.CSSProperties = {
-  minHeight: "100vh",
+  height: "100vh",
   background: "#0e0c0a",
   display: "flex",
   flexDirection: "column",
+  overflow: "hidden",
 };
 
 const topBar: React.CSSProperties = {
@@ -175,43 +170,35 @@ const errorBanner: React.CSSProperties = {
 };
 
 const scroll: React.CSSProperties = {
-  flex: 1, overflowY: "auto",
-  padding: "32px 0 72px",
+  flex: 1,
+  minHeight: 0,
+  overflowY: "auto",
+  padding: "28px 0 28px",
   display: "flex", flexDirection: "column",
   alignItems: "center", gap: 0,
 };
 
-const pageLabel: React.CSSProperties = {
-  fontSize: 11, fontWeight: 600,
-  color: "#4a4030", letterSpacing: "1.2px",
-  textTransform: "uppercase",
-  fontFamily: "system-ui, sans-serif",
-  marginBottom: 8, marginTop: 24,
-};
-
-// A4 at 96 dpi : 794 × 1123 px
+// 3 pages A4 : 3 × 297 mm à 96 dpi = 3 × 1122.5 px → 3368 px
 const a4Wrap: React.CSSProperties = {
-  width: "794px", height: "1123px",
-  overflow: "hidden", flexShrink: 0,
+  width: "794px",
+  height: "3368px",    // hauteur explicite = empêche le flex de comprimer le wrapper
+  flexShrink: 0,       // flex item ne rétrécit pas quand le conteneur est trop petit
   boxShadow: "0 8px 48px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4)",
   borderRadius: 2,
+  overflow: "hidden",
 };
 
-// Iframe contient les 2 pages (2246px) — on clipe page 1
-const iframeP1: React.CSSProperties = {
-  width: "794px", height: "2246px",
-  border: "none", display: "block",
+// 3 A4 pages : 3 × 297 mm à 96 dpi = 3 × 1122.5 px → 3368 px
+const iframeFull: React.CSSProperties = {
+  width: "794px",
+  height: "3368px",
+  border: "none",
+  display: "block",
   pointerEvents: "none",
 };
 
-// Décalage pour voir page 2
-const iframeP2: React.CSSProperties = {
-  ...iframeP1,
-  marginTop: "-1123px",
-};
-
 const hint: React.CSSProperties = {
-  marginTop: 28,
+  marginTop: 12,
   fontSize: 11, color: "#3a3028",
   fontFamily: "system-ui, sans-serif",
   textAlign: "center",

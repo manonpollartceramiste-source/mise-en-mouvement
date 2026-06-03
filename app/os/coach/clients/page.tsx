@@ -5,6 +5,7 @@ import { getOsProfileWithRole } from "@/lib/supabase/os-server";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { OsShell } from "@/app/os/_components/OsShell";
 import { NewClientModal } from "./NewClientModal";
+import { DeleteClientButton } from "./DeleteClientButton";
 import type { Profile } from "@/lib/os/types";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ function initials(name: string) {
     .slice(0, 2);
 }
 
-type SearchParams = Promise<{ q?: string; debug?: string }>;
+type SearchParams = Promise<{ q?: string; debug?: string; deleted?: string }>;
 
 export default async function CoachClientsPage({
   searchParams,
@@ -32,7 +33,7 @@ export default async function CoachClientsPage({
   const profile = await getOsProfileWithRole("coach");
   if (!profile) redirect("/os/login");
 
-  const { q = "", debug } = await searchParams;
+  const { q = "", debug, deleted } = await searchParams;
   const showDebug = debug === "1";
   const isAdmin = Array.isArray(profile.roles)
     ? profile.roles.includes("admin")
@@ -247,6 +248,13 @@ export default async function CoachClientsPage({
         </div>
       </form>
 
+      {/* ── Flash suppression ──────────────────────────────── */}
+      {deleted === "1" && (
+        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+          ✓ Client supprimé avec succès.
+        </div>
+      )}
+
       {/* ── Erreur Supabase visible ─────────────────────────── */}
       {clientsError && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -319,79 +327,84 @@ function ClientCard({
   const packEmpty = pack && pack.remaining === 0;
 
   return (
-    <Link
-      href={`/os/coach/clients/${client.id}`}
-      className="group flex flex-col rounded-2xl border border-taupe-300/40 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-taupe-400/60 hover:shadow-sm"
-    >
-      <div className="flex items-start gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-taupe-100 text-sm font-medium text-taupe-700">
-          {initials(client.display_name)}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-ink-900">
-            {client.display_name}
-          </p>
-          <p className="truncate text-xs text-taupe-500">{client.email}</p>
-          {client.phone && (
-            <p className="text-xs text-taupe-400">{client.phone}</p>
+    <div className="group relative flex flex-col rounded-2xl border border-taupe-300/40 bg-white transition-all hover:-translate-y-0.5 hover:border-taupe-400/60 hover:shadow-sm">
+      {/* Bouton suppression — apparaît au hover */}
+      <DeleteClientButton clientId={client.id} clientName={client.display_name} />
+
+      <Link
+        href={`/os/coach/clients/${client.id}`}
+        className="flex flex-1 flex-col p-5"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-taupe-100 text-sm font-medium text-taupe-700">
+            {initials(client.display_name)}
+          </div>
+          <div className="min-w-0 flex-1 pr-6">
+            <p className="truncate font-medium text-ink-900">
+              {client.display_name}
+            </p>
+            <p className="truncate text-xs text-taupe-500">{client.email}</p>
+            {client.phone && (
+              <p className="text-xs text-taupe-400">{client.phone}</p>
+            )}
+          </div>
+          {!client.active && (
+            <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] text-red-700">
+              Inactif
+            </span>
           )}
         </div>
-        {!client.active && (
-          <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] text-red-700">
-            Inactif
-          </span>
-        )}
-      </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-taupe-300/20 pt-3">
-        <div>
-          {pack ? (
-            <p
-              className={`text-xs ${
-                packEmpty
-                  ? "text-taupe-400"
-                  : packAlert
-                    ? "font-medium text-amber-700"
-                    : "text-taupe-600"
-              }`}
-            >
-              <span
-                className={`font-semibold ${
+        <div className="mt-4 flex items-center justify-between border-t border-taupe-300/20 pt-3">
+          <div>
+            {pack ? (
+              <p
+                className={`text-xs ${
                   packEmpty
                     ? "text-taupe-400"
                     : packAlert
-                      ? "text-amber-700"
-                      : "text-ink-900"
+                      ? "font-medium text-amber-700"
+                      : "text-taupe-600"
                 }`}
               >
-                {pack.remaining}/{pack.total}
-              </span>{" "}
-              séances
-              {packAlert && " ⚠"}
-              {packEmpty && " · épuisé"}
-            </p>
-          ) : (
-            <p className="text-xs text-taupe-400">Pas de pack</p>
-          )}
+                <span
+                  className={`font-semibold ${
+                    packEmpty
+                      ? "text-taupe-400"
+                      : packAlert
+                        ? "text-amber-700"
+                        : "text-ink-900"
+                  }`}
+                >
+                  {pack.remaining}/{pack.total}
+                </span>{" "}
+                séances
+                {packAlert && " ⚠"}
+                {packEmpty && " · épuisé"}
+              </p>
+            ) : (
+              <p className="text-xs text-taupe-400">Pas de pack</p>
+            )}
+          </div>
+          <div className="text-right">
+            {lastSession ? (
+              <p className="text-xs text-taupe-400">
+                Suivi :{" "}
+                {new Intl.DateTimeFormat("fr-FR", {
+                  day: "numeric",
+                  month: "short",
+                }).format(new Date(lastSession))}
+              </p>
+            ) : (
+              <p className="text-xs text-taupe-400">Aucune séance</p>
+            )}
+          </div>
         </div>
-        <div className="text-right">
-          {lastSession ? (
-            <p className="text-xs text-taupe-400">
-              Suivi :{" "}
-              {new Intl.DateTimeFormat("fr-FR", {
-                day: "numeric",
-                month: "short",
-              }).format(new Date(lastSession))}
-            </p>
-          ) : (
-            <p className="text-xs text-taupe-400">Aucune séance</p>
-          )}
-        </div>
-      </div>
 
-      <span className="mt-3 self-end text-xs font-medium text-taupe-600 transition-colors group-hover:text-ink-900">
-        Voir la fiche →
-      </span>
-    </Link>
+        <span className="mt-3 self-end text-xs font-medium text-taupe-600 transition-colors group-hover:text-ink-900">
+          Voir la fiche →
+        </span>
+      </Link>
+    </div>
   );
 }

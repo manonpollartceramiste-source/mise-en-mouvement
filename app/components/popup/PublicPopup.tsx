@@ -2,57 +2,133 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import type { Popup } from "@/lib/content/popups";
 import { FormattedText } from "@/app/components/ui/FormattedText";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
 
 const STORAGE_PREFIX = "mem-popup-dismissed:";
 
-export function PopupBanner({ popup }: { popup: Popup | null }) {
-  const key = popup ? `${STORAGE_PREFIX}${popup.id}` : "";
+function withinWindow(startsAt: string | null, endsAt: string | null, now: number): boolean {
+  if (startsAt) {
+    const t = Date.parse(startsAt);
+    if (!Number.isNaN(t) && t > now) return false;
+  }
+  if (endsAt) {
+    const t = Date.parse(endsAt);
+    if (!Number.isNaN(t) && t < now) return false;
+  }
+  return true;
+}
+
+export function PublicPopup() {
+  const pathname = usePathname();
+  const [popup, setPopup] = useState<Popup | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // ─── DIAGNOSTIC CONSOLE NAVIGATEUR ───────────────────────────────────
-    if (!popup) {
-      console.log("[Popup] données récupérées: null");
-      console.log("[Popup] popup ignorée — raison: Supabase n'a retourné aucune popup active pour cette page (vérifie la console serveur pour les détails)");
+    console.log("[Popup] composant monté");
+    console.log("[Popup] pathname:", pathname);
+
+    // Ne pas afficher dans admin ou OS
+    if (pathname?.startsWith("/admin") || pathname?.startsWith("/os")) {
+      console.log("[Popup] ignorée — zone admin/OS, arrêt.");
       return;
     }
 
-    console.log("[Popup] données récupérées:", {
-      id: popup.id,
-      title: popup.title,
-      scope: popup.scope,
-      active: popup.active,
-      startsAt: popup.startsAt ?? "null",
-      endsAt: popup.endsAt ?? "null",
-      ctaLabel: popup.ctaLabel ?? "null",
-      ctaHref: popup.ctaHref ?? "null",
-    });
-    console.log("[Popup] popup active retenue:", `"${popup.title}"`);
+    // Scope selon la page
+    let page: "home" | "offres" | null = null;
+    if (pathname === "/" || pathname === "") {
+      page = "home";
+    } else if (pathname?.startsWith("/offres")) {
+      page = "offres";
+    }
 
+    if (!page) {
+      console.log("[Popup] ignorée — page non ciblée (popup uniquement sur / et /offres)");
+      return;
+    }
+
+    void loadPopup(page);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  async function loadPopup(page: "home" | "offres") {
+    console.log("[Popup] requête Supabase lancée — active=true, scope in [" + page + ", both]");
+
+    let supabase;
     try {
-      const dismissed = sessionStorage.getItem(key) !== null;
-      if (dismissed) {
-        console.log("[Popup] popup ignorée — raison: sessionStorage contient la clé de fermeture:", key);
-        console.log("[Popup] → pour forcer l'affichage: sessionStorage.removeItem('" + key + "')");
+      supabase = getSupabaseBrowser();
+    } catch (err) {
+      console.log("[Popup] erreur Supabase", err);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("popups")
+      .select("id, title, body, cta_label, cta_href, scope, active, starts_at, ends_at")
+      .eq("active", true)
+      .in("scope", [page, "both"])
+      .order("created_at", { ascending: false });
+
+    console.log("[Popup] données récupérées", data);
+
+    if (error) {
+      console.log("[Popup] erreur Supabase", error);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      console.log("[Popup] popup ignorée — raison: aucune ligne active en base pour cette page");
+      return;
+    }
+
+    const now = Date.now();
+    const row = data.find((r) => withinWindow(r.starts_at, r.ends_at, now));
+
+    if (!row) {
+      console.log("[Popup] popup ignorée — raison: toutes les popups filtrées par starts_at / ends_at");
+      return;
+    }
+
+    const chosen: Popup = {
+      id: row.id,
+      title: row.title,
+      body: row.body,
+      ctaLabel: row.cta_label,
+      ctaHref: row.cta_href,
+      scope: row.scope,
+      active: row.active,
+      startsAt: row.starts_at,
+      endsAt: row.ends_at,
+    };
+
+    console.log("[Popup] popup retenue", chosen);
+
+    // Vérifier sessionStorage
+    const key = `${STORAGE_PREFIX}${chosen.id}`;
+    try {
+      if (sessionStorage.getItem(key) !== null) {
+        console.log("[Popup] popup ignorée — raison: déjà fermée (sessionStorage). Pour forcer: sessionStorage.removeItem('" + key + "')");
         return;
       }
-      setVisible(true);
-      console.log("[Popup] popup affichée ✓");
     } catch {
-      setVisible(true);
-      console.log("[Popup] popup affichée ✓ (sessionStorage inaccessible — affiché quand même)");
+      // sessionStorage inaccessible — on affiche quand même
     }
-    // ─────────────────────────────────────────────────────────────────────
-  }, [popup, key]);
+
+    setPopup(chosen);
+    setVisible(true);
+    console.log("[Popup] popup affichée ✓");
+  }
 
   const dismiss = useCallback(() => {
+    if (!popup) return;
+    const key = `${STORAGE_PREFIX}${popup.id}`;
     setVisible(false);
     try {
-      if (key) sessionStorage.setItem(key, "1");
+      sessionStorage.setItem(key, "1");
     } catch { /* ignore */ }
-  }, [key]);
+  }, [popup]);
 
   // ESC pour fermer
   useEffect(() => {
@@ -64,7 +140,7 @@ export function PopupBanner({ popup }: { popup: Popup | null }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [visible, dismiss]);
 
-  // Bloquer le scroll body pendant l'affichage
+  // Bloquer le scroll body
   useEffect(() => {
     if (!visible) return;
     const prev = document.body.style.overflow;
@@ -86,14 +162,14 @@ export function PopupBanner({ popup }: { popup: Popup | null }) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Overlay backdrop */}
+          {/* Overlay */}
           <div
             className="absolute inset-0 bg-ink-900/50 backdrop-blur-[3px]"
             onClick={dismiss}
             aria-hidden="true"
           />
 
-          {/* Carte modale */}
+          {/* Carte */}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -104,7 +180,7 @@ export function PopupBanner({ popup }: { popup: Popup | null }) {
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="relative z-10 w-full max-w-md rounded-3xl border border-taupe-200/60 bg-sand-50 px-8 py-9 shadow-[0_40px_100px_-20px_rgba(15,14,12,0.45)]"
           >
-            {/* Bouton fermer × */}
+            {/* × */}
             <button
               type="button"
               onClick={dismiss}
@@ -119,7 +195,7 @@ export function PopupBanner({ popup }: { popup: Popup | null }) {
               {popup.title}
             </p>
 
-            {/* Texte */}
+            {/* Corps */}
             <FormattedText
               text={popup.body}
               topGap="mt-4"

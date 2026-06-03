@@ -88,7 +88,6 @@ export default async function CoachDashboard() {
     clients,
     todayRes,
     urgentPacksRes,
-    pendingQRes,
     noShowsRes,
     upcomingRes,
     monthCountRes,
@@ -111,13 +110,6 @@ export default async function CoachDashboard() {
       .lte("remaining", 2)
       .gt("remaining", 0)
       .order("remaining")
-      .limit(6),
-    supabase
-      .from("questionnaires")
-      .select("id, client_id, submitted_at")
-      .eq("coach_id", coachId)
-      .eq("status", "soumis")
-      .order("submitted_at", { ascending: false })
       .limit(6),
     supabase
       .from("sessions")
@@ -186,13 +178,6 @@ export default async function CoachDashboard() {
     offer_label: p.offer_label,
   }));
 
-  const pendingQs = (pendingQRes.data ?? []).map((q) => ({
-    id: q.id,
-    client_id: q.client_id,
-    client_name: clientMap.get(q.client_id) ?? "Client",
-    submitted_at: q.submitted_at as string | null,
-  }));
-
   const noShows = (noShowsRes.data ?? []).map((s) => ({
     id: s.id,
     client_id: s.client_id,
@@ -256,7 +241,6 @@ export default async function CoachDashboard() {
     (conflicts.length > 0 ? 1 : 0) +
     (noShows.length > 0 ? 1 : 0) +
     (urgentPacks.length > 0 ? 1 : 0) +
-    (pendingQs.length > 0 ? 1 : 0) +
     (staleClients.length > 0 ? 1 : 0);
 
   return (
@@ -454,7 +438,6 @@ export default async function CoachDashboard() {
             conflicts={conflicts}
             noShows={noShows}
             urgentPacks={urgentPacks}
-            pendingQs={pendingQs}
             staleClients={staleClients}
           />
 
@@ -478,13 +461,9 @@ export default async function CoachDashboard() {
                   sub: `${clients.length} actif${clients.length !== 1 ? "s" : ""}`,
                 },
                 {
-                  label: "Questionnaires",
-                  href: "/os/coach/questionnaires",
-                  sub:
-                    pendingQs.length > 0
-                      ? `${pendingQs.length} à lire`
-                      : "À jour",
-                  alert: pendingQs.length > 0,
+                  label: "Bilan mouvement",
+                  href: "/os/coach/bilan-mouvement",
+                  sub: "Évaluation · Rapport",
                 },
                 ...(isAdmin
                   ? [
@@ -596,12 +575,6 @@ type AlertsProps = {
     total: number;
     offer_label: string;
   }[];
-  pendingQs: {
-    id: string;
-    client_id: string;
-    client_name: string;
-    submitted_at: string | null;
-  }[];
   staleClients: { client_id: string; name: string }[];
 };
 
@@ -609,14 +582,12 @@ function AlertsPanel({
   conflicts,
   noShows,
   urgentPacks,
-  pendingQs,
   staleClients,
 }: AlertsProps) {
   const hasAlerts =
     conflicts.length ||
     noShows.length ||
     urgentPacks.length ||
-    pendingQs.length ||
     staleClients.length;
 
   return (
@@ -629,7 +600,6 @@ function AlertsPanel({
               {conflicts.length +
                 noShows.length +
                 urgentPacks.length +
-                pendingQs.length +
                 staleClients.length}
             </span>
           ) : null}
@@ -682,17 +652,6 @@ function AlertsPanel({
               text={p.client_name}
               sub={`${p.remaining}/${p.total} séance${p.remaining > 1 ? "s" : ""} restante${p.remaining > 1 ? "s" : ""}`}
               href={`/os/coach/clients/${p.client_id}`}
-            />
-          ))}
-          {pendingQs.map((q) => (
-            <AlertRow
-              key={q.id}
-              color="border-blue-400"
-              textColor="text-blue-700"
-              label="Questionnaire"
-              text={q.client_name}
-              sub="Soumis · en attente de lecture"
-              href="/os/coach/questionnaires"
             />
           ))}
           {staleClients.map((c) => (

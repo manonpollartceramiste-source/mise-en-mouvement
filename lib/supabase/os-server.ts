@@ -160,17 +160,6 @@ export async function getCoachSessionsThisMonth(
   return (data ?? []) as Session[];
 }
 
-/** Nombre de questionnaires soumis non encore lus pour un coach. */
-export async function getCoachPendingQCount(coachId: string): Promise<number> {
-  const supabase = await getSupabaseServer();
-  const { count } = await supabase
-    .from("questionnaires")
-    .select("id", { count: "exact", head: true })
-    .eq("coach_id", coachId)
-    .eq("status", "soumis");
-  return count ?? 0;
-}
-
 // ─────────────────────────────────────────────────────────────
 // Bilans Mouvement
 // ─────────────────────────────────────────────────────────────

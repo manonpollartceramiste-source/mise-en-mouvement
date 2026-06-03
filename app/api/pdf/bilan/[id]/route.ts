@@ -235,7 +235,15 @@ export async function GET(
   const isPreview = url.searchParams.get("preview") === "1";
   const pdfMode = url.searchParams.get("mode") === "client" ? "client" : "coach";
 
-  const result = await buildBilanData(id);
+  let result: Awaited<ReturnType<typeof buildBilanData>>;
+  try {
+    result = await buildBilanData(id);
+  } catch (err) {
+    console.error("[PDF] ❌ buildBilanData exception:", err);
+    const msg = "Erreur interne lors de la récupération du bilan.";
+    if (isPreview) return htmlError(500, msg);
+    return new Response(msg, { status: 500 });
+  }
 
   // ── Auth / not found ──────────────────────────────────────────────────────
   if (!result) {
@@ -292,7 +300,7 @@ function htmlError(status: number, message: string): Response {
 .msg{font-size:13px;color:#8c7e6e;line-height:1.6;max-width:320px}</style>
 </head><body><div class="box">
 <div class="icon">⚠</div>
-<div class="title">${status === 401 ? "Non connecté" : "Bilan introuvable"}</div>
+<div class="title">${status === 401 ? "Non connecté" : status === 500 ? "Erreur serveur" : "Bilan introuvable"}</div>
 <div class="msg">${message.replace(/</g, "&lt;")}</div>
 </div></body></html>`;
   return new Response(html, {

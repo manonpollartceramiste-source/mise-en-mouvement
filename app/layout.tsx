@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Fraunces, Cormorant_Garamond } from "next/font/googl
 import { site } from "@/lib/content/site";
 import { loadTexts } from "@/lib/content/texts.server";
 import { loadSettings } from "@/lib/content/settings.server";
+import { PublicPopup } from "@/app/components/popup/PublicPopup";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -61,6 +62,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-sand-50 text-ink-900">
         {children}
+        <PublicPopup />
       </body>
     </html>
   );

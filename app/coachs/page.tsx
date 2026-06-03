@@ -10,6 +10,8 @@ import { Reveal } from "@/app/components/motion/Reveal";
 import { loadActiveCoaches } from "@/lib/content/coaches.server";
 import { loadImages } from "@/lib/content/images.server";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Coachs",
   description:

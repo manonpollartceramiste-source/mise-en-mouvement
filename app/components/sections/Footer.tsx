@@ -102,6 +102,12 @@ export async function Footer() {
             >
               Confidentialité
             </Link>
+            <Link
+              href="/conditions-generales-de-vente"
+              className="transition-colors hover:text-ink-900"
+            >
+              CGV
+            </Link>
           </div>
         </div>
       </Container>

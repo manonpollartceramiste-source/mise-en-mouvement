@@ -34,7 +34,7 @@ export default async function ClientDashboard() {
 
   const supabase = await getSupabaseServer();
 
-  const [packRes, nextSessionRes, qRes, coach, goalsRes, lastMeasureRes] =
+  const [packRes, nextSessionRes, coach, goalsRes, lastMeasureRes] =
     await Promise.all([
       supabase
         .from("session_packs")
@@ -51,11 +51,6 @@ export default async function ClientDashboard() {
         .gte("scheduled_at", new Date().toISOString())
         .order("scheduled_at")
         .limit(1)
-        .maybeSingle(),
-      supabase
-        .from("questionnaires")
-        .select("id, status")
-        .eq("client_id", profile.id)
         .maybeSingle(),
       profile.coach_id ? getProfileById(profile.coach_id) : null,
       supabase
@@ -75,7 +70,6 @@ export default async function ClientDashboard() {
 
   const pack = packRes.data;
   const nextSession = nextSessionRes.data;
-  const questionnaire = qRes.data;
   const activeGoals = goalsRes.data ?? [];
   const lastMeasure = lastMeasureRes.data;
   const firstName = profile.display_name.split(" ")[0];
@@ -97,26 +91,6 @@ export default async function ClientDashboard() {
           </p>
         )}
       </div>
-
-      {/* Alerte questionnaire */}
-      {questionnaire?.status === "en_attente" && (
-        <Link
-          href="/os/client/questionnaire"
-          className="mb-6 flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/80 px-5 py-4 transition-all hover:bg-amber-50"
-        >
-          <div>
-            <p className="font-medium text-amber-900">
-              Questionnaire à compléter
-            </p>
-            <p className="mt-0.5 text-xs text-amber-700">
-              Votre coach attend vos réponses pour personnaliser votre programme.
-            </p>
-          </div>
-          <span className="ml-4 shrink-0 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-            Remplir →
-          </span>
-        </Link>
-      )}
 
       {/* Prochaine séance — carte principale */}
       <div className="mb-6 rounded-2xl bg-ink-900 p-6 text-sand-50">
@@ -284,11 +258,10 @@ export default async function ClientDashboard() {
       )}
 
       {/* Navigation rapide */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
           { label: "Mes séances", href: "/os/client/seances" },
           { label: "Mes mesures", href: "/os/client/mesures" },
-          { label: "Questionnaire", href: "/os/client/questionnaire" },
           { label: "Mon profil", href: "/os/client/profil" },
         ].map((l) => (
           <Link

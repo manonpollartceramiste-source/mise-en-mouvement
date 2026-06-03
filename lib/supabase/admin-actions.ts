@@ -6,12 +6,21 @@ import type { Profile, UserRole } from "@/lib/os/types";
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY manquant. Ajoute-le dans .env.local.",
-    );
+
+  const missing = (
+    [
+      !url && "NEXT_PUBLIC_SUPABASE_URL",
+      !serviceKey && "SUPABASE_SERVICE_ROLE_KEY",
+    ] as (string | false)[]
+  ).filter((v): v is string => Boolean(v));
+
+  if (missing.length > 0) {
+    const names = missing.join(", ");
+    console.error(`[SUPABASE_ADMIN] Variable(s) manquante(s) : ${names}`);
+    throw new Error(`Variable(s) d'environnement manquante(s) : ${names}`);
   }
-  return createClient(url, serviceKey, {
+
+  return createClient(url!, serviceKey!, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }

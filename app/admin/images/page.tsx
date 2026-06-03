@@ -7,7 +7,7 @@ import {
 import { loadImages } from "@/lib/content/images.server";
 import { loadCoaches } from "@/lib/content/coaches.server";
 import { AdminShell, FlashMessages } from "../_components/AdminShell";
-import { FileField, SubmitButton } from "../_components/Fields";
+import { ImageUploadForm } from "../_components/ImageUploadForm";
 import {
   clearImage,
   uploadBackground,
@@ -71,6 +71,7 @@ export default async function AdminImagesPage({
           fallback="/logo.png"
           uploadAction={uploadLogo}
           slotId="logo"
+          extraData={{}}
         />
 
         {/* ── Images de mise en scène ──────────────────────────── */}
@@ -82,6 +83,7 @@ export default async function AdminImagesPage({
           currentUrl={images.hero}
           uploadAction={uploadHero}
           slotId="hero"
+          extraData={{}}
         />
 
         <ImageSlot
@@ -91,6 +93,7 @@ export default async function AdminImagesPage({
           uploadAction={uploadBackground}
           slotId="background"
           badge="Nouveau"
+          extraData={{}}
         />
 
         {/* ── Galerie cabinet & ambiance ───────────────────────── */}
@@ -103,7 +106,7 @@ export default async function AdminImagesPage({
             hint={slot.hint}
             currentUrl={images.gallery[slot.key] ?? null}
             uploadAction={uploadGalleryPhoto}
-            extraFields={<input type="hidden" name="gallerySlot" value={slot.key} />}
+            extraData={{ gallerySlot: slot.key }}
             slotId={`gallery:${slot.key}`}
             badge="Galerie"
           />
@@ -119,9 +122,7 @@ export default async function AdminImagesPage({
             hint={`Affiché en cercle sur les cartes coach et la page /coachs. Format carré 600×600 px recommandé.`}
             currentUrl={images.coaches[coach.id] ?? null}
             uploadAction={uploadCoachPhoto}
-            extraFields={
-              <input type="hidden" name="coachId" value={coach.id} />
-            }
+            extraData={{ coachId: coach.id }}
             slotId={`coach:${coach.id}`}
           />
         ))}
@@ -154,7 +155,7 @@ function ImageSlot({
   fallback,
   uploadAction,
   slotId,
-  extraFields,
+  extraData,
   badge,
 }: {
   title: string;
@@ -163,7 +164,7 @@ function ImageSlot({
   fallback?: string;
   uploadAction: (formData: FormData) => Promise<void>;
   slotId: string;
-  extraFields?: React.ReactNode;
+  extraData?: Record<string, string>;
   badge?: string;
 }) {
   const displayed = currentUrl ?? fallback ?? null;
@@ -209,16 +210,7 @@ function ImageSlot({
             </span>
           )}
         </div>
-        <form action={uploadAction} className="space-y-4">
-          {extraFields}
-          <FileField
-            label="Remplacer par"
-            name="file"
-            accept="image/png,image/jpeg,image/webp,image/svg+xml"
-            hint="PNG, JPG, WEBP ou SVG · max 5 Mo"
-          />
-          <SubmitButton>Uploader →</SubmitButton>
-        </form>
+        <ImageUploadForm action={uploadAction} extraData={extraData} />
       </div>
     </article>
   );

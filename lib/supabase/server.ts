@@ -1,10 +1,12 @@
 import "server-only";
 
+import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const FALLBACK_ADMIN_EMAILS =
   "manonpollart.ceramiste@gmail.com,dorian34.hebert@gmail.com";
@@ -53,6 +55,29 @@ export async function getSupabaseServer() {
         }
       },
     },
+  });
+}
+
+/**
+ * Returns a Supabase client with the service role key (bypasses RLS).
+ * ONLY use server-side for trusted operations — never expose to the client.
+ */
+export function getSupabaseAdmin() {
+  const missing = (
+    [
+      !url && "NEXT_PUBLIC_SUPABASE_URL",
+      !serviceRoleKey && "SUPABASE_SERVICE_ROLE_KEY",
+    ] as (string | false)[]
+  ).filter((v): v is string => Boolean(v));
+
+  if (missing.length > 0) {
+    const names = missing.join(", ");
+    console.error(`[SUPABASE_ADMIN] Variable(s) manquante(s) : ${names}`);
+    throw new Error(`Variable(s) d'environnement manquante(s) : ${names}`);
+  }
+
+  return createClient(url!, serviceRoleKey!, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 

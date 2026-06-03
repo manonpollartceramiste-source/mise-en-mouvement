@@ -9,7 +9,7 @@ import {
 import { loadImages } from "@/lib/content/images.server";
 import {
   getCurrentUser,
-  getSupabaseServer,
+  getSupabaseAdmin,
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
 import { saveContentKey } from "@/lib/supabase/content";
@@ -22,7 +22,8 @@ const REVALIDATE_PATHS = [
 ];
 
 const BUCKET = "site-assets";
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_BYTES = 5 * 1024 * 1024; // 5 Mo
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
 
 function fail(reason: string): never {
   redirect(`/admin/images?error=${encodeURIComponent(reason)}`);
@@ -52,9 +53,16 @@ async function uploadAndPersist(slot: Slot, file: File): Promise<void> {
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
 
+  // Validate file before any upload attempt
   if (file.size === 0) fail("Aucun fichier sélectionné.");
-  if (file.size > MAX_BYTES) fail("Fichier trop lourd (max 5 Mo).");
-  if (!file.type.startsWith("image/")) fail("Le fichier doit être une image.");
+  if (file.size > MAX_BYTES)
+    fail(
+      `Fichier trop lourd (${(file.size / 1024 / 1024).toFixed(1)} Mo). Maximum autorisé : 5 Mo.`,
+    );
+  if (!ALLOWED_TYPES.includes(file.type))
+    fail(
+      `Format non supporté (${file.type || "inconnu"}). Formats acceptés : JPG, PNG, WEBP, SVG.`,
+    );
 
   const ext = extFromMime(file.type);
   const slotKey =
@@ -65,20 +73,36 @@ async function uploadAndPersist(slot: Slot, file: File): Promise<void> {
         : `gallery-${slot.gallery}`;
   const path = `${slotKey}-${Date.now()}.${ext}`;
 
-  const supabase = await getSupabaseServer();
-  const buf = new Uint8Array(await file.arrayBuffer());
-  const { error: upErr } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, buf, {
-      contentType: file.type,
-      upsert: false,
-    });
-  if (upErr) fail(`Upload échoué : ${upErr.message}`);
+  // Upload via the service-role client (bypasses RLS, safe since auth is validated above)
+  let uploadError: string | null = null;
+  let publicUrl: string | null = null;
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  try {
+    const adminClient = getSupabaseAdmin();
+    const buf = new Uint8Array(await file.arrayBuffer());
 
+    const { error: upErr } = await adminClient.storage
+      .from(BUCKET)
+      .upload(path, buf, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (upErr) {
+      uploadError = upErr.message;
+    } else {
+      const { data } = adminClient.storage.from(BUCKET).getPublicUrl(path);
+      publicUrl = data.publicUrl;
+    }
+  } catch (err) {
+    uploadError =
+      err instanceof Error ? err.message : "Erreur réseau inconnue.";
+  }
+
+  if (uploadError) fail(`Upload échoué : ${uploadError}`);
+  if (!publicUrl) fail("URL publique non obtenue après upload.");
+
+  // Build the updated images object
   const current: SiteImages = await loadImages();
   let next: SiteImages;
   if (slot === "logo") {
@@ -101,10 +125,11 @@ async function uploadAndPersist(slot: Slot, file: File): Promise<void> {
   }
 
   const valid = siteImagesSchema.safeParse(next);
-  if (!valid.success) fail("Validation échouée.");
+  if (!valid.success)
+    fail("Validation interne échouée. Contactez le support.");
 
   const res = await saveContentKey("images", valid.data, REVALIDATE_PATHS);
-  if (!res.ok) fail(res.error);
+  if (!res.ok) fail(`Sauvegarde échouée : ${res.error}`);
 
   done(`Image enregistrée (${slotKey}).`);
 }

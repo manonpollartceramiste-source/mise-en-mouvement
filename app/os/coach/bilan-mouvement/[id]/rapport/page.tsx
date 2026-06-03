@@ -23,7 +23,7 @@ export default async function RapportPage({ params }: { params: Params }) {
     return <NotFound id={id} reason="Ce bilan n'existe pas ou a été supprimé." />;
   }
 
-  const isAdmin = coachProfile.roles.includes("admin");
+  const isAdmin = coachProfile.roles?.includes("admin") ?? false;
   if (!isAdmin && assessment.coach_id !== coachProfile.id) {
     return <NotFound id={id} reason="Vous n'avez pas accès à ce bilan." />;
   }

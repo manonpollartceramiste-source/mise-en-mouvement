@@ -19,7 +19,6 @@ import type {
   SessionPack,
   Measure,
   CoachNote,
-  Questionnaire,
   MovementTest,
   ClientGoal,
 } from "@/lib/os/types";
@@ -30,7 +29,6 @@ import {
   toggleNotePinnedAction,
   createMeasureAction,
   createPackAction,
-  markQuestionnaireReadAction,
   createMovementTestAction,
   createGoalAction,
   updateGoalStatusAction,
@@ -58,7 +56,6 @@ const TABS = [
   { key: "mouvement", label: "Mouvement" },
   { key: "objectifs", label: "Objectifs" },
   { key: "pack", label: "Pack" },
-  { key: "questionnaire", label: "Questionnaire" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -116,7 +113,6 @@ export default async function CoachClientDetailPage({
     notesRes,
     measuresRes,
     packsRes,
-    qRes,
     movementRes,
     goalsRes,
   ] = await Promise.all([
@@ -143,11 +139,6 @@ export default async function CoachClientDetailPage({
       .eq("client_id", id)
       .order("created_at", { ascending: false }),
     supabase
-      .from("questionnaires")
-      .select("*")
-      .eq("client_id", id)
-      .maybeSingle(),
-    supabase
       .from("movement_tests")
       .select("*")
       .eq("client_id", id)
@@ -163,7 +154,6 @@ export default async function CoachClientDetailPage({
   const notes = (notesRes.data ?? []) as CoachNote[];
   const measures = (measuresRes.data ?? []) as Measure[];
   const packs = (packsRes.data ?? []) as SessionPack[];
-  const questionnaire = qRes.data as Questionnaire | null;
   const movementTests = (movementRes.data ?? []) as MovementTest[];
   const goals = (goalsRes.data ?? []) as ClientGoal[];
 
@@ -198,7 +188,6 @@ export default async function CoachClientDetailPage({
         packs={packs}
         sessions={sessions}
         goals={goals}
-        questionnaire={questionnaire}
       />
 
       {/* Flash */}
@@ -222,10 +211,6 @@ export default async function CoachClientDetailPage({
                 {notes.length}
               </span>
             )}
-            {t.key === "questionnaire" &&
-              questionnaire?.status === "soumis" && (
-                <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500" />
-              )}
           </Link>
         ))}
       </div>
@@ -253,12 +238,6 @@ export default async function CoachClientDetailPage({
         )}
         {tab === "pack" && (
           <PackTab packs={packs} clientId={id} />
-        )}
-        {tab === "questionnaire" && (
-          <QuestionnaireTab
-            questionnaire={questionnaire}
-            clientId={id}
-          />
         )}
       </div>
     </OsShell>
@@ -857,160 +836,16 @@ function PackTab({
   );
 }
 
-// ── Onglet Questionnaire ───────────────────────────────────────
-
-function QuestionnaireTab({
-  questionnaire,
-  clientId,
-}: {
-  questionnaire: Questionnaire | null;
-  clientId: string;
-}) {
-  if (!questionnaire) {
-    return (
-      <div className="rounded-2xl border border-dashed border-taupe-400/60 bg-sand-100/30 p-10 text-center">
-        <p className="font-serif text-lg text-ink-900">
-          Aucun questionnaire envoyé
-        </p>
-        <p className="mt-2 text-sm text-taupe-600">
-          Le questionnaire est créé automatiquement quand le client est invité.
-        </p>
-      </div>
-    );
-  }
-
-  const a = questionnaire.answers;
-
-  return (
-    <div className="space-y-6">
-      {/* Statut + action */}
-      <div className="flex items-center justify-between rounded-2xl border border-taupe-300/40 bg-white px-6 py-4">
-        <div>
-          <p className="text-xs uppercase tracking-wider text-taupe-500">
-            Statut
-          </p>
-          <p className="mt-1 font-medium text-ink-900">
-            {questionnaire.status === "soumis" && "Soumis par le client"}
-            {questionnaire.status === "en_attente" &&
-              "En attente de réponse"}
-            {questionnaire.status === "relu" && "Lu et commenté"}
-          </p>
-          {questionnaire.submitted_at && (
-            <p className="text-xs text-taupe-500">
-              Soumis le{" "}
-              {fmtDate.format(new Date(questionnaire.submitted_at))}
-            </p>
-          )}
-        </div>
-        {questionnaire.status === "soumis" && (
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
-            Nouveau
-          </span>
-        )}
-      </div>
-
-      {/* Réponses */}
-      {a && (
-        <div className="rounded-2xl border border-taupe-300/40 bg-white divide-y divide-taupe-300/20">
-          {[
-            { label: "Objectif principal", value: a.main_goal },
-            {
-              label: "Objectifs secondaires",
-              value: a.secondary_goals?.join(", "),
-            },
-            { label: "Motivation", value: a.motivation },
-            { label: "Antécédents médicaux", value: a.medical_history },
-            { label: "Blessures", value: a.injuries },
-            { label: "Médicaments", value: a.medications },
-            { label: "Activité actuelle", value: a.current_activity },
-            {
-              label: "Fréquence d'entraînement",
-              value: a.activity_frequency,
-            },
-            {
-              label: "Heures de sommeil",
-              value: a.sleep_hours != null ? `${a.sleep_hours}h` : null,
-            },
-            {
-              label: "Niveau de stress",
-              value: a.stress_level != null ? `${a.stress_level}/5` : null,
-            },
-            { label: "Alimentation", value: a.diet_description },
-            {
-              label: "Restrictions alimentaires",
-              value: a.dietary_restrictions,
-            },
-            { label: "Disponibilités", value: a.availability },
-            { label: "Créneaux préférés", value: a.preferred_schedule },
-            { label: "Informations complémentaires", value: a.additional_info },
-          ]
-            .filter((r) => r.value)
-            .map((r) => (
-              <div key={r.label} className="px-5 py-3">
-                <p className="text-xs uppercase tracking-wider text-taupe-500">
-                  {r.label}
-                </p>
-                <p className="mt-1 text-sm text-ink-900">{r.value}</p>
-              </div>
-            ))}
-        </div>
-      )}
-
-      {/* Formulaire commentaire + validation */}
-      {questionnaire.status === "soumis" && (
-        <Card title="Marquer comme lu">
-          <form action={markQuestionnaireReadAction} className="space-y-4">
-            <input type="hidden" name="client_id" value={clientId} />
-            <input
-              type="hidden"
-              name="questionnaire_id"
-              value={questionnaire.id}
-            />
-            <OsTextarea
-              label="Commentaire coach (optionnel)"
-              name="coach_comment"
-              rows={3}
-              placeholder="Retour, recommandations, questions…"
-            />
-            <div className="flex justify-end">
-              <OsSubmitButton>Marquer comme lu →</OsSubmitButton>
-            </div>
-          </form>
-        </Card>
-      )}
-
-      {/* Commentaire existant */}
-      {questionnaire.status === "relu" && questionnaire.coach_comment && (
-        <div className="rounded-2xl border border-taupe-300/40 bg-sand-50 p-5">
-          <p className="text-xs uppercase tracking-wider text-taupe-500">
-            Votre commentaire
-          </p>
-          <p className="mt-2 text-sm text-ink-900">
-            {questionnaire.coach_comment}
-          </p>
-          {questionnaire.reviewed_at && (
-            <p className="mt-2 text-xs text-taupe-400">
-              Lu le {fmtDate.format(new Date(questionnaire.reviewed_at))}
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Widget résumé ──────────────────────────────────────────────
 
 function ClientSummary({
   packs,
   sessions,
   goals,
-  questionnaire,
 }: {
   packs: SessionPack[];
   sessions: Session[];
   goals: ClientGoal[];
-  questionnaire: Questionnaire | null;
 }) {
   const activePack = packs.find((p) => p.remaining > 0) ?? packs[0] ?? null;
   const lastSession = sessions.find((s) => s.status === "réalisée") ?? null;
@@ -1021,7 +856,6 @@ function ClientSummary({
         new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime(),
     )[0] ?? null;
   const activeGoals = goals.filter((g) => g.status === "actif").length;
-  const pendingQ = questionnaire?.status === "soumis";
 
   const stats: { label: string; value: string; sub?: string; alert?: boolean }[] = [
     {
@@ -1051,8 +885,7 @@ function ClientSummary({
     {
       label: "Objectifs actifs",
       value: String(activeGoals),
-      sub: pendingQ ? "Questionnaire à lire" : "Aucun questionnaire",
-      alert: pendingQ,
+      sub: activeGoals > 0 ? "en cours" : "Aucun objectif",
     },
   ];
 

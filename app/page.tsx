@@ -18,15 +18,13 @@ import { loadTexts } from "@/lib/content/texts.server";
 import { textOrDefault, type SiteTexts } from "@/lib/content/texts";
 import { loadImages } from "@/lib/content/images.server";
 import { getGalleryPhotos, type SiteImages } from "@/lib/content/images";
-import { loadActivePopup } from "@/lib/content/popups.server";
-import { PopupBanner } from "@/app/components/popup/PopupBanner";
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [coaches, texts, images, popup, visibleAvis] = await Promise.all([
+  const [coaches, texts, images, visibleAvis] = await Promise.all([
     loadActiveCoaches(),
     loadTexts(),
     loadImages(),
-    loadActivePopup("home"),
     loadVisibleTestimonials(),
   ]);
   return (
@@ -37,13 +35,12 @@ export default async function Home() {
         <Hero texts={texts} heroImage={images.hero} />
         <Approche texts={texts} />
         <CoachsPreview coaches={coaches} images={images} texts={texts} />
-        <GalerieAmbiance images={images} />
+        <CabinetSection images={images} />
         <Piliers texts={texts} />
         <AvisPreview texts={texts} testimonials={visibleAvis} />
         <CTAFinal texts={texts} />
       </main>
       <Footer />
-      {popup && <PopupBanner popup={popup} />}
     </>
   );
 }
@@ -305,10 +302,17 @@ function AvisPreview({
   );
 }
 
-function GalerieAmbiance({ images }: { images: SiteImages }) {
+function CabinetSection({ images }: { images: SiteImages }) {
   const cabinetPhotos = getGalleryPhotos(images, "cabinet-");
   const ambiancePhotos = getGalleryPhotos(images, "ambiance-");
-  const allPhotos = [...cabinetPhotos, ...ambiancePhotos].slice(0, 6);
+
+  // Exclude hero and background to avoid showing the same photo twice
+  const excludeUrls = new Set(
+    [images.hero, images.background].filter((u): u is string => u !== null),
+  );
+  const allPhotos = [...cabinetPhotos, ...ambiancePhotos]
+    .filter((url) => !excludeUrls.has(url))
+    .slice(0, 6);
 
   if (allPhotos.length === 0) return null;
 
@@ -324,28 +328,30 @@ function GalerieAmbiance({ images }: { images: SiteImages }) {
             <span className="italic text-taupe-600">pour votre progression.</span>
           </h2>
         </Reveal>
-        <div
-          className={`mt-10 grid gap-4 ${
-            allPhotos.length === 1
-              ? "grid-cols-1 max-w-xs"
-              : allPhotos.length === 2
-                ? "grid-cols-2"
-                : allPhotos.length <= 4
-                  ? "grid-cols-2 md:grid-cols-4"
-                  : "grid-cols-2 md:grid-cols-3"
-          }`}
-        >
-          {allPhotos.map((url, i) => (
-            <Reveal key={url} delay={i * 0.07}>
-              <div className="img-gallery-card aspect-[4/5]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" loading="lazy" />
-              </div>
-            </Reveal>
-          ))}
-        </div>
+        <EditorialGallery photos={allPhotos} />
       </Container>
     </Section>
+  );
+}
+
+function EditorialGallery({ photos }: { photos: string[] }) {
+  const visible = photos.slice(0, 3);
+  if (visible.length === 0) return null;
+
+  return (
+    <div className="mt-12 flex flex-wrap gap-6">
+      {visible.map((url, i) => (
+        <Reveal key={url} delay={i * 0.11}>
+          <div
+            className="img-gallery-editorial"
+            style={{ width: 168, height: 236 }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={url} alt="" loading="lazy" />
+          </div>
+        </Reveal>
+      ))}
+    </div>
   );
 }
 

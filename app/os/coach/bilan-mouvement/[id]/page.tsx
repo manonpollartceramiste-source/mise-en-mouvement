@@ -7,6 +7,7 @@ import {
   getProfileById,
 } from "@/lib/supabase/os-server";
 import { OsShell } from "@/app/os/_components/OsShell";
+import { DeleteBilanButton } from "./DeleteBilanButton";
 import type { AssessmentTestEntry, MovementAssessment } from "@/lib/os/types";
 
 export const dynamic = "force-dynamic";
@@ -228,6 +229,10 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
           >
             + Nouveau bilan
           </Link>
+          <DeleteBilanButton
+            bilanId={assessment.id}
+            clientId={assessment.client_id}
+          />
         </div>
       </div>
 

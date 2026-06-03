@@ -3,6 +3,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import {
   getCurrentUser,
+  getSupabaseAdmin,
   getSupabaseServer,
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
@@ -42,11 +43,15 @@ export async function saveContentKey<T>(
   return { ok: true };
 }
 
-/** Reads a single content key. Returns null if not found / not configured. */
+/**
+ * Reads a single content key.
+ * Uses the service-role client to bypass RLS — safe for server-side only reads.
+ * Returns null if not found / not configured.
+ */
 export async function readContentKey(key: string): Promise<unknown> {
   try {
     if (!isSupabaseConfigured()) return null;
-    const supabase = await getSupabaseServer();
+    const supabase = getSupabaseAdmin();
     const { data } = await supabase
       .from("content")
       .select("value")

@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClientAction } from "./actions";
 
 const inputCls =
   "w-full rounded-xl border border-taupe-300/60 bg-sand-50/50 px-4 py-3 text-sm text-ink-900 placeholder-taupe-400 focus:border-taupe-500 focus:outline-none focus:ring-1 focus:ring-taupe-500/30";
@@ -42,12 +41,16 @@ export function NewClientModal() {
     setError(null);
     startTransition(async () => {
       try {
-        const result = await createClientAction(form);
+        const res = await fetch("/api/os/clients/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        const result: { ok: boolean; error?: string } = await res.json();
         if (!result.ok) {
           setError(result.error ?? "Erreur inconnue.");
         } else {
           setSuccess(true);
-          // Navigation complète pour forcer un re-fetch serveur garanti
           setTimeout(() => {
             router.push("/os/coach/clients");
             router.refresh();

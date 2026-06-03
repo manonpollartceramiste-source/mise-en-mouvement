@@ -7,8 +7,6 @@ import { FadeIn } from "@/app/components/motion/FadeIn";
 import { Reveal } from "@/app/components/motion/Reveal";
 import { OfferCard } from "@/app/components/ui/OfferCard";
 import { loadOffers } from "@/lib/content/offers.server";
-import { loadActivePopup } from "@/lib/content/popups.server";
-import { PopupBanner } from "@/app/components/popup/PopupBanner";
 
 export const metadata: Metadata = {
   title: "Offres & tarifs",
@@ -46,10 +44,7 @@ const sections = [
 ];
 
 export default async function OffresPage() {
-  const [allOffers, popup] = await Promise.all([
-    loadOffers(),
-    loadActivePopup("offres"),
-  ]);
+  const allOffers = await loadOffers();
   return (
     <>
       <Header />
@@ -110,7 +105,6 @@ export default async function OffresPage() {
         })}
       </main>
       <Footer />
-      {popup && <PopupBanner popup={popup} />}
     </>
   );
 }

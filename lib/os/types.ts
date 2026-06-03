@@ -88,21 +88,6 @@ export type CoachNote = {
   updated_at: string;
 };
 
-export type QuestionnaireStatus = "en_attente" | "soumis" | "relu";
-
-export type Questionnaire = {
-  id: string;
-  client_id: string;
-  coach_id: string;
-  status: QuestionnaireStatus;
-  answers: QuestionnaireAnswers | null;
-  submitted_at: string | null;
-  reviewed_at: string | null;
-  coach_comment: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
 export type MovementTestType = "mobilité" | "force" | "cardio" | "équilibre" | "autre";
 
 export type MovementTest = {
@@ -204,27 +189,3 @@ export type MovementAssessmentWithClient = MovementAssessment & {
   client_display_name: string;
 };
 
-// Structure des réponses du questionnaire découverte
-export type QuestionnaireAnswers = {
-  // Objectifs
-  main_goal: string;
-  secondary_goals: string[];
-  motivation: string;
-  // Santé
-  medical_history: string;
-  injuries: string;
-  medications: string;
-  // Habitudes
-  current_activity: string;
-  activity_frequency: string;
-  sleep_hours: number | null;
-  stress_level: 1 | 2 | 3 | 4 | 5 | null;
-  // Alimentation
-  diet_description: string;
-  dietary_restrictions: string;
-  // Disponibilités
-  availability: string;
-  preferred_schedule: string;
-  // Libre
-  additional_info: string;
-};

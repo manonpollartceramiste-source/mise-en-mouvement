@@ -69,10 +69,6 @@ function formatName(name: string): string {
   return name.replace(/([a-zàâäéèêëïîôöùûüÿ])([A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜŸ])/g, "$1 $2").trim();
 }
 
-function coachInitials(name: string): string {
-  return name.trim().split(/\s+/).map(w => w[0]?.toUpperCase() ?? "").slice(0, 2).join("");
-}
-
 function scoreColor(s: number): string {
   return s >= 80 ? "#2E7D52" : s >= 60 ? "#B8956A" : s >= 40 ? "#C47040" : "#B84444";
 }
@@ -87,343 +83,788 @@ function statusLabel(score: number): string {
   return "À travailler";
 }
 
-function secTitle(label: string): string {
-  return `<div class="sec-head">
-    <span class="sec-label">${esc(label.toUpperCase())}</span>
-    <div class="sec-rule"></div>
-  </div>`;
+function scoreInterp(total: number): string {
+  if (total >= 80) return "Très bon niveau";
+  if (total >= 60) return "Niveau fonctionnel";
+  if (total >= 40) return "À travailler";
+  return "À corriger rapidement";
 }
 
-// ─── SVG : Score gauge ────────────────────────────────────────────────────────
+function sec(label: string): string {
+  return `<div class="sec"><span class="sec-lbl">${esc(label.toUpperCase())}</span><div class="sec-rule"></div></div>`;
+}
 
-function gaugeSvg(score: number): string {
-  const cx = 72, cy = 72, R = 56;
-  const circ   = 2 * Math.PI * R;
-  const filled = (circ * Math.min(score, 100) / 100).toFixed(2);
-  const gap    = (circ - circ * Math.min(score, 100) / 100).toFixed(2);
-  const col    = scoreColor(score);
-  const displayVal = (score / 10).toFixed(1).replace(".", ",");
-  const numSize    = displayVal.length >= 4 ? 34 : 42;
-  const numY       = displayVal.length >= 4 ? cy + 12 : cy + 15;
+// ─── SVG : grande jauge (score panel page 1) ─────────────────────────────────
 
-  const ticks = Array.from({ length: 40 }, (_, i) => {
-    const a     = -Math.PI / 2 + (2 * Math.PI * i / 40);
-    const major = i % 8 === 0;
-    const ro    = major ? 67 : 64;
-    const ri    = 59;
-    const x1    = (cx + ro * Math.cos(a)).toFixed(1);
-    const y1    = (cy + ro * Math.sin(a)).toFixed(1);
-    const x2    = (cx + ri * Math.cos(a)).toFixed(1);
-    const y2    = (cy + ri * Math.sin(a)).toFixed(1);
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#C8C0B0" stroke-width="${major ? "0.7" : "0.35"}" opacity="${major ? "0.55" : "0.26"}"/>`;
-  }).join("");
-
-  return `<svg width="164" height="164" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="${cx}" cy="${cy}" r="70" fill="none" stroke="#E4DCD0" stroke-width="0.4" opacity="0.6"/>
-    ${ticks}
-    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#EAE2D8" stroke-width="1.2"/>
-    <circle cx="${cx}" cy="${cy}" r="42" fill="none" stroke="#EEE8E0" stroke-width="0.35" opacity="0.5"/>
+function gaugeLarge(score: number): string {
+  const cx = 58, cy = 58, R = 48;
+  const circ = 2 * Math.PI * R;
+  const fill = (circ * Math.min(score, 100) / 100).toFixed(2);
+  const gap  = (circ - parseFloat(fill)).toFixed(2);
+  const col  = scoreColor(score);
+  const val  = (score / 10).toFixed(1).replace(".", ",");
+  return `<svg width="116" height="116" viewBox="0 0 116 116" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="rgba(184,149,106,0.10)" stroke-width="5"/>
     <g transform="rotate(-90,${cx},${cy})">
-      <circle cx="${cx}" cy="${cy}" r="${R}" fill="none"
-        stroke="${col}" stroke-width="1.5"
-        stroke-dasharray="${filled} ${gap}"
-        stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${col}" stroke-width="5.5"
+        stroke-dasharray="${fill} ${gap}" stroke-linecap="round"/>
     </g>
-    <line x1="${cx - 11}" y1="${cy - 5}" x2="${cx + 11}" y2="${cy - 5}"
-      stroke="#D4C4A8" stroke-width="0.5" opacity="0.7"/>
-    <text x="${cx}" y="${numY}" text-anchor="middle"
+    <text x="${cx}" y="${cy + 11}" text-anchor="middle"
       font-family="'Playfair Display',Georgia,serif"
-      font-size="${numSize}" font-weight="800" fill="${col}">${displayVal}</text>
-    <text x="${cx}" y="${cy + 30}" text-anchor="middle"
-      font-family="'Inter',-apple-system,sans-serif"
-      font-size="8" font-weight="300" fill="#C4B4A2" letter-spacing="1.5">/ 10</text>
+      font-size="33" font-weight="800" fill="${col}">${val}</text>
   </svg>`;
 }
 
-// ─── CSS ──────────────────────────────────────────────────────────────────────
+// ─── CSS ─────────────────────────────────────────────────────────────────────
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,600&family=Inter:wght@300;400;500;600;700;800&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 @page{size:A4 portrait;margin:0}
-
+html,body{overflow:hidden}
+::-webkit-scrollbar{display:none}
 body{
   font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  font-size:16px;line-height:1.55;
   background:#F2EEE7;
-  -webkit-print-color-adjust:exact;
-  print-color-adjust:exact;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
 }
-
 .page{
-  width:210mm;height:297mm;
-  overflow:hidden;
+  width:210mm;height:297mm;overflow:hidden;
   display:flex;flex-direction:column;
   background:#F2EEE7;
   page-break-after:always;
 }
 .page:last-child{page-break-after:auto}
 
-/* ═══════════ HEADER ═══════════ */
-.doc-header{
-  flex:0 0 28mm;
-  background:linear-gradient(180deg,#FFFFFF 0%,#FAF8F4 100%);
+/* ── HEADER ── */
+.hd{
+  flex-shrink:0;background:#1E1812;
+  padding:7pt 12mm;
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 12mm;
-  border-bottom:1pt solid #C8A87A;
+  border-bottom:1.5pt solid #B8956A;
 }
-.header-brand{display:flex;align-items:center;gap:16pt}
-.logo-img{
-  height:90px;width:auto;max-width:320px;
+.hd-brand{display:flex;align-items:center;gap:10pt}
+.hd-logo{
+  height:34px;width:auto;max-width:110px;
   object-fit:contain;object-position:left center;
-  display:block;flex-shrink:0;
-  filter:drop-shadow(0 0 14px rgba(184,149,106,0.20)) drop-shadow(0 1px 4px rgba(30,24,18,0.09));
+  filter:brightness(0) invert(1) opacity(0.85);
+  flex-shrink:0;
 }
-.brand-sep{width:0.7pt;height:56px;background:linear-gradient(180deg,transparent,#C8BEA8 30%,#C8BEA8 70%,transparent);flex-shrink:0}
-.brand-text{display:flex;flex-direction:column;gap:2pt}
-.cabinet-name{font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:700;color:#100C08;letter-spacing:-0.6px}
-.cabinet-tagline{font-size:10px;font-weight:500;color:#C09A6C;letter-spacing:2.5px;text-transform:uppercase;margin-top:2pt}
-.cabinet-sub{font-size:11px;color:#A89C8C;margin-top:2pt}
-.header-right{text-align:right;display:flex;flex-direction:column;gap:2pt;border-left:0.5pt solid #EDE5DA;padding-left:12pt}
-.header-date-lbl{font-size:10px;font-weight:600;color:#C09A6C;letter-spacing:2px;text-transform:uppercase}
-.header-date-val{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-weight:700;color:#1A1410;letter-spacing:-0.2px}
+.hd-sep{width:0.6pt;height:26px;background:rgba(184,149,106,0.45);flex-shrink:0}
+.hd-name{font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:700;color:#F0E8DA;letter-spacing:-0.2px}
+.hd-contact{font-size:11px;color:#7A6A58;margin-top:1pt;letter-spacing:0.2px}
+.hd-right{text-align:right}
+.hd-date-lbl{font-size:10.5px;font-weight:700;color:#B8956A;letter-spacing:2px;text-transform:uppercase}
+.hd-date-val{font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:700;color:#E8DDD0;display:block;margin-top:1pt}
 
-/* ═══════════ HERO ═══════════ */
+/* ── HERO page 1 — typographique, sans score ── */
 .hero{
-  flex:0 0 62mm;display:flex;position:relative;
-  background-color:#F7F4EF;
-  background-image:
-    radial-gradient(ellipse 70% 120% at 112% 50%, rgba(184,149,106,0.13) 0%, transparent 60%),
-    linear-gradient(180deg, rgba(255,253,250,0.50) 0%, transparent 32%);
-  border-bottom:0.7pt solid #DDD5C8;
+  flex-shrink:0;
+  background:linear-gradient(120deg,#18120A 0%,#261E12 55%,#1E1610 100%);
+  padding:14pt 12mm 12pt;
+  border-bottom:0.5pt solid #3A3020;
 }
-.hero-accent{width:5mm;flex-shrink:0;background:linear-gradient(180deg,#EAD9AE 0%,#B8956A 35%,#9A7A52 80%,#7A5A38 100%)}
-.hero-main{flex:1;display:flex;align-items:center;padding:0 10mm 0 9mm;gap:0}
-.hero-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:0;padding-right:6mm}
 .hero-overline{font-size:11px;font-weight:700;color:#B8956A;letter-spacing:3px;text-transform:uppercase;margin-bottom:6pt}
 .hero-name{
-  font-family:'Playfair Display',Georgia,'Times New Roman',serif;
-  font-size:68px;font-weight:800;color:#0D0905;
-  line-height:0.85;letter-spacing:-3px;margin-bottom:12pt;
-  text-shadow:0 1px 6px rgba(20,14,9,0.08);
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:38px;font-weight:800;color:#F5EFE5;
+  line-height:1;letter-spacing:-0.5px;margin-bottom:7pt;
 }
-.hero-coach-row{display:flex;align-items:center;gap:9pt;padding-top:10pt;border-top:0.6pt solid #E4DCD4}
-.coach-avatar{width:34px;height:34px;border-radius:50%;background:#1E1812;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1.5pt solid #B8956A}
-.coach-initials{font-family:'Playfair Display',Georgia,serif;font-size:11px;font-weight:700;color:#E8D5A8;line-height:1}
-.coach-info{display:flex;flex-direction:column;gap:2pt;min-width:0}
-.coach-name-txt{font-size:13px;font-weight:700;color:#4A3C30;letter-spacing:0.2px}
-.hero-score{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4pt;padding-left:8mm;border-left:0.8pt solid #E0D6CA}
-.hero-score-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;text-align:center;color:#B8956A}
-.hero-score-status{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-weight:700;text-align:center;letter-spacing:-0.1px}
+.hero-meta{display:flex;align-items:center;gap:11pt}
+.hero-meta-item{font-size:13px;color:#7A6A58}
+.hero-meta-item strong{color:#C4AA7A;font-weight:600}
+.hero-meta-dot{width:3pt;height:3pt;background:rgba(184,149,106,0.4);border-radius:50%;flex-shrink:0}
 
-/* ═══════════ PAGE 1 — 2 COLONNES ═══════════ */
-.p1-body{flex:1;padding:5mm 12mm 5mm;display:flex;gap:6mm;overflow:hidden;min-height:0}
-.p1-col{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
-.p1-col-card{
-  flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;
-  background:#FDFCF9;border-radius:11pt;padding:13pt 16pt 11pt;
-  box-shadow:0 1pt 3pt rgba(30,24,18,0.04),0 4pt 16pt rgba(30,24,18,0.07);
-  border:0.5pt solid rgba(184,149,106,0.10);
+/* ── SECTION LABEL ── */
+.sec{display:flex;align-items:center;gap:7pt;margin-bottom:6pt;flex-shrink:0}
+.sec-lbl{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap}
+.sec-rule{flex:1;height:0.35pt;background:linear-gradient(90deg,#D4C8B8,transparent)}
+
+/* ── PAGE 1 — 2 colonnes ── */
+.p1-body{
+  flex:1;min-height:0;overflow:hidden;
+  display:flex;padding:5mm 12mm 3mm;gap:0;
+}
+.p1-left{
+  flex:0 0 49%;display:flex;flex-direction:column;
+  padding-right:7mm;
+}
+.p1-vsep{
+  width:0.35pt;background:#E4DDD2;flex-shrink:0;
+  align-self:stretch;
+}
+.p1-right{
+  flex:1;display:flex;flex-direction:column;
+  padding-left:7mm;
 }
 
-/* ═══════════ AXES ═══════════ */
-.sec-head{display:flex;align-items:center;margin-bottom:10pt}
-.sec-label{font-size:10px;font-weight:700;color:#A89070;letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap}
-.sec-rule{flex:1;height:0.4pt;background:linear-gradient(90deg,#E0D6CA,transparent);margin-left:10pt}
+/* ── SECTION BLOCK — remplace .card pour la plupart des blocs ── */
+.sblock{flex-shrink:0;padding-bottom:4mm}
+.sblock+.sblock{padding-top:4mm;border-top:0.35pt solid #EDE5DA}
 
-.axes-card{flex-shrink:0;background:#FDFCF9;border-radius:11pt;padding:13pt 16pt 11pt;box-shadow:0 1pt 3pt rgba(30,24,18,0.04),0 4pt 16pt rgba(30,24,18,0.07);border:0.5pt solid rgba(184,149,106,0.10)}
-.axis-row{display:flex;align-items:center;padding:5pt 0;gap:12pt}
-.axis-row+.axis-row{border-top:0.4pt solid #F2EBE2}
-.axis-lbl{font-size:11px;font-weight:700;color:#9A8C80;letter-spacing:0.8px;text-transform:uppercase;width:62pt;flex-shrink:0}
-.axis-track{flex:1;height:5pt;border-radius:99pt;background:#EDE5DA;overflow:hidden}
-.axis-fill{height:5pt;border-radius:99pt}
-.axis-num{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:700;width:22pt;text-align:right;flex-shrink:0;line-height:1}
-.axis-den{font-size:12px;color:#B8A898;width:18pt;flex-shrink:0;line-height:1}
+/* ── SCORE PANEL (colonne droite page 1) ── */
+.score-panel{
+  display:flex;flex-direction:column;align-items:center;
+  padding:6pt 0 12pt;gap:3pt;flex-shrink:0;
+}
+.score-panel+.sblock{padding-top:4mm;border-top:0.35pt solid #EDE5DA}
+.score-panel-lbl{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:2pt}
+.score-panel-status{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700}
+.score-panel-interp{font-size:11.5px;color:rgba(184,149,106,0.65);letter-spacing:1px;text-transform:uppercase}
 
-/* ═══════════ PROGRAMME ═══════════ */
-.prog-list{display:flex;flex-direction:column;flex:1;margin-bottom:6pt}
-.prog-item{padding:8pt 0;border-bottom:0.4pt solid #EDE5DA;display:flex;flex-direction:column;gap:3pt}
-.prog-item:last-child{border-bottom:none}
-.prog-meta{display:flex;align-items:center;gap:7pt;margin-bottom:1pt}
-.prog-rank{font-family:'Playfair Display',Georgia,serif;font-size:10px;font-weight:700;color:#D8D0C0}
-.prog-step{font-size:10px;font-weight:700;color:#B8956A;letter-spacing:2px;text-transform:uppercase}
-.prog-name{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-weight:700;color:#1A1410;line-height:1.25}
-.freq-badge{border-radius:7pt;background:#1E1812;padding:9pt 13pt;margin-top:auto;border-left:3pt solid #B8956A;flex-shrink:0}
-.freq-lbl{font-size:10px;font-weight:700;color:#B8956A;letter-spacing:2px;text-transform:uppercase;margin-bottom:4pt}
-.freq-val{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-weight:700;color:#F5EFE5;line-height:1.3}
+/* ── AXES ── */
+.axis-row{display:flex;align-items:center;gap:7pt;padding:4.5pt 0;border-bottom:0.35pt solid #EDE5DA}
+.axis-row:last-child{border-bottom:none}
+.axis-lbl{font-size:13px;font-weight:600;color:#7A6A58;letter-spacing:0.2px;width:70pt;flex-shrink:0}
+.axis-track{flex:1;height:4pt;border-radius:99pt;background:#E8DDD0;overflow:hidden;min-width:20pt}
+.axis-fill{height:4pt;border-radius:99pt}
+.axis-num{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:700;width:17pt;text-align:right;flex-shrink:0;line-height:1}
+.axis-den{font-size:12px;color:#C0B0A0;width:13pt;flex-shrink:0}
 
-/* ═══════════ FOOTER ═══════════ */
-.footer{flex:0 0 9mm;background:#FDFCF9;display:flex;align-items:center;justify-content:space-between;padding:0 12mm;border-top:0.6pt solid #E0D6CA}
-.footer-text{font-size:12px;color:#B8A898;letter-spacing:0.3px}
-.footer-dot{font-size:7px;color:#B8956A}
+/* ── FORCES & PRIORITÉS ── */
+.fp-wrap{display:flex;gap:0;align-items:flex-start}
+.fp-col{flex:1;min-width:0}
+.fp-col:first-child{padding-right:7pt;border-right:0.35pt solid #E4DDD2}
+.fp-col:last-child{padding-left:7pt}
+.fp-title{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2px;text-transform:uppercase;margin-bottom:5pt}
+.fp-item{font-size:14.5px;color:#1A1410;font-weight:500;padding:2.5pt 0;display:flex;align-items:center;gap:5pt;line-height:1.35}
+.fp-check{color:#2E7D52;font-size:11px;flex-shrink:0}
+.fp-dot{color:#C47040;font-size:11px;flex-shrink:0}
 
-/* ═══════════ MINI HEADER (page 2) ═══════════ */
-.mini-header{flex:0 0 13mm;background:#1E1812;display:flex;align-items:center;justify-content:space-between;padding:0 12mm;border-bottom:1pt solid rgba(184,149,106,0.3)}
-.mini-left{display:flex;align-items:center;gap:9pt}
-.mini-dia{width:4.5pt;height:4.5pt;background:#B8956A;transform:rotate(45deg);flex-shrink:0}
-.mini-client{font-family:'Playfair Display',Georgia,serif;font-size:12px;font-weight:700;color:#F5EFE5}
-.mini-sub{font-size:11px;color:#6A5A48}
-.mini-pg{font-size:11px;color:#6A5A48;letter-spacing:0.4px}
+/* ── LIMITATIONS ── */
+.chips{display:flex;flex-wrap:wrap;gap:0;margin-top:3pt}
+.chip{
+  font-size:13.5px;font-weight:500;padding:2.5pt 8pt;border-radius:3pt;
+  background:#EAE2D4;color:#5A4A38;
+  display:inline-block;margin:2pt 2.5pt 0 0;
+  border:0.5pt solid #D8CDB8;
+}
 
-/* ═══════════ BODY PAGE 2 ═══════════ */
-.body2{flex:1;padding:5mm 12mm 4mm;display:flex;flex-direction:column;overflow:hidden}
+/* ── COMPENSATION ── */
+.comp-warn-pill{
+  display:flex;align-items:flex-start;gap:6pt;padding:5pt 0 5pt 9pt;
+  border-left:2pt solid #C47040;flex-shrink:0;margin-top:3pt;
+}
+.comp-warn-icon{font-size:11px;color:#C47040;flex-shrink:0;margin-top:1pt}
+.comp-warn-text{font-size:13px;color:#7A5020;line-height:1.45;font-style:italic}
 
-/* ═══════════ OBSERVATIONS ═══════════ */
-.obs-editorial{padding:12pt 16pt 12pt 20pt;border-left:4pt solid #B8956A;background:rgba(255,253,248,0.65);border-radius:0 8pt 8pt 0;margin-bottom:4mm;flex-shrink:0}
-.obs-text{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-style:italic;color:#1E1610;line-height:1.75;margin-bottom:6pt}
-.obs-text-sub{font-size:13px;color:#6A5E52;line-height:1.6}
+/* ── TESTS (page 1) ── */
+.test-row{display:flex;align-items:flex-start;padding:5pt 0;gap:7pt;border-bottom:0.35pt solid #EDE5DA}
+.test-row:last-child{border-bottom:none}
+.test-bar{width:2.5pt;border-radius:99pt;flex-shrink:0;align-self:stretch;min-height:14px;margin-top:2pt}
+.test-body{flex:1;min-width:0}
+.test-top{display:flex;align-items:center;justify-content:space-between;gap:5pt;margin-bottom:2pt}
+.test-name{font-size:15px;font-weight:600;color:#1A1410;line-height:1.3}
+.test-badge{
+  font-size:11.5px;font-weight:700;padding:2pt 6pt;border-radius:2pt;
+  border-width:0.6pt;border-style:solid;letter-spacing:0.3px;
+  text-transform:uppercase;white-space:nowrap;flex-shrink:0;
+}
+.test-obs{font-size:13.5px;color:#9A8C80;font-style:italic;line-height:1.45}
 
-/* ═══════════ OBJECTIF PROCHAIN BILAN ═══════════ */
-.nb-card{background:#1E1812;border-radius:9pt;padding:13pt 18pt;box-shadow:0 6pt 28pt rgba(30,24,18,0.44),0 2pt 6pt rgba(30,24,18,0.22);flex-shrink:0;margin-bottom:4mm;border-left:6pt solid #B8956A;border-top:0.5pt solid rgba(184,149,106,0.22);border-right:0.5pt solid rgba(184,149,106,0.22);border-bottom:0.5pt solid rgba(184,149,106,0.22)}
-.nb-card .sec-label{color:rgba(184,149,106,0.90)}
-.nb-card .sec-rule{background:linear-gradient(90deg,rgba(184,149,106,0.38),transparent)}
-.nb-row{display:flex;align-items:center;gap:0;margin-top:8pt}
+/* ── RESSENTI ── */
+.res-row{display:flex;align-items:center;gap:7pt;padding:4pt 0;border-bottom:0.35pt solid #EDE5DA}
+.res-row:last-child{border-bottom:none}
+.res-lbl{font-size:13px;font-weight:600;color:#7A6A58;width:52pt;flex-shrink:0}
+.res-track{flex:1;height:3pt;border-radius:99pt;background:#E8DDD0;overflow:hidden}
+.res-fill{height:3pt;border-radius:99pt}
+.res-val{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;width:21pt;text-align:right;flex-shrink:0;line-height:1}
+
+/* ── PROGRAMME ── */
+.prog-row{display:flex;gap:8pt;align-items:flex-start;padding:4pt 0;border-bottom:0.35pt solid #EDE5DA}
+.prog-row:last-child{border-bottom:none}
+.prog-num{
+  width:16px;height:16px;border-radius:50%;background:#1E1812;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;border:0.6pt solid #B8956A;margin-top:2pt;
+}
+.prog-num-txt{font-family:'Playfair Display',Georgia,serif;font-size:8px;font-weight:700;color:#E8D5A8}
+.prog-step-lbl{font-size:12px;font-weight:700;color:#B8956A;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:1pt}
+.prog-name{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:#1A1410;line-height:1.2}
+.freq-pill{
+  display:flex;align-items:center;gap:8pt;background:#1E1812;border-radius:4pt;
+  padding:5pt 10pt;margin-top:6pt;border-left:2.5pt solid #B8956A;flex-shrink:0;
+}
+.freq-lbl{font-size:11.5px;font-weight:700;color:#B8956A;letter-spacing:1.2px;text-transform:uppercase}
+.freq-val{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:#F5EFE5}
+
+/* ── FOOTER ── */
+.footer{
+  flex-shrink:0;background:#FDFCF9;height:7mm;display:flex;align-items:center;
+  justify-content:space-between;padding:0 12mm;border-top:0.5pt solid #DDD5C8;
+}
+.footer-centered{
+  flex-shrink:0;background:#FDFCF9;height:7mm;display:flex;align-items:center;
+  justify-content:center;gap:8pt;padding:0 12mm;border-top:0.5pt solid #DDD5C8;
+}
+.footer-txt{font-size:12.5px;color:#B8A898;letter-spacing:0.2px}
+.footer-dot{font-size:5px;color:#C4A87A}
+
+/* ── MINI HEADER pages 2 & 3 ── */
+.mini-hd{
+  flex-shrink:0;background:#1E1812;height:9.5mm;display:flex;align-items:center;
+  justify-content:space-between;padding:0 12mm;
+  border-bottom:0.7pt solid rgba(184,149,106,0.3);
+}
+.mini-left{display:flex;align-items:center;gap:7pt}
+.mini-dia{width:4pt;height:4pt;background:#B8956A;transform:rotate(45deg);flex-shrink:0}
+.mini-client{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-weight:700;color:#F5EFE5}
+.mini-sub{font-size:12.5px;color:#5A4A38}
+.mini-pg{font-size:12.5px;color:#5A4A38}
+
+/* ── PAGE 2 LAYOUT ── */
+.p2-body{
+  flex:1;display:flex;flex-direction:column;
+  padding:4mm 12mm 4mm;gap:1.5mm;min-height:0;overflow:hidden;
+}
+.p2-upper{display:flex;gap:0;align-items:stretch;flex-shrink:0}
+.p2-obs-col{flex:0 0 56%;padding-right:7mm;display:flex;flex-direction:column}
+.p2-vsep{width:0.35pt;background:#E4DDD2;flex-shrink:0;align-self:stretch}
+.p2-side-col{flex:1;padding-left:7mm;display:flex;flex-direction:column;gap:3.5mm}
+.p2-radar{flex-shrink:0;display:flex;justify-content:center}
+
+/* ── OBSERVATIONS (page 2) ── */
+.obs{
+  padding:7pt 12pt 7pt 14pt;border-left:3pt solid #B8956A;
+  background:#FDFCF9;border-radius:0 6pt 6pt 0;flex:1;
+}
+.obs-text{
+  font-family:'Playfair Display',Georgia,serif;font-size:20px;font-style:italic;
+  color:#1E1610;line-height:1.72;margin-bottom:5pt;
+}
+.obs-sub{font-size:16.5px;color:#7A6A5E;line-height:1.65}
+
+/* ── OBJECTIF PROCHAIN BILAN ── */
+.nb{
+  background:#1E1812;border-radius:5pt;padding:7pt 10pt;
+  border-left:3pt solid #B8956A;flex-shrink:0;
+  border-top:0.5pt solid rgba(184,149,106,0.2);
+  border-right:0.5pt solid rgba(184,149,106,0.2);
+  border-bottom:0.5pt solid rgba(184,149,106,0.2);
+}
+.nb .sec-lbl{color:rgba(184,149,106,0.85)}
+.nb .sec-rule{background:linear-gradient(90deg,rgba(184,149,106,0.4),transparent)}
+.nb-row{display:flex;align-items:center;margin-top:5pt}
 .nb-col{display:flex;flex-direction:column;align-items:center;flex:1}
-.nb-lbl{font-size:11px;font-weight:700;color:rgba(184,149,106,0.65);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6pt;text-align:center}
-.nb-score{font-family:'Playfair Display',Georgia,serif;font-size:34px;font-weight:800;line-height:1}
-.nb-unit{font-size:13px;font-weight:400;color:rgba(184,149,106,0.55);margin-left:1pt}
-.nb-delay{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:#E8DDD0;text-align:center;line-height:1.25}
-.nb-arrow{font-size:20px;color:#B8956A;padding:0 8pt 2pt;flex-shrink:0}
-.nb-sep{width:0.5pt;height:30px;background:linear-gradient(180deg,transparent,rgba(184,149,106,0.42) 30%,rgba(184,149,106,0.42) 70%,transparent);flex-shrink:0;margin:0 10pt 2pt}
+.nb-lbl{font-size:11px;font-weight:700;color:rgba(184,149,106,0.65);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt;text-align:center}
+.nb-score{font-family:'Playfair Display',Georgia,serif;font-size:27px;font-weight:800;line-height:1;text-align:center}
+.nb-unit{font-size:12px;color:rgba(184,149,106,0.5);margin-left:1pt;font-weight:400}
+.nb-delay{font-family:'Playfair Display',Georgia,serif;font-size:13px;font-weight:700;color:#E8DDD0;text-align:center;line-height:1.3}
+.nb-arrow{font-size:14px;color:#B8956A;padding:0 5pt;flex-shrink:0}
+.nb-sep{width:0.5pt;height:22px;background:rgba(184,149,106,0.35);flex-shrink:0;margin:0 7pt}
 
-/* ═══════════ PROJECTION 6 SEMAINES ═══════════ */
-.proj-card{padding:10pt 0 8pt;margin-bottom:4mm;flex-shrink:0;border-top:0.5pt solid #E4DCD4}
-.proj-steps{display:flex;align-items:flex-start;gap:0;margin-top:10pt}
-.proj-step{flex:1;display:flex;flex-direction:column;align-items:flex-start;position:relative}
-.proj-connector{flex:0 0 18pt;display:flex;align-items:flex-start;padding-top:8pt;justify-content:center}
-.proj-connector-line{width:100%;height:0.5pt;background:linear-gradient(90deg,#D4C4A8 0%,#B8956A 50%,#D4C4A8 100%)}
-.proj-num{width:22px;height:22px;border-radius:50%;background:#1E1812;font-family:'Playfair Display',Georgia,serif;font-size:10px;font-weight:700;color:#E8D5A8;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:5pt;border:1pt solid #B8956A}
-.proj-title{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:#1A1410;margin-bottom:2pt}
-.proj-week{font-size:10px;font-weight:700;color:#B8956A;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3pt}
-.proj-desc{font-size:13px;color:#6A5E52;line-height:1.5;padding-right:6pt}
+/* ── TESTS TABLE (page 2) ── */
+.ttest-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:4.5pt 0;border-bottom:0.35pt solid #EDE5DA;gap:8pt;
+}
+.ttest-row:last-child{border-bottom:none}
+.ttest-name{font-size:15px;font-weight:500;color:#1A1410;flex:1;min-width:0}
+.ttest-badge{
+  font-size:12.5px;font-weight:700;padding:2.5pt 7pt;border-radius:2pt;
+  border-width:0.6pt;border-style:solid;white-space:nowrap;flex-shrink:0;letter-spacing:0.2px;
+}
 
-/* ═══════════ TESTS ═══════════ */
-.tests-card{flex-shrink:0;background:#FDFCF9;border-radius:10pt;overflow:hidden;box-shadow:0 1pt 3pt rgba(30,24,18,0.04),0 4pt 14pt rgba(30,24,18,0.06);border:0.5pt solid rgba(184,149,106,0.09);margin-bottom:4mm}
-.tests-hd{padding:11pt 14pt 0}
-.test-row{display:flex;align-items:stretch;padding:8pt 14pt}
-.test-row+.test-row{border-top:0.4pt solid #F2EBE2}
-.test-bar{width:3pt;border-radius:99pt;margin-right:12pt;flex-shrink:0;align-self:stretch}
-.test-body{flex:1}
-.test-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:2pt}
-.test-name{font-size:14px;font-weight:700;color:#1A1410}
-.test-badge{font-size:11px;font-weight:700;padding:2pt 9pt;border-radius:99pt;border-width:0.7pt;border-style:solid;letter-spacing:0.5px;text-transform:uppercase}
-.test-obs{font-family:'Playfair Display',Georgia,serif;font-size:12px;font-style:italic;color:#9A8C80;line-height:1.5}
-
-/* ═══════════ ZONES + COMPOSITION — ROW ═══════════ */
-.p2-side-row{display:flex;gap:5mm;flex-shrink:0;margin-bottom:4mm;align-items:flex-start}
-.p2-side-col{flex:1;min-width:0}
-
-/* Zones chips */
-.z-chip{font-size:12px;font-weight:600;padding:4pt 10pt;border-radius:99pt;border-width:0.8pt;border-style:solid;display:inline-block;margin:3pt 4pt 0 0}
+/* ── ZONES (page 2) ── */
+.z-chips{display:flex;flex-wrap:wrap;margin-top:4pt}
+.z-chip{
+  font-size:14px;font-weight:500;padding:3pt 9pt;border-radius:3pt;
+  border-width:0.6pt;border-style:solid;display:inline-block;margin:2pt 2.5pt 0 0;
+}
 .z-forte{color:#8A2020;background:#F5E0E0;border-color:#D88080}
 .z-surv{color:#7A4010;background:#F5E8D8;border-color:#D8A870}
 
-/* Composition compacte */
-.comp2-grid{display:grid;grid-template-columns:1fr 1fr;gap:8pt 12pt;margin-top:8pt}
-.comp2-item{display:flex;flex-direction:column;gap:2pt}
-.comp2-k{font-size:11px;font-weight:700;color:#B8A898;letter-spacing:1px;text-transform:uppercase}
-.comp2-v{font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:700;color:#1A1410;line-height:1}
-.comp2-u{font-family:'Inter',-apple-system,sans-serif;font-size:12px;font-weight:400;color:#9A8C80;margin-left:2pt}
+/* ── RADAR (page 2) ── */
+.card{
+  background:#FDFCF9;border-radius:7pt;padding:8pt 11pt;
+  box-shadow:0 1pt 3pt rgba(30,24,18,0.04),0 3pt 10pt rgba(30,24,18,0.05);
+  border:0.5pt solid rgba(184,149,106,0.09);flex-shrink:0;
+}
+.radar-zone{
+  width:100%;box-sizing:border-box;
+  background:rgba(212,200,178,0.10);
+  border-radius:5pt;
+  border:0.4pt solid rgba(184,149,106,0.14);
+  padding:5pt 14pt 3pt;
+}
 
-/* Recommandations */
-.rec-chips{display:flex;flex-wrap:wrap;gap:0;margin-top:6pt}
-.rec-chip{font-size:12px;font-weight:600;padding:4pt 11pt;border-radius:99pt;border-width:0.7pt;border-style:solid;color:#4A3C30;background:#EDE3D0;border-color:#D8C8B0;display:inline-block;margin:3pt 5pt 0 0}
+/* ── PAGE 3 LAYOUT ── */
+.p3-body{
+  flex:1;display:flex;flex-direction:column;
+  padding:9mm 12mm 4mm;gap:8mm;min-height:0;overflow:hidden;
+}
+.p3-section{flex-shrink:0}
 
-/* ═══════════ CLOSING ═══════════ */
-.closing{flex-shrink:0;margin-top:auto;padding-top:4mm;text-align:center}
-.closing-rule-row{display:flex;align-items:center;margin-bottom:10pt}
-.closing-rule-line{flex:1;height:0.5pt;background:linear-gradient(90deg,transparent,#DDD5C8 30%,#DDD5C8 70%,transparent)}
-.closing-dia{width:5pt;height:5pt;background:#B8956A;transform:rotate(45deg);margin:0 10pt;flex-shrink:0}
-.closing-inner{display:flex;flex-direction:column;align-items:center;gap:3pt}
-.closing-name{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-weight:700;color:#1A1410;letter-spacing:-0.3px}
-.closing-tagline{font-size:12px;color:#9A8C80;letter-spacing:0.3px;margin-top:1pt}
-.closing-contact{font-size:12px;color:#B8A898;margin-top:2pt}
-.closing-conf{font-size:11px;color:#C4B8A8;letter-spacing:0.5px;text-transform:uppercase;margin-top:4pt}
+/* ── COMPOSITION ÉDITORIALE (page 3) ── */
+.comp-editorial{
+  display:flex;align-items:stretch;margin-top:8pt;
+}
+.comp-stat{
+  flex:1;text-align:center;padding:0 8pt;
+  border-right:0.35pt solid #E4DDD2;
+}
+.comp-stat:first-child{padding-left:0}
+.comp-stat:last-child{border-right:none;padding-right:0}
+.comp-stat-v{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:29px;font-weight:700;color:#1A1410;line-height:1;
+}
+.comp-stat-u{font-size:15px;color:#9A8C80;margin-left:1pt;font-weight:400}
+.comp-stat-k{
+  font-size:11px;font-weight:600;color:#A89070;
+  letter-spacing:1px;text-transform:uppercase;margin-top:4pt;
+}
+
+/* ── SEGMENTAIRE MUSCULAIRE (page 3) ── */
+.seg-sub-hd{display:flex;align-items:center;gap:6pt;margin:8pt 0 5pt;flex-shrink:0}
+.seg-sub-lbl{font-size:9.5px;font-weight:700;color:#C0B0A0;letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
+.seg-sub-rule{flex:1;height:0.3pt;background:linear-gradient(90deg,#DDD5C8,transparent)}
+.seg-row{display:flex;align-items:stretch}
+.seg-stat{flex:1;text-align:center;padding:0 5pt;border-right:0.35pt solid #E4DDD2}
+.seg-stat:first-child{padding-left:0}
+.seg-stat:last-child{border-right:none;padding-right:0}
+.seg-stat-v{font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:#3A2E24;line-height:1}
+.seg-stat-u{font-size:13px;color:#9A8C80;font-weight:400;margin-left:1pt}
+.seg-stat-k{font-size:10.5px;font-weight:600;color:#B8A898;letter-spacing:0.8px;text-transform:uppercase;margin-top:4pt}
+
+/* ── RECOMMANDATIONS COACH (page 3) ── */
+.rec-chips{display:flex;flex-wrap:wrap;margin-top:5pt}
+.rec-chip{
+  font-size:14px;font-weight:500;padding:3pt 9pt;border-radius:3pt;
+  border:0.5pt solid #D4C4AC;background:#EDE3D0;color:#4A3C30;
+  display:inline-block;margin:2pt 3pt 0 0;
+}
+.rec-freq{
+  display:flex;align-items:center;gap:6pt;margin-top:7pt;
+  padding-top:6pt;border-top:0.35pt solid #EDE5DA;
+}
+.rec-freq-lbl{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2px;text-transform:uppercase}
+.rec-freq-val{font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;color:#1A1410}
+.rec-action{
+  font-size:17px;font-weight:500;color:#5A4A38;line-height:1.6;margin-top:7pt;
+  padding:8pt 11pt;background:transparent;
+  border-left:2pt solid #B8956A;
+}
+.rec-detail{
+  font-size:18.5px;color:#3E3028;line-height:1.8;margin-top:8pt;
+  font-style:italic;padding-top:7pt;border-top:0.35pt solid #EDE5DA;
+}
+
+/* ── PROJECTION ÉDITORIALE (page 3) ── */
+.proj-editorial{
+  background:#1E1812;border-radius:6pt;
+  padding:12pt 14pt 14pt;
+  border-left:3pt solid #B8956A;
+  border-top:0.5pt solid rgba(184,149,106,0.2);
+  border-right:0.5pt solid rgba(184,149,106,0.2);
+  border-bottom:0.5pt solid rgba(184,149,106,0.2);
+  flex-shrink:0;
+}
+.proj-editorial .sec-lbl{color:rgba(184,149,106,0.85)}
+.proj-editorial .sec-rule{background:linear-gradient(90deg,rgba(184,149,106,0.4),transparent)}
+.proj-ed-steps{display:flex;align-items:stretch;margin-top:10pt;gap:0}
+.proj-ed-step{
+  flex:1;padding:0 14pt;
+  border-right:0.5pt solid rgba(184,149,106,0.18);
+}
+.proj-ed-step:first-child{padding-left:0}
+.proj-ed-step:last-child{border-right:none;padding-right:0}
+.proj-ed-num{
+  width:22px;height:22px;border-radius:50%;
+  background:rgba(184,149,106,0.12);
+  font-family:'Playfair Display',Georgia,serif;font-size:10px;font-weight:700;color:#C4A87A;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:7pt;border:0.6pt solid rgba(184,149,106,0.35);
+}
+.proj-ed-week{
+  font-size:11px;font-weight:700;color:rgba(184,149,106,0.65);
+  letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4pt;
+}
+.proj-ed-title{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:17px;font-weight:700;color:#F5EFE5;
+  margin-bottom:5pt;line-height:1.2;
+}
+.proj-ed-desc{font-size:14px;color:#9A8878;line-height:1.5}
+
+/* ── CLOSING (page 3) ── */
+.closing{padding:3pt 12mm 4mm;text-align:center;flex-shrink:0;position:relative;top:-20px}
+.closing-rule{display:flex;align-items:center;margin-bottom:5pt}
+.closing-line{flex:1;height:0.4pt;background:linear-gradient(90deg,transparent,#DDD5C8 30%,#DDD5C8 70%,transparent)}
+.closing-dia{width:4pt;height:4pt;background:#B8956A;transform:rotate(45deg);margin:0 8pt;flex-shrink:0}
+.closing-name{font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:700;color:#1A1410}
+.closing-sub{font-size:13px;color:#9A8C80;margin-top:2pt}
+.closing-contact{font-size:13px;color:#B8A898;margin-top:1pt}
+.closing-conf{font-size:11.5px;color:#C4B8A8;letter-spacing:0.5px;text-transform:uppercase;margin-top:2pt}
 `;
 
-// ─── Shared components ────────────────────────────────────────────────────────
+// ─── SVG : radar pentagone ────────────────────────────────────────────────────
 
-function miniHeader(clientName: string, subtitle: string, dateStr: string, page: string): string {
-  return `<div class="mini-header">
-    <div class="mini-left">
-      <div class="mini-dia"></div>
-      <span class="mini-client">${esc(clientName)}</span>
-      <span class="mini-sub">· ${esc(subtitle)}</span>
-    </div>
-    <span class="mini-pg">${esc(dateStr)} · ${esc(page)}</span>
-  </div>`;
+const ABBREVS: Record<string, string> = {
+  "mobilité": "MOB.", "stabilité": "STAB.", "force": "FORCE",
+  "posture": "POST.", "coordination": "COORD",
+};
+
+function radarSvg(axes: BilanPdfData["axes"], displaySize = 340): string {
+  const N = axes?.length;
+  if (!N) return "";
+
+  const VW = 370, VH = 370;
+  const cx = 185, cy = 185, R = 105;
+  const labelR = 126;
+
+  const ang = (i: number) => -Math.PI / 10 + (2 * Math.PI * i / N);
+  const ptX = (r: number, i: number) => cx + r * Math.cos(ang(i));
+  const ptY = (r: number, i: number) => cy + r * Math.sin(ang(i));
+  const fmt = (n: number) => n.toFixed(1);
+
+  const grid = [0.25, 0.5, 0.75, 1.0].map(lvl => {
+    const pts = Array.from({ length: N }, (_, i) =>
+      `${fmt(ptX(R * lvl, i))},${fmt(ptY(R * lvl, i))}`
+    ).join(" ");
+    const outer = lvl === 1.0;
+    return `<polygon points="${pts}" fill="${outer ? "rgba(242,238,231,0.55)" : "none"}"
+      stroke="${outer ? "rgba(184,149,106,0.50)" : "rgba(184,149,106,0.22)"}"
+      stroke-width="${outer ? "0.9" : "0.55"}"/>`;
+  }).join("");
+
+  const spokes = Array.from({ length: N }, (_, i) =>
+    `<line x1="${cx}" y1="${cy}" x2="${fmt(ptX(R, i))}" y2="${fmt(ptY(R, i))}"
+      stroke="rgba(184,149,106,0.25)" stroke-width="0.55"/>`
+  ).join("");
+
+  const dataPts = axes.map((a, i) => {
+    const v = a.max > 0 ? a.value / a.max : 0;
+    return `${fmt(ptX(R * v, i))},${fmt(ptY(R * v, i))}`;
+  }).join(" ");
+
+  const labels = axes.map((a, i) => {
+    const cosA = Math.cos(ang(i));
+    const sinA = Math.sin(ang(i));
+    const lx   = fmt(cx + labelR * cosA);
+    const lyRaw = cy + labelR * sinA;
+    const anchor = cosA > 0.2 ? "start" : cosA < -0.2 ? "end" : "middle";
+
+    let nameY: number;
+    if      (sinA > 0.4)  nameY = lyRaw + 13;
+    else if (sinA < -0.4) nameY = lyRaw - 3;
+    else                  nameY = lyRaw + 5;
+
+    const scoreY = nameY + 20;
+
+    return `<text x="${lx}" y="${fmt(nameY)}" text-anchor="${anchor}"
+      font-family="'Inter',sans-serif" font-size="13" font-weight="600" fill="#8A7A6A" style="letter-spacing:0.4px">${esc(a.label)}</text>
+<text x="${lx}" y="${fmt(scoreY)}" text-anchor="${anchor}"
+      font-family="'Playfair Display',Georgia,serif" font-size="14" font-weight="700" fill="#C4A87A">${a.value}<tspan font-family="'Inter',sans-serif" font-size="10" font-weight="400" fill="rgba(184,149,106,0.55)"> /${a.max}</tspan></text>`;
+  }).join("");
+
+  return `<svg width="${displaySize}" height="${displaySize}" viewBox="0 0 ${VW} ${VH}"
+    xmlns="http://www.w3.org/2000/svg">
+  ${grid}
+  ${spokes}
+  <polygon points="${dataPts}" fill="rgba(184,149,106,0.16)" stroke="#B8956A"
+    stroke-width="1.7" stroke-linejoin="round"/>
+  ${labels}
+</svg>`;
 }
 
-function pageFooter(cabinetName: string, right: string): string {
-  return `<div class="footer">
-    <span class="footer-text">${esc(cabinetName)}</span>
-    <span class="footer-dot">◆</span>
-    <span class="footer-text">${esc(right)}</span>
-  </div>`;
-}
+// ─── Header ───────────────────────────────────────────────────────────────────
 
-function closingBlock(d: BilanPdfData): string {
+function renderHeader(d: BilanPdfData): string {
   const contact = [d.contactLine, d.addressLine].filter(Boolean).join("  ·  ");
-  return `<div class="closing">
-    <div class="closing-rule-row">
-      <div class="closing-rule-line"></div>
-      <div class="closing-dia"></div>
-      <div class="closing-rule-line"></div>
+  const logoHtml = `<img class="hd-logo" src="${esc(d.logoSrc)}" alt=""
+    onerror="this.style.display='none'">`;
+  return `<div class="hd">
+    <div class="hd-brand">
+      ${logoHtml}
+      <div class="hd-sep"></div>
+      <div>
+        <div class="hd-name">${esc(d.cabinetName)}</div>
+        ${contact ? `<div class="hd-contact">${esc(contact)}</div>` : ""}
+      </div>
     </div>
-    <div class="closing-inner">
-      <span class="closing-name">${esc(d.cabinetName)}</span>
-      <div class="closing-tagline">Cabinet spécialisé mouvement &amp; performance</div>
-      ${contact ? `<div class="closing-contact">${esc(contact)}</div>` : ""}
-      <div class="closing-conf">Document confidentiel · ${esc(d.dateStr)}</div>
+    <div class="hd-right">
+      <span class="hd-date-lbl">Bilan du</span>
+      <span class="hd-date-val">${esc(d.dateStr)}</span>
     </div>
   </div>`;
 }
 
-// ─── Page 1 : sections ────────────────────────────────────────────────────────
+// ─── Hero (page 1) — typographique, sans score ────────────────────────────────
 
-function axisSection(axes: BilanPdfData["axes"]): string {
+function renderHero(d: BilanPdfData, name: string): string {
+  return `<div class="hero">
+    <div class="hero-overline">Bilan mouvement personnalisé</div>
+    <div class="hero-name">${esc(name)}</div>
+    <div class="hero-meta">
+      <span class="hero-meta-item">Coach&nbsp;: <strong>${esc(d.coachName || "Non renseigné")}</strong></span>
+      ${d.engagement ? `<div class="hero-meta-dot"></div><span class="hero-meta-item">${esc(d.engagement)}</span>` : ""}
+      <div class="hero-meta-dot"></div>
+      <span class="hero-meta-item">${esc(d.dateStr)}</span>
+    </div>
+  </div>`;
+}
+
+// ─── Score panel (colonne droite page 1) ─────────────────────────────────────
+
+function renderScorePanel(total: number): string {
+  const col    = scoreColor(total);
+  const status = statusLabel(total);
+  const interp = scoreInterp(total);
+  return `<div class="score-panel">
+    <div class="score-panel-lbl">Score global</div>
+    ${gaugeLarge(total)}
+    <div class="score-panel-status" style="color:${col}">${esc(status)}</div>
+    <div class="score-panel-interp">${esc(interp)}</div>
+  </div>`;
+}
+
+// ─── Axes ─────────────────────────────────────────────────────────────────────
+
+function renderAxes(axes: BilanPdfData["axes"]): string {
+  if (!axes?.length) return "";
   const rows = axes.map(a => {
-    const pct = (a.value / a.max) * 100;
+    const pct = a.max > 0 ? (a.value / a.max) * 100 : 0;
     const col = barColor(pct);
     return `<div class="axis-row">
-      <span class="axis-lbl">${esc(a.label.toUpperCase())}</span>
+      <span class="axis-lbl">${esc(a.label)}</span>
       <div class="axis-track"><div class="axis-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div>
       <span class="axis-num" style="color:${col}">${a.value}</span>
       <span class="axis-den">/${a.max}</span>
     </div>`;
   }).join("");
-  return `<div class="axes-card">${secTitle("Évaluation des 5 axes")}${rows}</div>`;
+  return `<div class="sblock">
+    ${sec("Évaluation des 5 axes")}
+    ${rows}
+  </div>`;
 }
 
-function programmeSection(priorities: string[], frequency: string | null): string {
-  const steps = [
-    priorities[0] && { rank: "01", label: "Maintenant", name: priorities[0] },
-    priorities[1] && { rank: "02", label: "Ensuite",    name: priorities[1] },
-    priorities[2] && { rank: "03", label: "Puis",       name: priorities[2] },
-  ].filter(Boolean) as Array<{ rank: string; label: string; name: string }>;
+// ─── Radar ────────────────────────────────────────────────────────────────────
 
-  const stepsHtml = steps.map(s => `<div class="prog-item">
-    <div class="prog-meta">
-      <span class="prog-rank">${s.rank}</span>
-      <span class="prog-step">${esc(s.label.toUpperCase())}</span>
+function renderBigRadar(axes: BilanPdfData["axes"]): string {
+  if (!axes?.length) return "";
+  return `<div class="radar-zone">
+    ${sec("Cartographie du mouvement")}
+    <div style="display:flex;justify-content:center;align-items:center;padding:4pt 0 3pt">
+      ${radarSvg(axes, 465)}
     </div>
-    <div class="prog-name">→ ${esc(s.name)}</div>
+  </div>`;
+}
+
+// ─── Forces & Priorités ───────────────────────────────────────────────────────
+
+function renderForcesAndPriorities(axes: BilanPdfData["axes"]): string {
+  if (!axes?.length) return "";
+  const sorted = [...axes].sort((a, b) => {
+    const pA = a.max > 0 ? a.value / a.max : 0;
+    const pB = b.max > 0 ? b.value / b.max : 0;
+    return pB - pA;
+  });
+  const top = sorted.slice(0, 2);
+  const bot = sorted.slice(-2).reverse();
+
+  const strongItems = top.map(a =>
+    `<div class="fp-item"><span class="fp-check">✓</span>${esc(a.label)}</div>`
+  ).join("");
+  const weakItems = bot.map(a =>
+    `<div class="fp-item"><span class="fp-dot">•</span>${esc(a.label)}</div>`
+  ).join("");
+
+  return `<div class="sblock">
+    <div class="fp-wrap">
+      <div class="fp-col">
+        <div class="fp-title">Points forts</div>
+        ${strongItems}
+      </div>
+      <div class="fp-col">
+        <div class="fp-title">Priorités</div>
+        ${weakItems}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Compensation warning ─────────────────────────────────────────────────────
+
+function renderCompensationWarning(tests: BilanPdfData["tests"]): string {
+  if (!tests?.length) return "";
+  const lowCount = tests.filter(t => t.score <= 1).length;
+  if (lowCount < 2) return "";
+  return `<div class="comp-warn-pill">
+    <span class="comp-warn-icon">⚠</span>
+    <span class="comp-warn-text">Compensations à surveiller lors des mouvements du quotidien.</span>
+  </div>`;
+}
+
+// ─── Ressenti subjectif ───────────────────────────────────────────────────────
+
+function renderRessenti(d: BilanPdfData): string {
+  const items: Array<{ lbl: string; val: number | null }> = [
+    { lbl: "Énergie",  val: d.energyScore },
+    { lbl: "Stress",   val: d.stressScore },
+    { lbl: "Sommeil",  val: d.sleepScore  },
+    { lbl: "Douleur",  val: d.painScore   },
+  ];
+  const present = items.filter(it => it.val !== null);
+  if (!present.length) return "";
+
+  const rows = present.map(it => {
+    const v   = it.val!;
+    const pct = v * 10;
+    const col = it.lbl === "Stress" || it.lbl === "Douleur"
+      ? barColor(100 - pct)
+      : barColor(pct);
+    return `<div class="res-row">
+      <span class="res-lbl">${esc(it.lbl)}</span>
+      <div class="res-track"><div class="res-fill" style="width:${pct}%;background:${col}"></div></div>
+      <span class="res-val" style="color:${col}">${v}</span>
+    </div>`;
+  }).join("");
+
+  return `<div class="sblock">
+    ${sec("Ressenti subjectif")}
+    ${rows}
+  </div>`;
+}
+
+// ─── Limitations ─────────────────────────────────────────────────────────────
+
+function renderLimitations(lim: string[]): string {
+  if (!lim?.length) return "";
+  const chips = lim.map(l => `<span class="chip">${esc(l)}</span>`).join("");
+  return `<div class="sblock">
+    ${sec("Limitations quotidiennes")}
+    <div class="chips">${chips}</div>
+  </div>`;
+}
+
+// ─── Tests de mouvement (page 1) ──────────────────────────────────────────────
+
+function renderTests(tests: BilanPdfData["tests"]): string {
+  if (!tests?.length) return "";
+  const CFG = {
+    0: { label: "DOULEUR",      bg: "#FEF4F4", border: "#F0C0C0", text: "#8A2828", bar: "#C44444" },
+    1: { label: "COMPENSATION", bg: "#FDF9F2", border: "#E8CFA0", text: "#7A5020", bar: "#C47040" },
+    2: { label: "OPTIMAL",      bg: "#F2FBF6", border: "#A4DEBA", text: "#1A5C38", bar: "#2E7D52" },
+  } as const;
+
+  const rows = tests.map(t => {
+    const cfg = CFG[t.score] ?? CFG[1];
+    return `<div class="test-row">
+      <div class="test-bar" style="background:${cfg.bar}"></div>
+      <div class="test-body">
+        <div class="test-top">
+          <span class="test-name">${esc(t.label)}</span>
+          <span class="test-badge" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.text}">${cfg.label}</span>
+        </div>
+        ${t.observation ? `<div class="test-obs">${esc(t.observation)}</div>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+
+  return `<div class="sblock">
+    ${sec("Tests de mouvement")}
+    ${rows}
+  </div>`;
+}
+
+// ─── Tests table (page 2) ────────────────────────────────────────────────────
+
+function renderTestsTable(tests: BilanPdfData["tests"]): string {
+  if (!tests?.length) return "";
+  const CFG = {
+    0: { label: "Douleur",      bg: "#FEF4F4", border: "#F0C0C0", text: "#8A2828" },
+    1: { label: "Compensation", bg: "#FDF9F2", border: "#E8CFA0", text: "#7A5020" },
+    2: { label: "Optimal",      bg: "#F2FBF6", border: "#A4DEBA", text: "#1A5C38" },
+  } as const;
+
+  const rows = tests.map(t => {
+    const cfg = CFG[t.score] ?? CFG[1];
+    return `<div class="ttest-row">
+      <span class="ttest-name">${esc(t.label)}</span>
+      <span class="ttest-badge" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.text}">${cfg.label}</span>
+    </div>`;
+  }).join("");
+
+  return `<div class="card">
+    ${sec("Détail des tests")}
+    ${rows}
+  </div>`;
+}
+
+// ─── Programme recommandé ─────────────────────────────────────────────────────
+
+function renderProgramme(priorities: string[], frequency: string | null): string {
+  const steps = [
+    priorities?.[0] ? { n: "1", lbl: "Maintenant", name: priorities[0] } : null,
+    priorities?.[1] ? { n: "2", lbl: "Ensuite",    name: priorities[1] } : null,
+    priorities?.[2] ? { n: "3", lbl: "Puis",       name: priorities[2] } : null,
+  ].filter(Boolean) as Array<{ n: string; lbl: string; name: string }>;
+
+  if (!steps.length && !frequency) return "";
+
+  const rows = steps.map(s => `<div class="prog-row">
+    <div class="prog-num"><span class="prog-num-txt">${s.n}</span></div>
+    <div>
+      <div class="prog-step-lbl">${esc(s.lbl)}</div>
+      <div class="prog-name">${esc(s.name)}</div>
+    </div>
   </div>`).join("");
 
-  const freqHtml = frequency ? `<div class="freq-badge">
-    <div class="freq-lbl">Fréquence conseillée</div>
-    <div class="freq-val">${esc(frequency)}</div>
+  const freqHtml = frequency ? `<div class="freq-pill">
+    <span class="freq-lbl">Fréquence</span>
+    <span class="freq-val">${esc(frequency)}</span>
   </div>` : "";
 
-  return `${secTitle("Programme recommandé")}
-    <div class="prog-list">${stepsHtml}</div>
-    ${freqHtml}`;
+  return `<div class="sblock">
+    ${sec("Programme recommandé")}
+    ${rows}
+    ${freqHtml}
+  </div>`;
 }
 
-// ─── Page 2 : sections ────────────────────────────────────────────────────────
+// ─── Footer ───────────────────────────────────────────────────────────────────
 
-function observationsBlock(d: BilanPdfData): string {
-  const scored = d.axes.map(a => ({ n: a.label.toLowerCase(), pct: Math.round((a.value / a.max) * 100) }));
+function renderFooter(cabinet: string, right: string): string {
+  return `<div class="footer">
+    <span class="footer-txt">${esc(cabinet)}</span>
+    <span class="footer-dot">◆</span>
+    <span class="footer-txt">${esc(right)}</span>
+  </div>`;
+}
+
+function renderFooter2(cabinet: string, pageLabel: string): string {
+  return `<div class="footer-centered">
+    <span class="footer-txt">${esc(cabinet)}</span>
+    <span class="footer-dot">◆</span>
+    <span class="footer-txt">Rapport confidentiel</span>
+    <span class="footer-dot">◆</span>
+    <span class="footer-txt">${esc(pageLabel)}</span>
+  </div>`;
+}
+
+// ─── Mini header (pages 2 & 3) ───────────────────────────────────────────────
+
+function renderMiniHeader(name: string, dateStr: string, pageLabel: string): string {
+  return `<div class="mini-hd">
+    <div class="mini-left">
+      <div class="mini-dia"></div>
+      <span class="mini-client">${esc(name)}</span>
+      <span class="mini-sub">· Feuille de route</span>
+    </div>
+    <span class="mini-pg">${esc(dateStr)} · Page ${esc(pageLabel)}</span>
+  </div>`;
+}
+
+// ─── Observations (page 2) ───────────────────────────────────────────────────
+
+function renderObservations(d: BilanPdfData): string {
+  const axes   = d.axes ?? [];
+  const scored = axes.map(a => ({
+    n: a.label.toLowerCase(),
+    pct: a.max > 0 ? Math.round((a.value / a.max) * 100) : 0,
+  }));
   const strong = scored.filter(a => a.pct >= 60).map(a => a.n);
   const weak   = scored.filter(a => a.pct < 45).map(a => a.n);
 
@@ -432,39 +873,36 @@ function observationsBlock(d: BilanPdfData): string {
       ? `votre ${names[0]}`
       : names.slice(0, -1).map(n => `votre ${n}`).join(", ") + ` et votre ${names[names.length - 1]}`;
 
-  let mainText: string;
-  let subText: string;
-
+  let main: string, sub: string;
   if (strong.length > 0 && weak.length > 0) {
-    const sp = strong.length > 1 ? "sont à un bon niveau" : "est à un bon niveau";
-    const wp = weak.length > 1   ? "freinent encore certains de vos mouvements" : "freine encore certains de vos mouvements";
-    mainText = `${(chain(strong).charAt(0).toUpperCase() + chain(strong).slice(1))} ${sp}, mais ${chain(weak)} ${wp}.`;
-    subText  = `Ce déséquilibre est courant à ce stade du parcours. En ciblant les axes prioritaires, vous progresserez de façon notable d'ici votre prochain bilan.`;
+    main = `${(chain(strong).charAt(0).toUpperCase() + chain(strong).slice(1))} ${strong.length > 1 ? "sont" : "est"} à un bon niveau, mais ${chain(weak)} ${weak.length > 1 ? "demandent" : "demande"} une attention particulière.`;
+    sub  = "Ce déséquilibre est courant. En ciblant les axes prioritaires, vous progresserez de façon mesurable dès les premières semaines.";
   } else if (weak.length > 0) {
-    const wp = weak.length > 1 ? "demandent" : "demande";
-    mainText = `${(chain(weak).charAt(0).toUpperCase() + chain(weak).slice(1))} ${wp} une attention particulière pour améliorer votre confort au quotidien.`;
-    subText  = `Votre programme a été conçu pour cibler précisément ces axes. Des progrès mesurables sont attendus dès les premières semaines.`;
+    main = `${(chain(weak).charAt(0).toUpperCase() + chain(weak).slice(1))} ${weak.length > 1 ? "demandent" : "demande"} une attention particulière pour améliorer votre confort au quotidien.`;
+    sub  = "Votre programme cible précisément ces axes. Des progrès concrets sont attendus dès les premières semaines.";
   } else if (strong.length > 0) {
-    mainText = `Tous vos axes sont bien développés, avec une répartition équilibrée sur les 5 dimensions évaluées.`;
-    subText  = `L'objectif du prochain cycle est de consolider ces acquis et d'atteindre un niveau d'excellence durable sur chaque dimension.`;
+    main = "Tous vos axes sont bien développés, avec une répartition équilibrée sur les 5 dimensions évaluées.";
+    sub  = "L'objectif du prochain cycle est de consolider ces acquis et d'atteindre un niveau d'excellence durable.";
   } else {
-    mainText = `Votre profil de mouvement est en développement régulier, avec des marges de progression sur chacun des 5 axes évalués.`;
-    subText  = `Votre programme personnalisé a été conçu pour vous faire progresser à votre rythme, de façon cohérente et mesurable.`;
+    main = "Votre profil de mouvement présente des marges de progression sur chacun des 5 axes évalués.";
+    sub  = "Votre programme personnalisé a été conçu pour vous faire progresser à votre rythme, de façon cohérente.";
   }
 
-  return `<div class="obs-editorial">
-    ${secTitle("Ce que nous avons observé")}
-    <div class="obs-text">${esc(mainText)}</div>
-    <div class="obs-text-sub">${esc(subText)}</div>
+  return `<div class="obs">
+    ${sec("Ce que nous avons observé")}
+    <div class="obs-text">${esc(main)}</div>
+    <div class="obs-sub">${esc(sub)}</div>
   </div>`;
 }
 
-function nextBilanBlock(total: number): string {
+// ─── Objectif prochain bilan ──────────────────────────────────────────────────
+
+function renderNextBilan(total: number): string {
   const current   = (total / 10).toFixed(1).replace(".", ",");
   const targetRaw = Math.min(total + 15, 100);
   const target    = (targetRaw / 10).toFixed(1).replace(".", ",");
-  return `<div class="nb-card">
-    ${secTitle("Objectif du prochain bilan")}
+  return `<div class="nb">
+    ${sec("Objectif du prochain bilan")}
     <div class="nb-row">
       <div class="nb-col">
         <div class="nb-lbl">Score actuel</div>
@@ -484,58 +922,9 @@ function nextBilanBlock(total: number): string {
   </div>`;
 }
 
-function projectionBlock(priorities: string[], concreteGoal: string | null): string {
-  const steps = [
-    { week: "Sem. 1–2", title: "Maintenant",   content: priorities[0] || null },
-    { week: "Sem. 3–4", title: "Ensuite",       content: priorities[1] || null },
-    { week: "Sem. 5–6", title: "Objectif visé", content: priorities[2] || concreteGoal || null },
-  ];
+// ─── Zones prioritaires ───────────────────────────────────────────────────────
 
-  const stepsHtml = steps.map((s, i) => `
-    <div class="proj-step">
-      <div class="proj-num">${i + 1}</div>
-      <div class="proj-week">${esc(s.week)}</div>
-      <div class="proj-title">${esc(s.title)}</div>
-      ${s.content ? `<div class="proj-desc">${esc(s.content)}</div>` : ""}
-    </div>
-    ${i < 2 ? '<div class="proj-connector"><div class="proj-connector-line"></div></div>' : ""}
-  `).join("");
-
-  return `<div class="proj-card">
-    ${secTitle("Projection 6 semaines")}
-    <div class="proj-steps">${stepsHtml}</div>
-  </div>`;
-}
-
-function testsBlock(tests: BilanPdfData["tests"]): string {
-  if (!tests.length) return "";
-  const CFG = {
-    0: { label: "DOULEUR",      bg: "#FEF4F4", border: "#F0C0C0", text: "#8A2828", bar: "#C44444" },
-    1: { label: "COMPENSATION", bg: "#FDF9F2", border: "#E8CFA0", text: "#7A5020", bar: "#C47040" },
-    2: { label: "OPTIMAL",      bg: "#F2FBF6", border: "#A4DEBA", text: "#1A5C38", bar: "#2E7D52" },
-  } as const;
-
-  const rows = tests.map(t => {
-    const cfg = CFG[t.score];
-    return `<div class="test-row">
-      <div class="test-bar" style="background:${cfg.bar}"></div>
-      <div class="test-body">
-        <div class="test-top">
-          <span class="test-name">${esc(t.label)}</span>
-          <span class="test-badge" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.text}">${cfg.label}</span>
-        </div>
-        ${t.observation ? `<div class="test-obs">${esc(t.observation)}</div>` : ""}
-      </div>
-    </div>`;
-  }).join("");
-
-  return `<div class="tests-card">
-    <div class="tests-hd">${secTitle("Tests de mouvement")}</div>
-    ${rows}
-  </div>`;
-}
-
-function zonesBlock(zonePriorities: NonNullable<BilanPdfData["zonePriorities"]>): string {
+function renderZones(zonePriorities: NonNullable<BilanPdfData["zonePriorities"]>): string {
   const LABELS: Record<string, string> = {
     cervicales:        "Ceinture cervicale",
     dos_haut:          "Ceinture scapulaire",
@@ -554,159 +943,248 @@ function zonesBlock(zonePriorities: NonNullable<BilanPdfData["zonePriorities"]>)
     pieds:             "Pieds",
     genoux:            "Genoux",
   };
-
-  const fortes = Object.entries(zonePriorities)
-    .filter(([, v]) => v === "forte")
-    .map(([k]) => LABELS[k] ?? k);
-  const survs = Object.entries(zonePriorities)
-    .filter(([, v]) => v === "surveillance")
-    .map(([k]) => LABELS[k] ?? k);
-
+  const fortes = Object.entries(zonePriorities).filter(([, v]) => v === "forte").map(([k]) => LABELS[k] ?? k);
+  const survs  = Object.entries(zonePriorities).filter(([, v]) => v === "surveillance").map(([k]) => LABELS[k] ?? k);
   if (!fortes.length && !survs.length) return "";
+
+  const header = `<div style="display:flex;gap:10pt;margin-bottom:5pt;margin-top:4pt">
+    ${fortes.length ? `<span style="font-size:8.5px;font-weight:700;color:#8A2020;letter-spacing:1px;text-transform:uppercase">● Priorité</span>` : ""}
+    ${survs.length  ? `<span style="font-size:8.5px;font-weight:700;color:#7A4010;letter-spacing:1px;text-transform:uppercase">● Surveillance</span>` : ""}
+  </div>`;
 
   const chips = [
     ...fortes.map(l => `<span class="z-chip z-forte">${esc(l)}</span>`),
-    ...survs.map(l => `<span class="z-chip z-surv">${esc(l)}</span>`),
+    ...survs.map(l  => `<span class="z-chip z-surv">${esc(l)}</span>`),
   ].join("");
 
-  return `<div>
-    ${secTitle("Zones prioritaires")}
-    <div style="margin-top:6pt">${chips}</div>
+  return `<div class="card">
+    ${sec("Zones prioritaires")}
+    ${header}
+    <div class="z-chips">${chips}</div>
   </div>`;
 }
 
-function compositionBlock(bc: NonNullable<BilanPdfData["bodyComposition"]>): string {
-  const items = [
-    bc.weightKg  !== null ? { k: "Poids",           v: bc.weightKg!.toFixed(1).replace(".", ","),  u: "kg" } : null,
-    bc.fatPct    !== null ? { k: "Masse grasse",     v: bc.fatPct!.toFixed(1).replace(".", ","),    u: "%" }  : null,
-    bc.musclePct !== null ? { k: "Masse musculaire", v: bc.musclePct!.toFixed(1).replace(".", ","), u: "%" }  : null,
-    bc.waterPct  !== null ? { k: "Eau",              v: bc.waterPct!.toFixed(1).replace(".", ","),  u: "%" }  : null,
-  ].filter(Boolean) as Array<{ k: string; v: string; u: string }>;
+// ─── Composition corporelle éditoriale (page 3) ───────────────────────────────
 
-  if (!items.length) return "";
+function renderComposition(bc: NonNullable<BilanPdfData["bodyComposition"]>): string {
+  const all = [
+    bc.weightKg     !== null ? { v: bc.weightKg!.toFixed(1).replace(".", ","),   u: "kg",   k: "Poids"          } : null,
+    bc.fatPct       !== null ? { v: bc.fatPct!.toFixed(1).replace(".", ","),     u: "%",    k: "Masse grasse"    } : null,
+    bc.musclePct    !== null ? { v: bc.musclePct!.toFixed(1).replace(".", ","),  u: "%",    k: "Masse musc."     } : null,
+    bc.waterPct     !== null ? { v: bc.waterPct!.toFixed(1).replace(".", ","),   u: "%",    k: "Hydratation"     } : null,
+    bc.visceralFat  !== null ? { v: String(bc.visceralFat),                      u: "",     k: "Graisse visc."   } : null,
+    bc.metabolicAge !== null ? { v: String(bc.metabolicAge),                     u: "ans",  k: "Âge métab."      } : null,
+    bc.boneMassKg   !== null ? { v: bc.boneMassKg!.toFixed(1).replace(".", ","), u: "kg",   k: "Masse osseuse"   } : null,
+    bc.bmrKcal      !== null ? { v: String(bc.bmrKcal),                          u: "kcal", k: "Métabolisme"     } : null,
+  ].filter(Boolean) as Array<{ v: string; u: string; k: string }>;
 
-  return `<div>
-    ${secTitle("Composition corporelle")}
-    <div class="comp2-grid">
-      ${items.map(it => `<div class="comp2-item">
-        <span class="comp2-k">${esc(it.k)}</span>
-        <span class="comp2-v">${esc(it.v)}<span class="comp2-u">${esc(it.u)}</span></span>
-      </div>`).join("")}
+  if (!all.length) return "";
+  const display = all.slice(0, 6);
+
+  const stats = display.map(it => `<div class="comp-stat">
+    <div class="comp-stat-v">${esc(it.v)}<span class="comp-stat-u">${esc(it.u)}</span></div>
+    <div class="comp-stat-k">${esc(it.k)}</div>
+  </div>`).join("");
+
+  const segItems = [
+    bc.segArmLeft   !== null ? { v: bc.segArmLeft!.toFixed(1).replace(".", ","),  k: "Bras G."  } : null,
+    bc.segArmRight  !== null ? { v: bc.segArmRight!.toFixed(1).replace(".", ","), k: "Bras D."  } : null,
+    bc.segTrunk     !== null ? { v: bc.segTrunk!.toFixed(1).replace(".", ","),    k: "Tronc"    } : null,
+    bc.segLegLeft   !== null ? { v: bc.segLegLeft!.toFixed(1).replace(".", ","),  k: "Jambe G." } : null,
+    bc.segLegRight  !== null ? { v: bc.segLegRight!.toFixed(1).replace(".", ","), k: "Jambe D." } : null,
+  ].filter(Boolean) as Array<{ v: string; k: string }>;
+
+  const segHtml = segItems.length >= 2 ? `
+    <div class="seg-sub-hd">
+      <span class="seg-sub-lbl">Masse segmentaire</span>
+      <div class="seg-sub-rule"></div>
     </div>
+    <div class="seg-row">${segItems.map(it => `<div class="seg-stat">
+      <div class="seg-stat-v">${esc(it.v)}<span class="seg-stat-u">kg</span></div>
+      <div class="seg-stat-k">${esc(it.k)}</div>
+    </div>`).join("")}</div>` : "";
+
+  return `<div class="p3-section">
+    ${sec("Composition corporelle")}
+    <div class="comp-editorial">${stats}</div>
+    ${segHtml}
   </div>`;
 }
 
-function recommendationsBlock(activeRec: string[]): string {
-  if (!activeRec.length) return "";
-  const chips = activeRec.map(r => `<span class="rec-chip">${esc(r)}</span>`).join("");
-  return `<div style="margin-bottom:4mm;flex-shrink:0">
-    ${secTitle("Recommandations")}
-    <div class="rec-chips">${chips}</div>
-  </div>`;
-}
+// ─── Recommandations coach (page 3) ───────────────────────────────────────────
 
-// ─── Générateur principal : 2 pages fixes ────────────────────────────────────
+function renderRecommandations(
+  rec: string[],
+  frequency: string | null,
+  nextAction: string | null,
+  axes: BilanPdfData["axes"],
+  tests: BilanPdfData["tests"],
+): string {
+  if (!rec?.length && !frequency && !nextAction) return "";
 
-export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "coach"): string {
-  const clientDisplayName = formatName(d.clientName);
-  const color             = scoreColor(d.total);
-  const status            = statusLabel(d.total);
-  const footerTxt         = [d.contactLine, d.addressLine].filter(Boolean).join("  ·  ");
+  const chips = rec?.length
+    ? `<div class="rec-chips">${rec.map(r => `<span class="rec-chip">${esc(r)}</span>`).join("")}</div>`
+    : "";
 
-  const hasProg     = d.topPriorities.length > 0 || !!d.frequency;
-  const hasTests    = d.tests.length > 0;
-  const hasProj     = d.topPriorities.length > 0 || !!d.concreteGoal;
-  const hasZones    = !!(d.zonePriorities && Object.entries(d.zonePriorities).some(([, v]) => v === "forte" || v === "surveillance"));
-  const hasBodyComp = !!(d.bodyComposition && (
-    d.bodyComposition.weightKg !== null ||
-    d.bodyComposition.fatPct   !== null ||
-    d.bodyComposition.musclePct !== null ||
-    d.bodyComposition.waterPct !== null
-  ));
-  const hasRec      = d.activeRec.length > 0;
-  const hasSideRow  = hasZones || hasBodyComp;
-
-  // Branding
-  const brandHtml = `<img class="logo-img" src="${esc(d.logoSrc)}" alt="${esc(d.cabinetName)}"
-    onerror="this.style.display='none';this.nextElementSibling.style.display='none'">
-    <div class="brand-sep"></div>
-    <div class="brand-text">
-      <span class="cabinet-name">${esc(d.cabinetName)}</span>
-      <span class="cabinet-tagline">Mouvement · Performance · Bien-être</span>
-      ${d.contactLine ? `<span class="cabinet-sub">${esc(d.contactLine)}</span>` : ""}
-    </div>`;
-
-  // ─── PAGE 1 : Synthèse client ──────────────────────────────────────────────
-  const page1 = `
-<div class="page">
-  <div class="doc-header">
-    <div class="header-brand">${brandHtml}</div>
-    <div class="header-right">
-      <span class="header-date-lbl">Bilan du</span>
-      <span class="header-date-val">${esc(d.dateStr)}</span>
-    </div>
-  </div>
-  <div class="hero">
-    <div class="hero-accent"></div>
-    <div class="hero-main">
-      <div class="hero-text">
-        <div class="hero-overline">Bilan mouvement personnalisé</div>
-        <div class="hero-name">${esc(clientDisplayName)}</div>
-        <div class="hero-coach-row">
-          <div class="coach-avatar"><span class="coach-initials">${coachInitials(d.coachName)}</span></div>
-          <div class="coach-info"><span class="coach-name-txt">${esc(d.coachName)}</span></div>
-        </div>
-      </div>
-      <div class="hero-score">
-        ${gaugeSvg(d.total)}
-        <div class="hero-score-lbl">Score global</div>
-        <div class="hero-score-status" style="color:${color}">${esc(status)}</div>
-      </div>
-    </div>
-  </div>
-  <div class="p1-body">
-    <div class="p1-col">
-      ${axisSection(d.axes)}
-    </div>
-    ${hasProg ? `<div class="p1-col-card">
-      ${programmeSection(d.topPriorities, d.frequency)}
-    </div>` : ""}
-  </div>
-  ${pageFooter(d.cabinetName, footerTxt || `Document confidentiel · ${d.dateStr}`)}
-</div>`;
-
-  // ─── PAGE 2 : Feuille de route ─────────────────────────────────────────────
-  const sideRow = hasSideRow ? `<div class="p2-side-row">
-    ${hasZones    ? `<div class="p2-side-col">${zonesBlock(d.zonePriorities!)}</div>` : ""}
-    ${hasBodyComp ? `<div class="p2-side-col">${compositionBlock(d.bodyComposition!)}</div>` : ""}
+  const freqHtml = frequency ? `<div class="rec-freq">
+    <span class="rec-freq-lbl">Fréquence recommandée</span>
+    <span style="color:#C4B8A8;margin:0 5pt">·</span>
+    <span class="rec-freq-val">${esc(frequency)}</span>
   </div>` : "";
 
-  const page2 = `
-<div class="page">
-  ${miniHeader(clientDisplayName, "Feuille de route", d.dateStr, "Page 2")}
-  <div class="body2">
-    ${observationsBlock(d)}
-    ${nextBilanBlock(d.total)}
-    ${hasProj ? projectionBlock(d.topPriorities, d.concreteGoal) : ""}
-    ${hasTests ? testsBlock(d.tests) : ""}
-    ${sideRow}
-    ${hasRec ? recommendationsBlock(d.activeRec) : ""}
-    ${closingBlock(d)}
+  const actionHtml = nextAction ? `<div class="rec-action">${esc(nextAction)}</div>` : "";
+
+  const sortedAxes = [...(axes ?? [])].sort((a, b) => {
+    const pA = a.max > 0 ? a.value / a.max : 0;
+    const pB = b.max > 0 ? b.value / b.max : 0;
+    return pA - pB;
+  });
+  const weakAxes = sortedAxes.slice(0, 2).filter(a => (a.max > 0 ? a.value / a.max : 0) < 0.7);
+  const hasComps = (tests ?? []).filter(t => t.score <= 1).length >= 1;
+
+  let detailText = "";
+  if (weakAxes.length >= 2) {
+    detailText = `Le travail doit prioritairement porter sur la ${weakAxes[0].label.toLowerCase()} et la ${weakAxes[1].label.toLowerCase()} afin d'améliorer la qualité du mouvement${hasComps ? " et limiter les compensations observées" : ""}.`;
+  } else if (weakAxes.length === 1) {
+    detailText = `Le travail doit prioritairement porter sur la ${weakAxes[0].label.toLowerCase()} afin d'améliorer la qualité du mouvement${hasComps ? " et limiter les compensations observées" : ""}.`;
+  } else {
+    detailText = "Votre profil de mouvement est bien équilibré. L'objectif est de consolider ces acquis et de progresser vers l'excellence.";
+  }
+
+  return `<div class="p3-section">
+    ${sec("Recommandations coach")}
+    ${chips}
+    ${freqHtml}
+    ${actionHtml}
+    <div class="rec-detail">${esc(detailText)}</div>
+  </div>`;
+}
+
+// ─── Projection éditoriale (page 3) ──────────────────────────────────────────
+
+function renderProjectionEditorial(priorities: string[], concreteGoal: string | null): string {
+  if (!priorities?.length && !concreteGoal) return "";
+
+  const steps = [
+    { week: "Semaines 1–2", title: priorities?.[0] || "Phase d'activation",  desc: null },
+    { week: "Semaines 3–4", title: priorities?.[1] || "Phase de progression", desc: null },
+    { week: "Semaines 5–6", title: priorities?.[2] || concreteGoal || "Consolidation", desc: null },
+  ];
+
+  const stepsHtml = steps.map((s, i) => `<div class="proj-ed-step">
+    <div class="proj-ed-num">${i + 1}</div>
+    <div class="proj-ed-week">${esc(s.week)}</div>
+    <div class="proj-ed-title">${esc(s.title)}</div>
+    ${s.desc ? `<div class="proj-ed-desc">${esc(s.desc)}</div>` : ""}
+  </div>`).join("");
+
+  return `<div class="proj-editorial">
+    ${sec("Projection 6 semaines")}
+    <div class="proj-ed-steps">${stepsHtml}</div>
+  </div>`;
+}
+
+// ─── Closing ──────────────────────────────────────────────────────────────────
+
+function renderClosing(d: BilanPdfData): string {
+  const contact = [d.contactLine, d.addressLine].filter(Boolean).join("  ·  ");
+  return `<div class="closing">
+    <div class="closing-rule">
+      <div class="closing-line"></div>
+      <div class="closing-dia"></div>
+      <div class="closing-line"></div>
+    </div>
+    <div class="closing-name">${esc(d.cabinetName)}</div>
+    <div class="closing-sub">Cabinet spécialisé mouvement &amp; performance</div>
+    ${contact ? `<div class="closing-contact">${esc(contact)}</div>` : ""}
+    <div class="closing-conf">Document confidentiel · ${esc(d.dateStr)}</div>
+  </div>`;
+}
+
+// ─── Générateur principal ─────────────────────────────────────────────────────
+
+export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "coach"): string {
+  const name    = formatName(d.clientName || "Client");
+  const total   = d.total ?? 0;
+  const footer1 = [d.contactLine, d.addressLine].filter(Boolean).join("  ·  ") || `Document confidentiel · ${d.dateStr}`;
+
+  const hasTests    = (d.tests?.length ?? 0) > 0;
+  const hasProg     = (d.topPriorities?.length ?? 0) > 0 || !!d.frequency;
+  const hasLim      = (d.activeLim?.length ?? 0) > 0;
+  const hasRessenti = d.energyScore !== null || d.stressScore !== null || d.sleepScore !== null || d.painScore !== null;
+  const hasProj     = (d.topPriorities?.length ?? 0) > 0 || !!d.concreteGoal;
+  const hasZones    = !!(d.zonePriorities && Object.entries(d.zonePriorities).some(([, v]) => v === "forte" || v === "surveillance"));
+  const hasComp     = !!(d.bodyComposition && (
+    d.bodyComposition.weightKg !== null || d.bodyComposition.fatPct !== null ||
+    d.bodyComposition.musclePct !== null || d.bodyComposition.waterPct !== null ||
+    d.bodyComposition.boneMassKg !== null || d.bodyComposition.visceralFat !== null ||
+    d.bodyComposition.bmrKcal !== null || d.bodyComposition.metabolicAge !== null
+  ));
+  const hasRec  = (d.activeRec?.length ?? 0) > 0 || !!d.frequency || !!d.nextAction;
+  const hasAxes = (d.axes?.length ?? 0) > 0;
+
+  // ── PAGE 1 : 2 colonnes — gauche : diagnostic / droite : score + analyse + plan ──
+  const page1 = `<div class="page">
+  ${renderHeader(d)}
+  ${renderHero(d, name)}
+  <div class="p1-body">
+    <div class="p1-left">
+      ${renderAxes(d.axes)}
+      ${hasAxes ? renderForcesAndPriorities(d.axes) : ""}
+      ${hasLim ? renderLimitations(d.activeLim) : ""}
+      ${hasProg ? renderProgramme(d.topPriorities, d.frequency) : ""}
+    </div>
+    <div class="p1-vsep"></div>
+    <div class="p1-right">
+      ${renderScorePanel(total)}
+      ${hasTests ? renderTests(d.tests) : ""}
+      ${hasTests ? renderCompensationWarning(d.tests) : ""}
+      ${hasRessenti ? renderRessenti(d) : ""}
+    </div>
   </div>
-  ${pageFooter(d.cabinetName, "Rapport client confidentiel · Page 2 / 2")}
+  ${renderFooter(d.cabinetName, footer1)}
+</div>`;
+
+  // ── PAGE 2 : Observations, zones, tests, cartographie ────────────────────
+  const page2 = `<div class="page">
+  ${renderMiniHeader(name, d.dateStr, "2 / 3")}
+  <div class="p2-body">
+    <div class="p2-upper">
+      <div class="p2-obs-col">
+        ${renderObservations(d)}
+      </div>
+      <div class="p2-vsep"></div>
+      <div class="p2-side-col">
+        ${hasZones ? renderZones(d.zonePriorities!) : ""}
+        ${hasTests ? renderTestsTable(d.tests) : ""}
+      </div>
+    </div>
+    <div class="p2-radar">
+      ${hasAxes ? renderBigRadar(d.axes) : ""}
+    </div>
+  </div>
+  ${renderFooter2(d.cabinetName, "Page 2 / 3")}
+</div>`;
+
+  // ── PAGE 3 : Composition → Recommandations → Projection éditoriale ─────────
+  const page3 = `<div class="page">
+  ${renderMiniHeader(name, d.dateStr, "3 / 3")}
+  <div class="p3-body">
+    ${hasComp ? renderComposition(d.bodyComposition!) : ""}
+    ${hasRec  ? renderRecommandations(d.activeRec ?? [], d.frequency, d.nextAction, d.axes, d.tests) : ""}
+    ${hasProj ? renderProjectionEditorial(d.topPriorities, d.concreteGoal) : ""}
+  </div>
+  ${renderClosing(d)}
+  ${renderFooter2(d.cabinetName, "Page 3 / 3")}
 </div>`;
 
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Bilan Mouvement — ${esc(clientDisplayName)}</title>
-  <style>${CSS}</style>
+<meta charset="UTF-8">
+<title>Bilan Mouvement — ${esc(name)}</title>
+<style>${CSS}</style>
 </head>
-<body>
-${page1}
-${page2}
-</body>
+<body>${page1}${page2}${page3}</body>
 </html>`;
 }

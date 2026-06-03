@@ -232,24 +232,3 @@ export async function updateGoalStatusAction(formData: FormData) {
   done(clientId, "objectifs", "Objectif mis à jour.");
 }
 
-export async function markQuestionnaireReadAction(formData: FormData) {
-  const profile = await guardCoach();
-  const clientId = String(formData.get("client_id") ?? "");
-  const qId = String(formData.get("questionnaire_id") ?? "");
-  const coachComment =
-    String(formData.get("coach_comment") ?? "").trim() || null;
-
-  const supabase = await getSupabaseServer();
-  const { error } = await supabase
-    .from("questionnaires")
-    .update({
-      status: "relu",
-      reviewed_at: new Date().toISOString(),
-      coach_comment: coachComment,
-    })
-    .eq("id", qId)
-    .eq("coach_id", profile.id);
-
-  if (error) fail(clientId, "questionnaire", error.message);
-  done(clientId, "questionnaire", "Questionnaire marqué comme lu.");
-}

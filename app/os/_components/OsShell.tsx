@@ -12,7 +12,6 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { label: "Mes séances", href: "/os/client/seances" },
     { label: "Mes mesures", href: "/os/client/mesures" },
     { label: "Mes objectifs", href: "/os/client/objectifs" },
-    { label: "Questionnaire", href: "/os/client/questionnaire" },
     { label: "Mon profil", href: "/os/client/profil" },
   ],
   coach: [
@@ -20,7 +19,6 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { label: "Calendrier", href: "/os/coach/calendar" },
     { label: "Mes clients", href: "/os/coach/clients" },
     { label: "Bilan mouvement", href: "/os/coach/bilan-mouvement" },
-    { label: "Questionnaires", href: "/os/coach/questionnaires" },
   ],
   admin: [
     { label: "Tableau de bord", href: "/os/admin" },
