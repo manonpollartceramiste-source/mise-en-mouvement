@@ -183,23 +183,58 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
 
 // ─── Playwright PDF ────────────────────────────────────────────────────────────
 
+// Chromium pack URL for serverless (Sparticuz v148 = Chromium 148 = playwright-core 1.60).
+// Override via CHROMIUM_PACK_URL env var if needed.
+const DEFAULT_CHROMIUM_PACK_URL =
+  "https://github.com/Sparticuz/chromium/releases/download/v148.0.0/chromium-v148.0.0-pack.tar";
+
 async function renderPdf(html: string): Promise<Buffer> {
   const { chromium } = await import("playwright-core");
 
-  const executablePath = process.env.CHROME_EXECUTABLE_PATH
-    || process.env.CHROMIUM_EXECUTABLE_PATH;
+  const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_VERSION;
 
-  const browser = await chromium.launch({
-    executablePath: executablePath || undefined,
-    channel: executablePath ? undefined : "chrome",
-    headless: true,
-    args: [
+  let executablePath: string | undefined;
+  let launchArgs: string[];
+
+  if (isServerless) {
+    // Use @sparticuz/chromium-min: no system Chrome needed, downloads once to /tmp
+    const chromiumMin = await import("@sparticuz/chromium-min");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bin = (chromiumMin.default ?? chromiumMin) as any as {
+      args: string[];
+      graphicsMode: boolean;
+      executablePath: (url: string) => Promise<string>;
+    };
+
+    bin.graphicsMode = false; // headless PDF, no GPU
+
+    const packUrl = process.env.CHROMIUM_PACK_URL ?? DEFAULT_CHROMIUM_PACK_URL;
+    console.log(`[PDF] Serverless Chromium — downloading from: ${packUrl}`);
+
+    executablePath = await bin.executablePath(packUrl);
+    launchArgs = [...bin.args, "--font-render-hinting=none"];
+
+    console.log(`[PDF] executablePath: ${executablePath}`);
+  } else {
+    // Local development: use system Chrome or env var
+    const envPath =
+      process.env.CHROME_EXECUTABLE_PATH ||
+      process.env.CHROMIUM_EXECUTABLE_PATH;
+    executablePath = envPath || undefined;
+    launchArgs = [
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-dev-shm-usage",
       "--disable-gpu",
       "--font-render-hinting=none",
-    ],
+    ];
+  }
+
+  const browser = await chromium.launch({
+    executablePath: executablePath || undefined,
+    channel: !executablePath && !isServerless ? "chrome" : undefined,
+    headless: true,
+    args: launchArgs,
   });
 
   try {
