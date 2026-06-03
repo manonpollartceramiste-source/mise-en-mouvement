@@ -159,6 +159,101 @@ export async function getAllOsClients(): Promise<Profile[]> {
   return data as Profile[];
 }
 
+// ─── Statut OS d'un coach ─────────────────────────────────────────────────────
+
+export type OsCoachStatus = {
+  status: "pending" | "active" | "inactive";
+  email: string;
+};
+
+/**
+ * Invite un coach OS et retourne l'UUID auth créé.
+ * Identique à inviteOsUser mais expose userId pour le lier à la fiche site.
+ */
+export async function inviteOsCoach(
+  data: CreateUserData,
+): Promise<{ ok: boolean; userId?: string; error?: string }> {
+  const admin = getServiceClient();
+
+  const { data: inviteData, error: inviteError } =
+    await admin.auth.admin.inviteUserByEmail(data.email, {
+      data: { display_name: data.display_name, role: data.role },
+    });
+
+  if (inviteError) return { ok: false, error: inviteError.message };
+
+  const userId = inviteData.user.id;
+
+  const profileData: Record<string, unknown> = {
+    id: userId,
+    email: data.email,
+    display_name: data.display_name,
+    role: data.role,
+    roles: [data.role],
+    active: true,
+  };
+  if (data.phone) profileData.phone = data.phone;
+  if (data.bio) profileData.bio = data.bio;
+  if (data.calcom_url) profileData.calcom_url = data.calcom_url;
+  if (data.sumup_url) profileData.sumup_url = data.sumup_url;
+
+  const { error: profileError } = await admin
+    .from("profiles")
+    .upsert(profileData, { onConflict: "id" });
+
+  if (profileError) return { ok: false, error: profileError.message };
+  return { ok: true, userId };
+}
+
+/** Récupère le statut OS (pending / active / inactive) pour plusieurs profils coachs. */
+export async function getOsCoachesStatus(
+  profileIds: string[],
+): Promise<Record<string, OsCoachStatus>> {
+  if (profileIds.length === 0) return {};
+  const admin = getServiceClient();
+
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("id, active, email")
+    .in("id", profileIds);
+
+  if (!profiles || profiles.length === 0) return {};
+
+  const result: Record<string, OsCoachStatus> = {};
+
+  await Promise.all(
+    (profiles as { id: string; active: boolean; email: string }[]).map(
+      async (profile) => {
+        if (!profile.active) {
+          result[profile.id] = { status: "inactive", email: profile.email };
+          return;
+        }
+        const {
+          data: { user },
+        } = await admin.auth.admin.getUserById(profile.id);
+        result[profile.id] = {
+          status: user?.email_confirmed_at ? "active" : "pending",
+          email: profile.email,
+        };
+      },
+    ),
+  );
+
+  return result;
+}
+
+/** Renvoie l'invitation email OS (fonctionne si l'invitation n'est pas encore confirmée). */
+export async function resendOsInvite(
+  email: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = getServiceClient();
+  const { error } = await admin.auth.admin.inviteUserByEmail(email);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 /**
  * Crée un client depuis l'espace coach (pas d'email envoyé).
  * Le client peut se connecter via "mot de passe oublié".

@@ -18,8 +18,12 @@ export type Coach = {
   siret?: string;
   /** Rôle légal / activité affiché dans les mentions légales (facultatif). */
   legalRole?: string;
-  /** Email professionnel facultatif affiché dans les mentions légales. */
+  /** Email professionnel affiché dans les mentions légales. */
   proEmail?: string;
+  /** Email de connexion OS (invitation Cabinet OS). */
+  email?: string;
+  /** UUID du profil Cabinet OS lié (profiles.id). */
+  osProfileId?: string;
 };
 
 export const coachSchema = z.object({
@@ -37,6 +41,8 @@ export const coachSchema = z.object({
   siret: z.string().optional(),
   legalRole: z.string().optional(),
   proEmail: z.string().optional(),
+  email: z.string().optional(),
+  osProfileId: z.string().optional(),
 }) satisfies z.ZodType<Coach>;
 
 export const coachArraySchema = z.array(coachSchema);
