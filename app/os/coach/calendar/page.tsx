@@ -8,6 +8,9 @@ import {
 import type { SessionWithClient } from "@/lib/supabase/os-server";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { loadCoaches } from "@/lib/content/coaches.server";
+import { getCalcomBookingsForCoach } from "@/lib/supabase/calcom-server";
+import type { CalcomBooking } from "@/lib/supabase/calcom-server";
+import type { SessionStatus } from "@/lib/os/types";
 import { OsShell } from "@/app/os/_components/OsShell";
 import { CalendarClient } from "./CalendarClient";
 
@@ -60,7 +63,7 @@ export default async function CoachCalendarPage({
   const linkedCoach = publicCoaches.find((c) => c.osProfileId === profile.id);
   const calcomUrl = linkedCoach?.calcomUrl ?? profile.calcom_url ?? null;
 
-  const [sessionsRes, clients] = await Promise.all([
+  const [sessionsRes, clients, calcomRaw] = await Promise.all([
     (() => {
       const q = supabase
         .from("sessions")
@@ -71,15 +74,43 @@ export default async function CoachCalendarPage({
       return isAdmin ? q : q.eq("coach_id", profile.id);
     })(),
     isAdmin ? getAllActiveClients() : getCoachClients(profile.id),
+    isAdmin
+      ? Promise.resolve([] as CalcomBooking[])
+      : getCalcomBookingsForCoach(profile.id, weekStart, weekEnd).catch(
+          () => [] as CalcomBooking[],
+        ),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sessions: SessionWithClient[] = (sessionsRes.data ?? []).map((row: any) => ({
+  const internalSessions: SessionWithClient[] = (sessionsRes.data ?? []).map((row: any) => ({
     ...row,
     profiles: undefined,
     client_display_name:
       (row.profiles as { display_name: string } | null)?.display_name ?? "Client",
   }));
+
+  const calcomSessions: SessionWithClient[] = calcomRaw.map(
+    (b: CalcomBooking) => ({
+      id: b.id,
+      client_id: "",
+      coach_id: b.coach_id,
+      pack_id: null,
+      offer_id: null,
+      status: (b.status ?? "planifiée") as SessionStatus,
+      scheduled_at: b.scheduled_at,
+      duration_min: b.duration_min,
+      location: b.location,
+      summary: `Cal.com · ${b.client_email}`,
+      created_at: b.created_at,
+      updated_at: b.updated_at,
+      client_display_name: `${b.client_name} ★`,
+    }),
+  );
+
+  const sessions: SessionWithClient[] = [
+    ...internalSessions,
+    ...calcomSessions,
+  ];
 
   return (
     <OsShell profile={profile} title="Calendrier">
@@ -89,8 +120,10 @@ export default async function CoachCalendarPage({
         </p>
         <h2 className="mt-1 font-serif text-3xl text-ink-900">Calendrier</h2>
         <p className="mt-1 text-sm text-taupe-500">
-          {sessions.length} séance{sessions.length !== 1 ? "s" : ""} cette
-          semaine
+          {internalSessions.length} séance{internalSessions.length !== 1 ? "s" : ""} OS
+          {calcomSessions.length > 0 && (
+            <> · {calcomSessions.length} Cal.com</>
+          )}
         </p>
       </div>
 
