@@ -28,7 +28,15 @@
       "Bash(findstr -i \"animate\\\\|framer\\\\|motion\")",
       "Bash(Get-Content \"C:\\\\Users\\\\manon\\\\site-pro\\\\site-premium\\\\package.json\")",
       "Bash(Select-String \"animate|framer|motion\")",
-      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\manon\\\\site-pro\\\\site-premium\\\\app\" -Filter \"page.tsx\" -Recurse)"
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\manon\\\\site-pro\\\\site-premium\\\\app\" -Filter \"page.tsx\" -Recurse)",
+      "Bash(Get-ChildItem -Recurse -Path \"C:\\\\Users\\\\manon\\\\OneDrive\\\\Bureau\\\\Site-Premium\\\\site-premium\" -Filter \"*.sql\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -First 20)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\manon\\\\OneDrive\\\\Bureau\\\\Site-Premium\\\\site-premium\\\\\" | Where-Object { $_.Name -match \"middleware\" })",
+      "Bash(python3 -c ' *)",
+      "Bash(git commit -m ' *)",
+      "Bash(node _gen_variants.js)",
+      "Bash(node _gen_m2_favicon.js)",
+      "Bash(node -e \"const m=require\\('./.next/server/next-font-manifest.json'\\); const keys=Object.keys\\(m\\); console.log\\(JSON.stringify\\(m\\).substring\\(0,3000\\)\\)\")"
     ]
   }
 }

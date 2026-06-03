@@ -90,13 +90,13 @@ const sections: Section[] = [
     id: "os-coachs",
     label: "Comptes coachs OS",
     description: "Créer les accès coachs et gérer leur connexion à /os/coach",
-    href: "/admin/os-coachs",
+    href: "/os/coach",
   },
   {
     id: "os-clients",
     label: "Comptes clients OS",
     description: "Créer les clients, les rattacher à un coach et gérer leurs bilans",
-    href: "/admin/os-clients",
+    href: "/os/client",
   },
 ];
 
