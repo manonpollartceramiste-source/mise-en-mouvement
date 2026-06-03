@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import Cal, { getCalApi } from "@calcom/embed-react";
+import type { EmbedEvent } from "@calcom/embed-react";
 import { type Coach } from "@/lib/content/coaches";
 import {
   isCoachAllowed,
@@ -252,6 +254,12 @@ function Row({
   );
 }
 
+function extractCalInfo(url: string): { calLink: string; calOrigin: string } {
+  const match = url.match(/^(https?:\/\/(?:app\.)?cal\.com)\/(.*)/);
+  if (match) return { calLink: match[2], calOrigin: match[1] };
+  return { calLink: url, calOrigin: "https://cal.com" };
+}
+
 function CalcomEmbed({
   coach,
   coachId,
@@ -261,53 +269,38 @@ function CalcomEmbed({
   coachId: string;
   offerId: string;
 }) {
+  // Refs keep latest coach/offer values accessible inside the stable listener
+  const coachIdRef = useRef(coachId);
+  const offerIdRef = useRef(offerId);
+  useEffect(() => { coachIdRef.current = coachId; }, [coachId]);
+  useEffect(() => { offerIdRef.current = offerId; }, [offerId]);
+
+  // Register the bookingSuccessfulV2 listener once; clean up with cal("off")
   useEffect(() => {
-    function handleMessage(e: MessageEvent) {
-      // Cal.com sends the event as a plain object or stringified JSON
-      let msg: Record<string, unknown> | null = null;
-      if (typeof e.data === "string") {
-        try {
-          msg = JSON.parse(e.data) as Record<string, unknown>;
-        } catch {
-          return;
-        }
-      } else if (e.data && typeof e.data === "object") {
-        msg = e.data as Record<string, unknown>;
-      }
-      if (!msg) return;
+    let cancelled = false;
+    let calApi: Awaited<ReturnType<typeof getCalApi>> | null = null;
 
-      const type = msg.type as string | undefined;
-      if (type !== "bookingSuccessful" && type !== "rescheduleBookingSuccessful") return;
+    const handleBooking = (e: EmbedEvent<"bookingSuccessfulV2">) => {
+      const { uid, startTime } = e.detail.data;
+      const p = new URLSearchParams();
+      if (coachIdRef.current) p.set("coach", coachIdRef.current);
+      if (offerIdRef.current) p.set("offre", offerIdRef.current);
+      if (uid) p.set("bookingUid", uid);
+      if (startTime) p.set("startTime", startTime);
+      window.location.href = `/reservation/confirmation?${p.toString()}`;
+    };
 
-      // Cal.com nests booking under data.booking, or data directly
-      const nested = msg.data as Record<string, unknown> | undefined;
-      const booking =
-        (nested?.booking as Record<string, unknown> | undefined) ??
-        (nested as Record<string, unknown> | undefined) ??
-        msg;
+    (async () => {
+      calApi = await getCalApi();
+      if (cancelled) return;
+      calApi("on", { action: "bookingSuccessfulV2", callback: handleBooking });
+    })();
 
-      const params = new URLSearchParams();
-      if (coachId) params.set("coach", coachId);
-      if (offerId) params.set("offre", offerId);
-
-      const uid = booking?.uid as string | undefined;
-      if (uid) params.set("bookingUid", uid);
-
-      const attendees = booking?.attendees as
-        | Array<{ name?: string; email?: string }>
-        | undefined;
-      if (attendees?.[0]?.name) params.set("name", attendees[0].name);
-      if (attendees?.[0]?.email) params.set("email", attendees[0].email);
-
-      const startTime = booking?.startTime as string | undefined;
-      if (startTime) params.set("startTime", startTime);
-
-      window.location.href = `/reservation/confirmation?${params.toString()}`;
-    }
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [coachId, offerId]);
+    return () => {
+      cancelled = true;
+      calApi?.("off", { action: "bookingSuccessfulV2", callback: handleBooking });
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!coach) {
     return (
@@ -321,13 +314,15 @@ function CalcomEmbed({
       </div>
     );
   }
+
+  const { calLink, calOrigin } = extractCalInfo(coach.calcomUrl);
+
   return (
     <div className="mt-6 overflow-hidden rounded-2xl border border-taupe-300/40 bg-sand-50">
-      <iframe
-        title={`Calendrier Cal.com — ${coach.name}`}
-        src={coach.calcomUrl}
-        className="h-[640px] w-full"
-        loading="lazy"
+      <Cal
+        calLink={calLink}
+        calOrigin={calOrigin}
+        style={{ width: "100%", minHeight: "640px" }}
       />
     </div>
   );
