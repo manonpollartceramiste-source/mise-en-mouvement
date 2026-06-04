@@ -8,7 +8,7 @@ import QRCode from "qrcode";
 // ─── Route config ─────────────────────────────────────────────────────────────
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 // ─── Label maps ───────────────────────────────────────────────────────────────
 
@@ -186,10 +186,13 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
 
 // ─── Playwright PDF ────────────────────────────────────────────────────────────
 
-// Chromium pack URL for serverless (Sparticuz v148 = Chromium 148 = playwright-core 1.60).
+// Chromium pack URL for serverless.
+// @sparticuz/chromium-min downloads this binary at runtime into /tmp.
+// GitHub releases only exist up to v133.x — v148 pack does NOT exist (→ 404).
+// playwright-core 1.60 is compatible with Chromium 133.
 // Override via CHROMIUM_PACK_URL env var if needed.
 const DEFAULT_CHROMIUM_PACK_URL =
-  "https://github.com/Sparticuz/chromium/releases/download/v148.0.0/chromium-v148.0.0-pack.tar";
+  "https://github.com/Sparticuz/chromium/releases/download/v133.0.0/chromium-v133.0.0-pack.tar";
 
 async function renderPdf(html: string): Promise<Buffer> {
   const { chromium } = await import("playwright-core");
