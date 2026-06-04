@@ -507,6 +507,33 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
           </div>
         )}
 
+        {/* ── Informations client ── */}
+        {(assessment.sexe || assessment.age != null) && (
+          <div className="rounded-2xl border border-taupe-300/40 bg-white p-5">
+            <p className="mb-4 text-sm font-medium uppercase tracking-wider text-taupe-400">
+              Informations client
+            </p>
+            <div className="flex flex-wrap gap-4">
+              {assessment.sexe && (
+                <div>
+                  <p className="mb-1 text-xs text-taupe-500">Sexe</p>
+                  <span className="rounded-full bg-sand-200 px-3 py-1 text-xs font-medium capitalize text-taupe-700">
+                    {assessment.sexe}
+                  </span>
+                </div>
+              )}
+              {assessment.age != null && (
+                <div>
+                  <p className="mb-1 text-xs text-taupe-500">Âge</p>
+                  <span className="rounded-full bg-sand-200 px-3 py-1 text-xs font-medium text-taupe-700">
+                    {assessment.age} ans
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── Programme ── */}
         {(assessment.frequency || assessment.motivation || assessment.engagement) && (
           <div className="rounded-2xl border border-taupe-300/40 bg-white p-5">
@@ -531,9 +558,9 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
                 </div>
               )}
               {assessment.engagement && (
-                <div>
-                  <p className="mb-1 text-xs text-taupe-500">Engagement</p>
-                  <span className="rounded-full bg-sand-200 px-3 py-1 text-xs font-medium capitalize text-taupe-700">
+                <div className="w-full">
+                  <p className="mb-1 text-xs text-taupe-500">Niveau d'engagement</p>
+                  <span className="inline-block rounded-2xl border border-taupe-200 bg-sand-50 px-4 py-2 text-sm font-medium text-taupe-800">
                     {assessment.engagement}
                   </span>
                 </div>

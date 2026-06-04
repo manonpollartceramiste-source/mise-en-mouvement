@@ -125,7 +125,10 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
     : null;
 
   const data: BilanPdfData = {
-    clientName, cabinetName, logoSrc, hasCustomLogo,
+    clientName,
+    sexe: (assessment.sexe as "femme" | "homme" | null | undefined) ?? null,
+    age:  (assessment.age as number | null | undefined) ?? null,
+    cabinetName, logoSrc, hasCustomLogo,
     contactLine, addressLine, dateStr,
     total, axes,
     activeLim, activeRec,

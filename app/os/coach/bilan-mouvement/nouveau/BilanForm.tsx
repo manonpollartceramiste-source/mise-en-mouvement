@@ -14,6 +14,8 @@ type BoolMap = Record<string, boolean>;
 type FormState = {
   client_id: string;
   assessed_at: string;
+  sexe: "femme" | "homme" | null;
+  age: number | null;
   energy_score: number | null;
   stress_score: number | null;
   sleep_score: number | null;
@@ -50,9 +52,12 @@ type FormState = {
   recommendations: BoolMap;
   zone_priorities: ZonePriorityMap;
   axis_notes: Record<string, string>;
-  frequency: "1x/semaine" | "2x/semaine" | "3x/semaine" | null;
-  motivation: "faible" | "moyenne" | "forte" | null;
-  engagement: "débutant" | "régulier" | "très motivé" | null;
+  frequency: "1x/semaine" | "2x/semaine" | "3x/semaine" | "4x/semaine" | "5x/semaine" | null;
+  engagement:
+    | "J'ai besoin d'être guidé(e) pour démarrer"
+    | "Je suis prêt(e) à progresser régulièrement"
+    | "Je suis pleinement engagé(e) dans ma transformation"
+    | null;
   important_notes: string;
   next_action: string;
   pain_evolution: string;
@@ -130,6 +135,7 @@ const BODY_ZONES = [
   { key: "fessiers",          label: "Fessiers" },
   { key: "quadriceps",        label: "Quadriceps" },
   { key: "ischio_jambiers",   label: "Ischio-jambiers" },
+  { key: "genoux",            label: "Genoux" },
   { key: "mollets",           label: "Mollets" },
   { key: "chevilles",         label: "Chevilles" },
   { key: "pieds",             label: "Pieds" },
@@ -219,16 +225,16 @@ const AXES = [
 ] as const;
 
 const SECTIONS = [
-  { id: "subjectif",   label: "Subjectif" },
-  { id: "composition", label: "Compo." },
-  { id: "mode-vie",    label: "Mode de vie" },
-  { id: "zones",       label: "Zones" },
-  { id: "tests", label: "Tests" },
-  { id: "scores", label: "Synthèse" },
-  { id: "limitations", label: "Limitations" },
-  { id: "recommandations", label: "Reco." },
-  { id: "programme", label: "Programme" },
-  { id: "notes", label: "Notes" },
+  { id: "subjectif",        label: "Subjectif" },
+  { id: "composition",      label: "Compo." },
+  { id: "tests",            label: "Tests" },
+  { id: "mode-vie",         label: "Mode de vie" },
+  { id: "zones",            label: "Zones" },
+  { id: "scores",           label: "Synthèse" },
+  { id: "limitations",      label: "Limitations" },
+  { id: "recommandations",  label: "Reco." },
+  { id: "programme",        label: "Programme" },
+  { id: "notes",            label: "Notes" },
 ];
 
 // ─── Score helpers ────────────────────────────────────────────
@@ -590,6 +596,8 @@ export function BilanForm({
   const [form, setForm] = useState<FormState>({
     client_id: defaultClient,
     assessed_at: nowISO,
+    sexe: null,
+    age: null,
     energy_score: null,
     stress_score: null,
     sleep_score: null,
@@ -627,7 +635,6 @@ export function BilanForm({
     zone_priorities: {},
     axis_notes: {},
     frequency: null,
-    motivation: null,
     engagement: null,
     important_notes: "",
     next_action: "",
@@ -684,6 +691,7 @@ export function BilanForm({
         seg_leg_right_kg, seg_leg_left_kg,
         seg_trunk_kg,
         zone_priorities,
+        sexe, age,
         ...restForm
       } = form;
       const result = await createAssessmentAction({
@@ -702,6 +710,7 @@ export function BilanForm({
         important_notes: form.important_notes || null,
         next_action: form.next_action || null,
         pain_evolution: form.pain_evolution || null,
+        motivation: null,
         // Migration 0008 — composition corporelle
         ...(weight_kg     != null ? { weight_kg     } : {}),
         ...(fat_pct       != null ? { fat_pct       } : {}),
@@ -721,6 +730,9 @@ export function BilanForm({
         ...(seg_trunk_kg     != null ? { seg_trunk_kg     } : {}),
         // Migration 0011 — notes par axe
         ...(Object.keys(axis_notes).length > 0 ? { axis_notes } : {}),
+        // Migration 0014 — sexe et âge
+        ...(sexe != null ? { sexe } : {}),
+        ...(age  != null ? { age  } : {}),
       });
       if (result.error) {
         setError(result.error);
@@ -791,7 +803,7 @@ export function BilanForm({
               </div>
             </div>
 
-            {/* Client + date */}
+            {/* Client + date + sexe + âge */}
             <div className="flex flex-1 flex-col gap-4">
               <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
@@ -810,6 +822,42 @@ export function BilanForm({
                   ))}
                 </select>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
+                    Sexe
+                  </label>
+                  <div className="flex gap-2">
+                    {(["femme", "homme"] as const).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => set("sexe", form.sexe === s ? null : s)}
+                        className={`flex-1 rounded-2xl border px-4 py-3 text-sm font-semibold capitalize transition-all active:scale-95 ${
+                          form.sexe === s
+                            ? "border-ink-900 bg-ink-900 text-sand-50 shadow-sm"
+                            : "border-taupe-200 bg-white text-taupe-600 hover:border-taupe-400 hover:bg-sand-50"
+                        }`}
+                      >
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
+                    Âge
+                  </label>
+                  <NumberInput
+                    value={form.age}
+                    onChange={(v) => set("age", v)}
+                    placeholder="35"
+                    step="1"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
                   Date du bilan
@@ -916,9 +964,85 @@ export function BilanForm({
           </Card>
         </div>
 
-        {/* ── Section 3 : Mode de vie ─────────────────────────── */}
+        {/* ── Section 3 : Tests de mouvement ─────────────────── */}
         <div>
-          <SectionTitle id="mode-vie">3. Mode de vie</SectionTitle>
+          <SectionTitle id="tests">3. Tests de mouvement</SectionTitle>
+          <div className="grid gap-5 lg:grid-cols-2">
+            {MOVEMENT_TESTS.map((test) => {
+              const entry = form.movement_tests[test.key];
+              return (
+                <Card key={test.key} className="flex flex-col gap-5">
+                  <div>
+                    <p className="text-base font-bold text-ink-900">{test.label}</p>
+                    <p className="mt-1 text-sm text-taupe-400">{test.desc}</p>
+                  </div>
+
+                  {/* 3 big score buttons */}
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {TEST_SCORES.map((s) => (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => setTest(test.key, "score", s.value)}
+                        className={`flex flex-col items-center justify-center rounded-2xl border py-4 text-center transition-all active:scale-95 ${
+                          entry.score === s.value ? s.active : s.inactive
+                        }`}
+                      >
+                        <span className="text-lg font-bold leading-none">{s.value}</span>
+                        <span className="mt-1 text-xs font-medium leading-tight">{s.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <PremiumScoreRow
+                    label="Score /10"
+                    value={entry.score10 ?? null}
+                    onChange={(v) => setTest(test.key, "score10", v)}
+                  />
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
+                        Observation
+                      </label>
+                      <TextArea
+                        value={entry.observation}
+                        onChange={(v) => setTest(test.key, "observation", v)}
+                        placeholder="Ce que j'ai observé…"
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
+                        Note coach
+                      </label>
+                      <TextArea
+                        value={entry.note}
+                        onChange={(v) => setTest(test.key, "note", v)}
+                        placeholder="Point d'attention, progression attendue…"
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
+                        Zone concernée
+                      </label>
+                      <TextInput
+                        value={entry.zone ?? ""}
+                        onChange={(v) => setTest(test.key, "zone", v)}
+                        placeholder="Hanches, épaules, lombaires…"
+                      />
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Section 4 : Mode de vie ─────────────────────────── */}
+        <div>
+          <SectionTitle id="mode-vie">4. Mode de vie</SectionTitle>
           <div className="space-y-5">
             <Card>
               <div className="grid gap-5 sm:grid-cols-2">
@@ -1093,82 +1217,6 @@ export function BilanForm({
           </Card>
         </div>
 
-        {/* ── Section 4 : Tests de mouvement ─────────────────── */}
-        <div>
-          <SectionTitle id="tests">4. Tests de mouvement</SectionTitle>
-          <div className="grid gap-5 lg:grid-cols-2">
-            {MOVEMENT_TESTS.map((test) => {
-              const entry = form.movement_tests[test.key];
-              return (
-                <Card key={test.key} className="flex flex-col gap-5">
-                  <div>
-                    <p className="text-base font-bold text-ink-900">{test.label}</p>
-                    <p className="mt-1 text-sm text-taupe-400">{test.desc}</p>
-                  </div>
-
-                  {/* 3 big score buttons */}
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {TEST_SCORES.map((s) => (
-                      <button
-                        key={s.value}
-                        type="button"
-                        onClick={() => setTest(test.key, "score", s.value)}
-                        className={`flex flex-col items-center justify-center rounded-2xl border py-4 text-center transition-all active:scale-95 ${
-                          entry.score === s.value ? s.active : s.inactive
-                        }`}
-                      >
-                        <span className="text-lg font-bold leading-none">{s.value}</span>
-                        <span className="mt-1 text-xs font-medium leading-tight">{s.label}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  <PremiumScoreRow
-                    label="Score /10"
-                    value={entry.score10 ?? null}
-                    onChange={(v) => setTest(test.key, "score10", v)}
-                  />
-
-                  <div className="space-y-3">
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
-                        Observation
-                      </label>
-                      <TextArea
-                        value={entry.observation}
-                        onChange={(v) => setTest(test.key, "observation", v)}
-                        placeholder="Ce que j'ai observé…"
-                        rows={2}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
-                        Note coach
-                      </label>
-                      <TextArea
-                        value={entry.note}
-                        onChange={(v) => setTest(test.key, "note", v)}
-                        placeholder="Point d'attention, progression attendue…"
-                        rows={2}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
-                        Zone concernée
-                      </label>
-                      <TextInput
-                        value={entry.zone ?? ""}
-                        onChange={(v) => setTest(test.key, "zone", v)}
-                        placeholder="Hanches, épaules, lombaires…"
-                      />
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-
         {/* ── Section 5 : Synthèse fonctionnelle ─────────────── */}
         <div>
           <SectionTitle id="scores">5. Synthèse fonctionnelle</SectionTitle>
@@ -1304,6 +1352,8 @@ export function BilanForm({
                     { value: "1x/semaine", label: "1×/semaine" },
                     { value: "2x/semaine", label: "2×/semaine" },
                     { value: "3x/semaine", label: "3×/semaine" },
+                    { value: "4x/semaine", label: "4×/semaine" },
+                    { value: "5x/semaine", label: "5×/semaine" },
                   ]}
                   value={form.frequency}
                   onChange={(v) => set("frequency", v)}
@@ -1311,29 +1361,38 @@ export function BilanForm({
               </div>
               <div className="h-px bg-taupe-100" />
               <div>
-                <Label>Motivation du client</Label>
-                <ToggleGrid
-                  options={[
-                    { value: "faible", label: "Faible" },
-                    { value: "moyenne", label: "Moyenne" },
-                    { value: "forte", label: "Forte" },
-                  ]}
-                  value={form.motivation}
-                  onChange={(v) => set("motivation", v)}
-                />
-              </div>
-              <div className="h-px bg-taupe-100" />
-              <div>
-                <Label>Niveau d'engagement</Label>
-                <ToggleGrid
-                  options={[
-                    { value: "débutant", label: "Débutant" },
-                    { value: "régulier", label: "Régulier" },
-                    { value: "très motivé", label: "Très motivé" },
-                  ]}
-                  value={form.engagement}
-                  onChange={(v) => set("engagement", v)}
-                />
+                <Label>Niveau d'engagement actuel</Label>
+                <div className="flex flex-col gap-2.5">
+                  {(
+                    [
+                      "J'ai besoin d'être guidé(e) pour démarrer",
+                      "Je suis prêt(e) à progresser régulièrement",
+                      "Je suis pleinement engagé(e) dans ma transformation",
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => set("engagement", form.engagement === opt ? null : opt)}
+                      className={`flex items-center gap-3 rounded-2xl border px-5 py-4 text-left text-sm font-medium transition-all active:scale-[0.99] ${
+                        form.engagement === opt
+                          ? "border-ink-900 bg-ink-900 text-sand-50 shadow-sm"
+                          : "border-taupe-200 bg-white text-taupe-700 hover:border-taupe-400 hover:bg-sand-50"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs ${
+                          form.engagement === opt
+                            ? "border-sand-400 text-sand-100"
+                            : "border-taupe-300 text-transparent"
+                        }`}
+                      >
+                        ✓
+                      </span>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </Card>

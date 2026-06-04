@@ -171,9 +171,17 @@ export type MovementAssessment = {
   movement_tests: Record<string, AssessmentTestEntry> | null;
   daily_limitations: Record<string, boolean> | null;
   recommendations: Record<string, boolean> | null;
-  frequency: "1x/semaine" | "2x/semaine" | "3x/semaine" | null;
+  // Informations personnelles — migration 0014
+  sexe?: "femme" | "homme" | null;
+  age?: number | null;
+  frequency: "1x/semaine" | "2x/semaine" | "3x/semaine" | "4x/semaine" | "5x/semaine" | null;
   motivation: "faible" | "moyenne" | "forte" | null;
-  engagement: "débutant" | "régulier" | "très motivé" | null;
+  engagement:
+    | "débutant" | "régulier" | "très motivé"
+    | "J'ai besoin d'être guidé(e) pour démarrer"
+    | "Je suis prêt(e) à progresser régulièrement"
+    | "Je suis pleinement engagé(e) dans ma transformation"
+    | null;
   important_notes: string | null;
   next_action: string | null;
   pain_evolution: string | null;

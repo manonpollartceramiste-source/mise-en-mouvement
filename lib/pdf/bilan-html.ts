@@ -2,6 +2,8 @@
 
 export type BilanPdfData = {
   clientName: string;
+  sexe: "femme" | "homme" | null;
+  age: number | null;
   cabinetName: string;
   logoSrc: string;
   hasCustomLogo: boolean;
@@ -594,14 +596,24 @@ function renderHeader(d: BilanPdfData): string {
 // ─── Hero (page 1) — typographique, sans score ────────────────────────────────
 
 function renderHero(d: BilanPdfData, name: string): string {
+  const sexeLabel = d.sexe === "femme" ? "Femme" : d.sexe === "homme" ? "Homme" : null;
+  const identityParts: string[] = [];
+  if (sexeLabel)    identityParts.push(`<strong>${esc(sexeLabel)}</strong>`);
+  if (d.age != null) identityParts.push(`<strong>${d.age}</strong>&nbsp;ans`);
+  identityParts.push(esc(d.dateStr));
+
   return `<div class="hero">
     <div class="hero-overline">Bilan mouvement personnalisé</div>
     <div class="hero-name">${esc(name)}</div>
     <div class="hero-meta">
+      ${identityParts.map((p, i) =>
+        (i > 0 ? `<div class="hero-meta-dot"></div>` : "") +
+        `<span class="hero-meta-item">${p}</span>`
+      ).join("")}
+    </div>
+    <div class="hero-meta" style="margin-top:4pt">
       <span class="hero-meta-item">Coach&nbsp;: <strong>${esc(d.coachName || "Non renseigné")}</strong></span>
-      ${d.engagement ? `<div class="hero-meta-dot"></div><span class="hero-meta-item">${esc(d.engagement)}</span>` : ""}
-      <div class="hero-meta-dot"></div>
-      <span class="hero-meta-item">${esc(d.dateStr)}</span>
+      ${d.engagement ? `<div class="hero-meta-dot"></div><span class="hero-meta-item" style="font-style:italic">${esc(d.engagement)}</span>` : ""}
     </div>
   </div>`;
 }
@@ -1131,8 +1143,8 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
     <div class="p1-left">
       ${renderAxes(d.axes)}
       ${hasAxes ? renderForcesAndPriorities(d.axes) : ""}
-      ${hasLim ? renderLimitations(d.activeLim) : ""}
       ${hasProg ? renderProgramme(d.topPriorities, d.frequency) : ""}
+      ${hasLim ? renderLimitations(d.activeLim) : ""}
     </div>
     <div class="p1-vsep"></div>
     <div class="p1-right">
