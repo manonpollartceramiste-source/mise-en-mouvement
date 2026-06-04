@@ -184,26 +184,25 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
   return { data, slug };
 }
 
-// ─── Playwright PDF ────────────────────────────────────────────────────────────
+// ─── Puppeteer PDF ────────────────────────────────────────────────────────────
 
 // Chromium pack URL for serverless.
 // @sparticuz/chromium-min downloads this binary at runtime into /tmp.
 // GitHub releases only exist up to v133.x — v148 pack does NOT exist (→ 404).
-// playwright-core 1.60 is compatible with Chromium 133.
+// puppeteer-core v22 is compatible with Chromium 133.
 // Override via CHROMIUM_PACK_URL env var if needed.
 const DEFAULT_CHROMIUM_PACK_URL =
   "https://github.com/Sparticuz/chromium/releases/download/v133.0.0/chromium-v133.0.0-pack.tar";
 
 async function renderPdf(html: string): Promise<Buffer> {
-  const { chromium } = await import("playwright-core");
+  const puppeteer = await import("puppeteer-core");
 
   const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_VERSION;
 
-  let executablePath: string | undefined;
+  let executablePath: string;
   let launchArgs: string[];
 
   if (isServerless) {
-    // Use @sparticuz/chromium-min: no system Chrome needed, downloads once to /tmp
     const chromiumMin = await import("@sparticuz/chromium-min");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bin = (chromiumMin.default ?? chromiumMin) as any as {
@@ -212,7 +211,7 @@ async function renderPdf(html: string): Promise<Buffer> {
       executablePath: (url: string) => Promise<string>;
     };
 
-    bin.graphicsMode = false; // headless PDF, no GPU
+    bin.graphicsMode = false;
 
     const packUrl = process.env.CHROMIUM_PACK_URL ?? DEFAULT_CHROMIUM_PACK_URL;
     console.log(`[PDF] Serverless Chromium — downloading from: ${packUrl}`);
@@ -222,11 +221,10 @@ async function renderPdf(html: string): Promise<Buffer> {
 
     console.log(`[PDF] executablePath: ${executablePath}`);
   } else {
-    // Local development: use system Chrome or env var
-    const envPath =
+    executablePath =
       process.env.CHROME_EXECUTABLE_PATH ||
-      process.env.CHROMIUM_EXECUTABLE_PATH;
-    executablePath = envPath || undefined;
+      process.env.CHROMIUM_EXECUTABLE_PATH ||
+      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
     launchArgs = [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -236,19 +234,15 @@ async function renderPdf(html: string): Promise<Buffer> {
     ];
   }
 
-  const browser = await chromium.launch({
-    executablePath: executablePath || undefined,
-    channel: !executablePath && !isServerless ? "chrome" : undefined,
+  const browser = await puppeteer.launch({
+    executablePath,
     headless: true,
     args: launchArgs,
   });
 
   try {
-    const context = await browser.newContext({
-      baseURL: process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000",
-    });
-    const page = await context.newPage();
-    await page.setContent(html, { waitUntil: "networkidle" });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
     await page.evaluate(() => document.fonts.ready);
 
     const pdf = await page.pdf({
