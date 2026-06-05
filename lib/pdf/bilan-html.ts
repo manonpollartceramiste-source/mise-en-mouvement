@@ -101,7 +101,7 @@ function axisInterp(value: number): { label: string; color: string } {
 const PROFILE_LEVELS: Array<{ minScore: number; label: string; desc: string; color: string }> = [
   { minScore: 90, label: "Performant",    desc: "Un profil remarquable, construit par une pratique régulière.",                              color: "#2E7D52" },
   { minScore: 75, label: "Solide",        desc: "Vos bases sont solides. Le programme va vous permettre d'aller encore plus loin.",           color: "#3E8A68" },
-  { minScore: 60, label: "Fonctionnel",   desc: "Votre corps fonctionne bien. Quelques axes à optimiser pour gagner en confort et efficacité.", color: "#B8956A" },
+  { minScore: 60, label: "Bien engagé",   desc: "Votre corps répond bien. Quelques axes à optimiser pour gagner en confort et en efficacité.", color: "#B8956A" },
   { minScore: 40, label: "En progression", desc: "Vous avez de belles marges de progression devant vous. C'est exactement là que le travail fait la différence.", color: "#C47040" },
   { minScore: 0,  label: "À développer",  desc: "Un beau chemin s'ouvre devant vous. Chaque séance vous rapprochera d'un meilleur confort au quotidien.", color: "#B8956A" },
 ];
