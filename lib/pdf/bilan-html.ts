@@ -112,11 +112,11 @@ function profileLevel(total: number): typeof PROFILE_LEVELS[0] {
 
 // ─── Textes "Pourquoi travailler ces axes" (simples, accessibles) ─────────────
 const WHY_AXES_TEXT: Record<string, string> = {
-  "mobilité":     "Quand la mobilité est limitée, certains gestes du quotidien — se baisser, attraper quelque chose en hauteur, tourner la tête — deviennent inconfortables. En travaillant cet axe, vous retrouverez de l'aisance dans vos mouvements et réduirez les tensions chroniques.",
-  "stabilité":    "La stabilité, c'est la capacité de votre corps à se maintenir en équilibre sous l'effort. Sans elle, d'autres muscles compensent et s'épuisent prématurément. En la renforçant, vous améliorerez votre posture et protégerez vos articulations.",
-  "force":        "La force fonctionnelle vous permet de porter des charges, de monter les escaliers ou de vous lever sans effort. Ce n'est pas une question de volume musculaire, mais de capacité à utiliser votre corps efficacement dans votre vie réelle.",
-  "posture":      "Une posture déséquilibrée génère des tensions invisibles sur votre dos, vos épaules et votre nuque. En la rééquilibrant progressivement, vous réduirez les douleurs chroniques et gagnerez en énergie au fil des journées.",
-  "coordination": "La coordination rend vos mouvements fluides et sûrs. En la travaillant, vous améliorez votre réactivité, réduisez votre risque de blessure et gagnez en confiance dans toutes vos activités physiques.",
+  "mobilité":     "Gagner en mobilité facilite les gestes du quotidien et réduit les tensions articulaires persistantes.",
+  "stabilité":    "Un meilleur contrôle postural protège vos articulations et élimine les compensations musculaires.",
+  "force":        "La force fonctionnelle rend les efforts du quotidien plus faciles et prévient les blessures.",
+  "posture":      "Rééquilibrer la posture soulage les douleurs du dos, des épaules et de la nuque.",
+  "coordination": "Des mouvements plus fluides et sécurisés réduisent le risque de blessure dans toutes vos activités.",
 };
 
 // ─── Projections 6 semaines par axe (utilisées dans la feuille de route) ──────
@@ -552,7 +552,7 @@ body{
 /* ── FEUILLE DE ROUTE (page 3, élément principal) ── */
 .roadmap{
   background:#1E1812;border-radius:7pt;
-  padding:8pt 13pt 9pt;
+  padding:7pt 12pt 7pt;
   border-left:3pt solid #B8956A;
   border-top:0.5pt solid rgba(184,149,106,0.2);
   border-right:0.5pt solid rgba(184,149,106,0.2);
@@ -561,35 +561,24 @@ body{
 }
 .roadmap .sec-lbl{color:rgba(184,149,106,0.85)}
 .roadmap .sec-rule{background:linear-gradient(90deg,rgba(184,149,106,0.4),transparent)}
-.roadmap-context{
-  display:flex;gap:0;margin-top:5pt;padding-bottom:4pt;
-  border-bottom:0.5pt solid rgba(184,149,106,0.18);
-}
-.roadmap-ctx-item{flex:1;padding:0 12pt}
-.roadmap-ctx-item:first-child{padding-left:0}
-.roadmap-ctx-item+.roadmap-ctx-item{border-left:0.5pt solid rgba(184,149,106,0.18)}
-.roadmap-ctx-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2pt}
-.roadmap-ctx-val{font-family:'Playfair Display',Georgia,serif;font-size:13.5px;font-weight:700;color:#F5EFE5;line-height:1.3}
 .roadmap-meta{
-  display:flex;gap:0;padding:5pt 0;
+  display:flex;gap:0;padding:4pt 0;
   border-bottom:0.5pt solid rgba(184,149,106,0.18);
 }
-.roadmap-meta-item{flex:1;padding:0 12pt}
+.roadmap-meta-item{flex:1;padding:0 10pt}
 .roadmap-meta-item:first-child{padding-left:0}
 .roadmap-meta-item+.roadmap-meta-item{border-left:0.5pt solid rgba(184,149,106,0.18)}
-.roadmap-meta-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2pt}
-.roadmap-meta-val{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;color:#E8D5A8;line-height:1.2}
-.roadmap-proj{padding:5pt 0;border-bottom:0.5pt solid rgba(184,149,106,0.18)}
-.roadmap-proj-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4pt}
-.roadmap-proj-steps{display:flex;gap:0}
-.roadmap-proj-step{flex:1;padding:0 10pt;border-right:0.5pt solid rgba(184,149,106,0.18)}
-.roadmap-proj-step:first-child{padding-left:0}
-.roadmap-proj-step:last-child{border-right:none;padding-right:0}
-.roadmap-proj-week{font-size:9px;font-weight:700;color:rgba(184,149,106,0.5);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:2pt}
-.roadmap-proj-title{font-family:'Playfair Display',Georgia,serif;font-size:13px;font-weight:700;color:#F5EFE5;line-height:1.3}
-.roadmap-action{padding-top:5pt}
-.roadmap-action-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2pt}
-.roadmap-action-val{font-size:14.5px;font-weight:500;color:#E8DDD0;line-height:1.45;font-style:italic}
+.roadmap-meta-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1.5pt}
+.roadmap-meta-val{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:#E8D5A8;line-height:1.2}
+.roadmap-proj{padding:4pt 0;border-bottom:0.5pt solid rgba(184,149,106,0.18)}
+.roadmap-proj-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt}
+.roadmap-bullets{display:flex;flex-direction:column}
+.roadmap-bullet{display:flex;align-items:baseline;gap:5pt;padding:1.5pt 0}
+.roadmap-bullet-dot{font-size:5.5px;color:#B8956A;flex-shrink:0;line-height:1}
+.roadmap-bullet-text{font-size:12.5px;color:#D0C4B8;line-height:1.35}
+.roadmap-action{padding-top:4pt}
+.roadmap-action-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1.5pt}
+.roadmap-action-val{font-size:13px;font-weight:500;color:#E8DDD0;line-height:1.4;font-style:italic}
 
 /* ── POURQUOI CES AXES (page 3) ── */
 .why-grid{display:flex;gap:8pt;margin-top:4pt}
@@ -836,34 +825,19 @@ function renderWhyAxes(axes: BilanPdfData["axes"]): string {
 // ─── Feuille de route personnalisée (page 3, élément principal) ───────────────
 
 function renderRoadmap(d: BilanPdfData): string {
-  const { mainGoal, mainLimitation, frequency, nextAction, axes, topPriorities, concreteGoal } = d;
+  const { mainGoal, frequency, nextAction, axes, topPriorities } = d;
 
   const sortedAxes = [...(axes ?? [])].sort((a, b) => (a.value / a.max) - (b.value / b.max));
   const weakAxes   = sortedAxes.filter(a => a.max > 0 && a.value / a.max < 0.75);
   const priorityAxis = weakAxes[0] ?? sortedAxes[0] ?? null;
 
-  const hasContent = mainGoal || mainLimitation || frequency || nextAction || priorityAxis;
-  if (!hasContent) return "";
+  if (!priorityAxis && !frequency && !nextAction && !mainGoal) return "";
 
-  // Contexte : point de départ + objectif
-  const ctxItems = [
-    mainLimitation ? { lbl: "Point de départ", val: mainLimitation } : null,
-    mainGoal       ? { lbl: "Objectif",         val: mainGoal       } : null,
-  ].filter(Boolean) as Array<{ lbl: string; val: string }>;
-
-  const ctxHtml = ctxItems.length
-    ? `<div class="roadmap-context">${ctxItems.map(it =>
-        `<div class="roadmap-ctx-item">
-          <div class="roadmap-ctx-lbl">${esc(it.lbl)}</div>
-          <div class="roadmap-ctx-val">${esc(it.val)}</div>
-        </div>`).join("")}</div>`
-    : "";
-
-  // Méta : axe prioritaire + fréquence
-  const metaItems = [
-    priorityAxis ? { lbl: "Axe prioritaire",      val: priorityAxis.label } : null,
-    frequency    ? { lbl: "Fréquence recommandée", val: frequency          } : null,
-  ].filter(Boolean) as Array<{ lbl: string; val: string }>;
+  // Ligne méta compacte : axe + fréquence (+ objectif si court)
+  const metaItems: Array<{ lbl: string; val: string }> = [];
+  if (priorityAxis) metaItems.push({ lbl: "Axe prioritaire", val: priorityAxis.label });
+  if (frequency)    metaItems.push({ lbl: "Fréquence",        val: frequency          });
+  if (mainGoal && metaItems.length < 3) metaItems.push({ lbl: "Objectif", val: mainGoal });
 
   const metaHtml = metaItems.length
     ? `<div class="roadmap-meta">${metaItems.map(it =>
@@ -873,42 +847,40 @@ function renderRoadmap(d: BilanPdfData): string {
         </div>`).join("")}</div>`
     : "";
 
-  // Projection 6 semaines (3 étapes)
-  const getProj = (axis: typeof weakAxes[0] | undefined, fallback: string | undefined, def: string) => {
-    if (axis) return AXIS_PROJECTIONS[axis.label.toLowerCase()] ?? `Progression sur la ${axis.label.toLowerCase()}`;
-    return fallback ?? def;
-  };
-  const proj1 = getProj(weakAxes[0], topPriorities?.[0], "Phase d'activation et prise de repères");
-  const proj2 = getProj(weakAxes[1], topPriorities?.[1], "Progression régulière et consolidation");
-  const proj3 = concreteGoal ?? topPriorities?.[2] ?? "Autonomie dans le mouvement et maintien des acquis";
+  // Bullets de projection depuis les axes faibles
+  const bullets: string[] = [];
+  weakAxes.slice(0, 3).forEach(a => {
+    const p = AXIS_PROJECTIONS[a.label.toLowerCase()];
+    if (p) bullets.push(p);
+  });
+  if (bullets.length < 2) {
+    (topPriorities ?? []).forEach(p => {
+      if (bullets.length < 3 && !bullets.includes(p)) bullets.push(p);
+    });
+  }
+  if (bullets.length === 0) {
+    bullets.push("Phase d'activation et prise de repères corporels");
+    bullets.push("Progression régulière et consolidation des acquis");
+  }
+
+  const bulletHtml = bullets.slice(0, 3).map(b =>
+    `<div class="roadmap-bullet"><span class="roadmap-bullet-dot">◆</span><span class="roadmap-bullet-text">${esc(b)}</span></div>`
+  ).join("");
 
   const projHtml = `<div class="roadmap-proj">
-    <div class="roadmap-proj-lbl">Projection 6 semaines</div>
-    <div class="roadmap-proj-steps">
-      <div class="roadmap-proj-step">
-        <div class="roadmap-proj-week">Sem. 1–2</div>
-        <div class="roadmap-proj-title">${esc(proj1)}</div>
-      </div>
-      <div class="roadmap-proj-step">
-        <div class="roadmap-proj-week">Sem. 3–4</div>
-        <div class="roadmap-proj-title">${esc(proj2)}</div>
-      </div>
-      <div class="roadmap-proj-step">
-        <div class="roadmap-proj-week">Sem. 5–6</div>
-        <div class="roadmap-proj-title">${esc(proj3)}</div>
-      </div>
-    </div>
+    <div class="roadmap-proj-lbl">Projection à 6 semaines</div>
+    <div class="roadmap-bullets">${bulletHtml}</div>
   </div>`;
 
-  const actionVal = nextAction || "Mise en place de votre programme personnalisé.";
-  const actionHtml = `<div class="roadmap-action">
-    <div class="roadmap-action-lbl">Prochaine étape</div>
-    <div class="roadmap-action-val">${esc(actionVal)}</div>
-  </div>`;
+  const actionHtml = nextAction
+    ? `<div class="roadmap-action">
+        <div class="roadmap-action-lbl">Prochaine étape</div>
+        <div class="roadmap-action-val">${esc(nextAction)}</div>
+      </div>`
+    : "";
 
   return `<div class="roadmap">
     ${sec("Votre feuille de route")}
-    ${ctxHtml}
     ${metaHtml}
     ${projHtml}
     ${actionHtml}
@@ -1197,7 +1169,7 @@ function renderComposition(bc: NonNullable<BilanPdfData["bodyComposition"]>): st
   ].filter(Boolean) as Array<{ v: string; u: string; k: string }>;
 
   if (!all.length) return "";
-  const display = all.slice(0, 6);
+  const display = all.slice(0, 4);
 
   const stats = display.map(it => `<div class="comp-stat">
     <div class="comp-stat-v">${esc(it.v)}<span class="comp-stat-u">${esc(it.u)}</span></div>
@@ -1212,7 +1184,7 @@ function renderComposition(bc: NonNullable<BilanPdfData["bodyComposition"]>): st
     bc.segLegRight  !== null ? { v: bc.segLegRight!.toFixed(1).replace(".", ","), k: "Jambe D." } : null,
   ].filter(Boolean) as Array<{ v: string; k: string }>;
 
-  const segHtml = segItems.length >= 2 ? `
+  const segHtml = segItems.length >= 3 ? `
     <div class="seg-sub-hd">
       <span class="seg-sub-lbl">Masse segmentaire</span>
       <div class="seg-sub-rule"></div>
@@ -1233,24 +1205,12 @@ function renderComposition(bc: NonNullable<BilanPdfData["bodyComposition"]>): st
 
 function renderRecommandations(
   rec: string[],
-  frequency: string | null,
-  nextAction: string | null,
   axes: BilanPdfData["axes"],
   tests: BilanPdfData["tests"],
 ): string {
-  if (!rec?.length && !frequency && !nextAction) return "";
+  if (!rec?.length) return "";
 
-  const chips = rec?.length
-    ? `<div class="rec-chips">${rec.map(r => `<span class="rec-chip">${esc(r)}</span>`).join("")}</div>`
-    : "";
-
-  const freqHtml = frequency ? `<div class="rec-freq">
-    <span class="rec-freq-lbl">Fréquence recommandée</span>
-    <span style="color:#C4B8A8;margin:0 5pt">·</span>
-    <span class="rec-freq-val">${esc(frequency)}</span>
-  </div>` : "";
-
-  const actionHtml = nextAction ? `<div class="rec-action">${esc(nextAction)}</div>` : "";
+  const chips = `<div class="rec-chips">${rec.map(r => `<span class="rec-chip">${esc(r)}</span>`).join("")}</div>`;
 
   const sortedAxes = [...(axes ?? [])].sort((a, b) => {
     const pA = a.max > 0 ? a.value / a.max : 0;
@@ -1262,18 +1222,16 @@ function renderRecommandations(
 
   let detailText = "";
   if (weakAxes.length >= 2) {
-    detailText = `Le travail doit prioritairement porter sur la ${weakAxes[0].label.toLowerCase()} et la ${weakAxes[1].label.toLowerCase()} afin d'améliorer la qualité du mouvement${hasComps ? " et limiter les compensations observées" : ""}.`;
+    detailText = `Priorité : ${weakAxes[0].label.toLowerCase()} et ${weakAxes[1].label.toLowerCase()}${hasComps ? " — compensations à corriger" : ""}.`;
   } else if (weakAxes.length === 1) {
-    detailText = `Le travail doit prioritairement porter sur la ${weakAxes[0].label.toLowerCase()} afin d'améliorer la qualité du mouvement${hasComps ? " et limiter les compensations observées" : ""}.`;
+    detailText = `Priorité : ${weakAxes[0].label.toLowerCase()}${hasComps ? " — compensations à corriger" : ""}.`;
   } else {
-    detailText = "Votre profil de mouvement est bien équilibré. L'objectif est de consolider ces acquis et de progresser vers l'excellence.";
+    detailText = "Profil équilibré — consolider les acquis et progresser vers l'excellence.";
   }
 
   return `<div class="p3-section">
     ${sec("Recommandations coach")}
     ${chips}
-    ${freqHtml}
-    ${actionHtml}
     <div class="rec-detail">${esc(detailText)}</div>
   </div>`;
 }
@@ -1337,9 +1295,9 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
     d.bodyComposition.boneMassKg !== null || d.bodyComposition.visceralFat !== null ||
     d.bodyComposition.bmrKcal !== null || d.bodyComposition.metabolicAge !== null
   ));
-  const hasRec   = (d.activeRec?.length ?? 0) > 0 || !!d.frequency || !!d.nextAction;
+  const hasRec   = (d.activeRec?.length ?? 0) > 0;
   const hasAxes  = (d.axes?.length ?? 0) > 0;
-  const hasRoadmap = !!(d.mainGoal || d.mainLimitation || d.frequency || d.nextAction || hasAxes);
+  const hasRoadmap = !!(d.mainGoal || d.frequency || d.nextAction || hasAxes);
   const hasWhyAxes = hasAxes && (d.axes ?? []).some(a => a.max > 0 && a.value / a.max < 0.65);
 
   // ── PAGE 1 : 2 colonnes — gauche : diagnostic / droite : score + analyse + plan ──
@@ -1391,7 +1349,7 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
     ${hasRoadmap ? renderRoadmap(d) : ""}
     ${hasWhyAxes ? renderWhyAxes(d.axes) : ""}
     ${hasComp ? renderComposition(d.bodyComposition!) : ""}
-    ${hasRec  ? renderRecommandations(d.activeRec ?? [], d.frequency, d.nextAction, d.axes, d.tests) : ""}
+    ${hasRec  ? renderRecommandations(d.activeRec ?? [], d.axes, d.tests) : ""}
   </div>
   ${renderClosing(d)}
   ${renderFooter2(d.cabinetName, "Page 3 / 3")}
