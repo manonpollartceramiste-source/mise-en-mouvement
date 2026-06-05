@@ -187,6 +187,8 @@ export type MovementAssessment = {
   pain_evolution: string | null;
   // Zones prioritaires — migration 0009
   zone_priorities?: Record<string, "forte" | "surveillance" | "ras"> | null;
+  // Limitation principale — migration 0015
+  main_limitation?: string | null;
   // Notes par axe — migration 0011
   axis_notes?: Record<string, string> | null;
   created_at: string;

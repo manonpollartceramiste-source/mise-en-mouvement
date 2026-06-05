@@ -296,6 +296,7 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
 
         {/* ── Mode de vie ── */}
         {(assessment.main_goal ||
+          (assessment as Record<string, unknown>).main_limitation ||
           assessment.concrete_goal ||
           assessment.work_type ||
           assessment.sport_practiced ||
@@ -308,6 +309,7 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
             <div className="grid gap-4 sm:grid-cols-2">
               {[
                 { label: "Objectif principal", value: assessment.main_goal },
+                { label: "Limitation principale actuelle", value: (assessment as Record<string, unknown>).main_limitation as string | undefined },
                 { label: "Objectif mesurable", value: assessment.concrete_goal },
                 { label: "Blessures anciennes", value: assessment.old_injuries },
                 { label: "Opérations", value: assessment.operations },

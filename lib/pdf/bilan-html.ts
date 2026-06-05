@@ -34,6 +34,7 @@ export type BilanPdfData = {
   painEvolution: string | null;
   oldInjuries: string | null;
   operations: string | null;
+  mainLimitation?: string | null;
   coachName: string;
   coachRole: string | null;
   coachPhotoSrc: string | null;
@@ -79,18 +80,53 @@ function barColor(pct: number): string {
   return pct >= 75 ? "#2E7D52" : pct >= 50 ? "#B8956A" : pct >= 25 ? "#C47040" : "#B84444";
 }
 
-function statusLabel(score: number): string {
-  if (score >= 70) return "Bon niveau";
-  if (score >= 45) return "En progression";
-  return "À travailler";
+// ─── Seuils d'interprétation par axe (facilement modifiables) ────────────────
+// Format : score sur 20 → label + couleur
+const AXIS_THRESHOLDS: Array<{ maxScore: number; label: string; color: string }> = [
+  { maxScore: 5,  label: "Prioritaire",  color: "#C44444" },
+  { maxScore: 10, label: "À développer", color: "#C47040" },
+  { maxScore: 15, label: "Bon niveau",   color: "#B8956A" },
+  { maxScore: 20, label: "Point fort",   color: "#2E7D52" },
+];
+
+function axisInterp(value: number): { label: string; color: string } {
+  for (const t of AXIS_THRESHOLDS) {
+    if (value <= t.maxScore) return { label: t.label, color: t.color };
+  }
+  return { label: "Point fort", color: "#2E7D52" };
 }
 
-function scoreInterp(total: number): string {
-  if (total >= 80) return "Très bon niveau";
-  if (total >= 60) return "Niveau fonctionnel";
-  if (total >= 40) return "À travailler";
-  return "À corriger rapidement";
+// ─── Niveaux de profil (5 paliers, toujours valorisants) ─────────────────────
+// Calculé depuis le total /100. Modifier minScore pour ajuster les paliers.
+const PROFILE_LEVELS: Array<{ minScore: number; label: string; desc: string; color: string }> = [
+  { minScore: 90, label: "Performant",    desc: "Un profil remarquable, construit par une pratique régulière.",                              color: "#2E7D52" },
+  { minScore: 75, label: "Solide",        desc: "Vos bases sont solides. Le programme va vous permettre d'aller encore plus loin.",           color: "#3E8A68" },
+  { minScore: 60, label: "Fonctionnel",   desc: "Votre corps fonctionne bien. Quelques axes à optimiser pour gagner en confort et efficacité.", color: "#B8956A" },
+  { minScore: 40, label: "En progression", desc: "Vous avez de belles marges de progression devant vous. C'est exactement là que le travail fait la différence.", color: "#C47040" },
+  { minScore: 0,  label: "À développer",  desc: "Un beau chemin s'ouvre devant vous. Chaque séance vous rapprochera d'un meilleur confort au quotidien.", color: "#B8956A" },
+];
+
+function profileLevel(total: number): typeof PROFILE_LEVELS[0] {
+  return PROFILE_LEVELS.find(p => total >= p.minScore) ?? PROFILE_LEVELS[PROFILE_LEVELS.length - 1];
 }
+
+// ─── Textes "Pourquoi travailler ces axes" (simples, accessibles) ─────────────
+const WHY_AXES_TEXT: Record<string, string> = {
+  "mobilité":     "Quand la mobilité est limitée, certains gestes du quotidien — se baisser, attraper quelque chose en hauteur, tourner la tête — deviennent inconfortables. En travaillant cet axe, vous retrouverez de l'aisance dans vos mouvements et réduirez les tensions chroniques.",
+  "stabilité":    "La stabilité, c'est la capacité de votre corps à se maintenir en équilibre sous l'effort. Sans elle, d'autres muscles compensent et s'épuisent prématurément. En la renforçant, vous améliorerez votre posture et protégerez vos articulations.",
+  "force":        "La force fonctionnelle vous permet de porter des charges, de monter les escaliers ou de vous lever sans effort. Ce n'est pas une question de volume musculaire, mais de capacité à utiliser votre corps efficacement dans votre vie réelle.",
+  "posture":      "Une posture déséquilibrée génère des tensions invisibles sur votre dos, vos épaules et votre nuque. En la rééquilibrant progressivement, vous réduirez les douleurs chroniques et gagnerez en énergie au fil des journées.",
+  "coordination": "La coordination rend vos mouvements fluides et sûrs. En la travaillant, vous améliorez votre réactivité, réduisez votre risque de blessure et gagnez en confiance dans toutes vos activités physiques.",
+};
+
+// ─── Projections 6 semaines par axe (utilisées dans la feuille de route) ──────
+const AXIS_PROJECTIONS: Record<string, string> = {
+  "mobilité":     "Amélioration de votre amplitude articulaire et réduction des raideurs quotidiennes",
+  "stabilité":    "Meilleur contrôle postural et réduction des compensations musculaires",
+  "force":        "Développement d'une force fonctionnelle adaptée à votre quotidien",
+  "posture":      "Rééquilibrage musculaire et soulagement des tensions chroniques",
+  "coordination": "Mouvements plus fluides et sécurisés dans toutes vos activités",
+};
 
 function sec(label: string): string {
   return `<div class="sec"><span class="sec-lbl">${esc(label.toUpperCase())}</span><div class="sec-rule"></div></div>`;
@@ -490,6 +526,81 @@ body{
 }
 .proj-ed-desc{font-size:14px;color:#9A8878;line-height:1.5}
 
+/* ── PROFIL NIVEAU (remplace score panel) ── */
+.profile-level{
+  display:flex;flex-direction:column;align-items:center;
+  padding:8pt 0 14pt;gap:4pt;flex-shrink:0;
+}
+.profile-level+.sblock{padding-top:4mm;border-top:0.35pt solid #EDE5DA}
+.profile-level-lbl{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:2pt}
+.profile-level-badge{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:26px;font-weight:700;letter-spacing:0.5px;
+  line-height:1.1;text-align:center;margin-bottom:2pt;
+}
+.profile-level-desc{
+  font-size:13px;color:#9A8880;line-height:1.55;text-align:center;
+  max-width:120pt;font-style:italic;
+}
+
+/* ── INTERPRÉTATION AXE ── */
+.axis-interp{
+  font-size:10.5px;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;
+  width:62pt;text-align:right;flex-shrink:0;
+}
+
+/* ── FEUILLE DE ROUTE (page 3, élément principal) ── */
+.roadmap{
+  background:#1E1812;border-radius:7pt;
+  padding:12pt 14pt 14pt;
+  border-left:3pt solid #B8956A;
+  border-top:0.5pt solid rgba(184,149,106,0.2);
+  border-right:0.5pt solid rgba(184,149,106,0.2);
+  border-bottom:0.5pt solid rgba(184,149,106,0.2);
+  flex-shrink:0;
+}
+.roadmap .sec-lbl{color:rgba(184,149,106,0.85)}
+.roadmap .sec-rule{background:linear-gradient(90deg,rgba(184,149,106,0.4),transparent)}
+.roadmap-context{
+  display:flex;gap:0;margin-top:9pt;padding-bottom:8pt;
+  border-bottom:0.5pt solid rgba(184,149,106,0.18);
+}
+.roadmap-ctx-item{flex:1;padding:0 12pt}
+.roadmap-ctx-item:first-child{padding-left:0}
+.roadmap-ctx-item+.roadmap-ctx-item{border-left:0.5pt solid rgba(184,149,106,0.18)}
+.roadmap-ctx-lbl{font-size:10px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt}
+.roadmap-ctx-val{font-family:'Playfair Display',Georgia,serif;font-size:15.5px;font-weight:700;color:#F5EFE5;line-height:1.35}
+.roadmap-meta{
+  display:flex;gap:0;padding:8pt 0;
+  border-bottom:0.5pt solid rgba(184,149,106,0.18);
+}
+.roadmap-meta-item{flex:1;padding:0 12pt}
+.roadmap-meta-item:first-child{padding-left:0}
+.roadmap-meta-item+.roadmap-meta-item{border-left:0.5pt solid rgba(184,149,106,0.18)}
+.roadmap-meta-lbl{font-size:10px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt}
+.roadmap-meta-val{font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:700;color:#E8D5A8;line-height:1.2}
+.roadmap-proj{padding:8pt 0;border-bottom:0.5pt solid rgba(184,149,106,0.18)}
+.roadmap-proj-lbl{font-size:10px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7pt}
+.roadmap-proj-steps{display:flex;gap:0}
+.roadmap-proj-step{flex:1;padding:0 10pt;border-right:0.5pt solid rgba(184,149,106,0.18)}
+.roadmap-proj-step:first-child{padding-left:0}
+.roadmap-proj-step:last-child{border-right:none;padding-right:0}
+.roadmap-proj-week{font-size:9px;font-weight:700;color:rgba(184,149,106,0.5);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3pt}
+.roadmap-proj-title{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-weight:700;color:#F5EFE5;line-height:1.3}
+.roadmap-action{padding-top:8pt}
+.roadmap-action-lbl{font-size:10px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt}
+.roadmap-action-val{font-size:16px;font-weight:500;color:#E8DDD0;line-height:1.5;font-style:italic}
+
+/* ── POURQUOI CES AXES (page 3) ── */
+.why-grid{display:flex;gap:9pt;margin-top:7pt}
+.why-item{
+  flex:1;padding:8pt 10pt;
+  background:rgba(245,239,229,0.5);border-radius:5pt;
+  border:0.4pt solid #E4DDD2;
+}
+.why-item-label{font-size:11px;font-weight:700;color:#B8956A;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4pt}
+.why-item-text{font-size:14.5px;color:#4A3C30;line-height:1.65}
+
 /* ── CLOSING (page 3) ── */
 .closing{padding:3pt 12mm 4mm;text-align:center;flex-shrink:0;position:relative;top:-20px}
 .closing-rule{display:flex;align-items:center;margin-bottom:5pt}
@@ -618,17 +729,14 @@ function renderHero(d: BilanPdfData, name: string): string {
   </div>`;
 }
 
-// ─── Score panel (colonne droite page 1) ─────────────────────────────────────
+// ─── Profil niveau (colonne droite page 1, remplace score panel) ─────────────
 
-function renderScorePanel(total: number): string {
-  const col    = scoreColor(total);
-  const status = statusLabel(total);
-  const interp = scoreInterp(total);
-  return `<div class="score-panel">
-    <div class="score-panel-lbl">Score global</div>
-    ${gaugeLarge(total)}
-    <div class="score-panel-status" style="color:${col}">${esc(status)}</div>
-    <div class="score-panel-interp">${esc(interp)}</div>
+function renderProfileLevel(total: number): string {
+  const level = profileLevel(total);
+  return `<div class="profile-level">
+    <div class="profile-level-lbl">Profil actuel</div>
+    <div class="profile-level-badge" style="color:${level.color}">${esc(level.label.toUpperCase())}</div>
+    <div class="profile-level-desc">${esc(level.desc)}</div>
   </div>`;
 }
 
@@ -639,11 +747,13 @@ function renderAxes(axes: BilanPdfData["axes"]): string {
   const rows = axes.map(a => {
     const pct = a.max > 0 ? (a.value / a.max) * 100 : 0;
     const col = barColor(pct);
+    const interp = axisInterp(a.value);
     return `<div class="axis-row">
       <span class="axis-lbl">${esc(a.label)}</span>
       <div class="axis-track"><div class="axis-fill" style="width:${pct.toFixed(1)}%;background:${col}"></div></div>
       <span class="axis-num" style="color:${col}">${a.value}</span>
       <span class="axis-den">/${a.max}</span>
+      <span class="axis-interp" style="color:${interp.color}">${esc(interp.label)}</span>
     </div>`;
   }).join("");
   return `<div class="sblock">
@@ -697,15 +807,111 @@ function renderForcesAndPriorities(axes: BilanPdfData["axes"]): string {
   </div>`;
 }
 
-// ─── Compensation warning ─────────────────────────────────────────────────────
+// ─── Pourquoi travailler ces axes (page 3) ───────────────────────────────────
 
-function renderCompensationWarning(tests: BilanPdfData["tests"]): string {
-  if (!tests?.length) return "";
-  const lowCount = tests.filter(t => t.score <= 1).length;
-  if (lowCount < 2) return "";
-  return `<div class="comp-warn-pill">
-    <span class="comp-warn-icon">⚠</span>
-    <span class="comp-warn-text">Compensations à surveiller lors des mouvements du quotidien.</span>
+function renderWhyAxes(axes: BilanPdfData["axes"]): string {
+  if (!axes?.length) return "";
+  const weakAxes = [...axes]
+    .filter(a => a.max > 0 && a.value / a.max < 0.65)
+    .sort((a, b) => (a.value / a.max) - (b.value / b.max))
+    .slice(0, 2);
+  if (!weakAxes.length) return "";
+
+  const items = weakAxes.map(a => {
+    const text = WHY_AXES_TEXT[a.label.toLowerCase()];
+    if (!text) return "";
+    return `<div class="why-item">
+      <div class="why-item-label">${esc(a.label)}</div>
+      <div class="why-item-text">${esc(text)}</div>
+    </div>`;
+  }).filter(Boolean).join("");
+
+  if (!items) return "";
+  return `<div class="p3-section">
+    ${sec("Pourquoi travailler ces axes ?")}
+    <div class="why-grid">${items}</div>
+  </div>`;
+}
+
+// ─── Feuille de route personnalisée (page 3, élément principal) ───────────────
+
+function renderRoadmap(d: BilanPdfData): string {
+  const { mainGoal, mainLimitation, frequency, nextAction, axes, topPriorities, concreteGoal } = d;
+
+  const sortedAxes = [...(axes ?? [])].sort((a, b) => (a.value / a.max) - (b.value / b.max));
+  const weakAxes   = sortedAxes.filter(a => a.max > 0 && a.value / a.max < 0.75);
+  const priorityAxis = weakAxes[0] ?? sortedAxes[0] ?? null;
+
+  const hasContent = mainGoal || mainLimitation || frequency || nextAction || priorityAxis;
+  if (!hasContent) return "";
+
+  // Contexte : point de départ + objectif
+  const ctxItems = [
+    mainLimitation ? { lbl: "Point de départ", val: mainLimitation } : null,
+    mainGoal       ? { lbl: "Objectif",         val: mainGoal       } : null,
+  ].filter(Boolean) as Array<{ lbl: string; val: string }>;
+
+  const ctxHtml = ctxItems.length
+    ? `<div class="roadmap-context">${ctxItems.map(it =>
+        `<div class="roadmap-ctx-item">
+          <div class="roadmap-ctx-lbl">${esc(it.lbl)}</div>
+          <div class="roadmap-ctx-val">${esc(it.val)}</div>
+        </div>`).join("")}</div>`
+    : "";
+
+  // Méta : axe prioritaire + fréquence
+  const metaItems = [
+    priorityAxis ? { lbl: "Axe prioritaire",      val: priorityAxis.label } : null,
+    frequency    ? { lbl: "Fréquence recommandée", val: frequency          } : null,
+  ].filter(Boolean) as Array<{ lbl: string; val: string }>;
+
+  const metaHtml = metaItems.length
+    ? `<div class="roadmap-meta">${metaItems.map(it =>
+        `<div class="roadmap-meta-item">
+          <div class="roadmap-meta-lbl">${esc(it.lbl)}</div>
+          <div class="roadmap-meta-val">${esc(it.val)}</div>
+        </div>`).join("")}</div>`
+    : "";
+
+  // Projection 6 semaines (3 étapes)
+  const getProj = (axis: typeof weakAxes[0] | undefined, fallback: string | undefined, def: string) => {
+    if (axis) return AXIS_PROJECTIONS[axis.label.toLowerCase()] ?? `Progression sur la ${axis.label.toLowerCase()}`;
+    return fallback ?? def;
+  };
+  const proj1 = getProj(weakAxes[0], topPriorities?.[0], "Phase d'activation et prise de repères");
+  const proj2 = getProj(weakAxes[1], topPriorities?.[1], "Progression régulière et consolidation");
+  const proj3 = concreteGoal ?? topPriorities?.[2] ?? "Autonomie dans le mouvement et maintien des acquis";
+
+  const projHtml = `<div class="roadmap-proj">
+    <div class="roadmap-proj-lbl">Projection 6 semaines</div>
+    <div class="roadmap-proj-steps">
+      <div class="roadmap-proj-step">
+        <div class="roadmap-proj-week">Sem. 1–2</div>
+        <div class="roadmap-proj-title">${esc(proj1)}</div>
+      </div>
+      <div class="roadmap-proj-step">
+        <div class="roadmap-proj-week">Sem. 3–4</div>
+        <div class="roadmap-proj-title">${esc(proj2)}</div>
+      </div>
+      <div class="roadmap-proj-step">
+        <div class="roadmap-proj-week">Sem. 5–6</div>
+        <div class="roadmap-proj-title">${esc(proj3)}</div>
+      </div>
+    </div>
+  </div>`;
+
+  const actionVal = nextAction || "Mise en place de votre programme personnalisé.";
+  const actionHtml = `<div class="roadmap-action">
+    <div class="roadmap-action-lbl">Prochaine étape</div>
+    <div class="roadmap-action-val">${esc(actionVal)}</div>
+  </div>`;
+
+  return `<div class="roadmap">
+    ${sec("Votre feuille de route")}
+    ${ctxHtml}
+    ${metaHtml}
+    ${projHtml}
+    ${actionHtml}
   </div>`;
 }
 
@@ -757,7 +963,7 @@ function renderTests(tests: BilanPdfData["tests"]): string {
   if (!tests?.length) return "";
   const CFG = {
     0: { label: "DOULEUR",      bg: "#FEF4F4", border: "#F0C0C0", text: "#8A2828", bar: "#C44444" },
-    1: { label: "COMPENSATION", bg: "#FDF9F2", border: "#E8CFA0", text: "#7A5020", bar: "#C47040" },
+    1: { label: "OBSERVATION",  bg: "#FDF9F2", border: "#E8CFA0", text: "#7A5020", bar: "#C47040" },
     2: { label: "OPTIMAL",      bg: "#F2FBF6", border: "#A4DEBA", text: "#1A5C38", bar: "#2E7D52" },
   } as const;
 
@@ -787,7 +993,7 @@ function renderTestsTable(tests: BilanPdfData["tests"]): string {
   if (!tests?.length) return "";
   const CFG = {
     0: { label: "Douleur",      bg: "#FEF4F4", border: "#F0C0C0", text: "#8A2828" },
-    1: { label: "Compensation", bg: "#FDF9F2", border: "#E8CFA0", text: "#7A5020" },
+    1: { label: "À surveiller", bg: "#FDF9F2", border: "#E8CFA0", text: "#7A5020" },
     2: { label: "Optimal",      bg: "#F2FBF6", border: "#A4DEBA", text: "#1A5C38" },
   } as const;
 
@@ -1124,7 +1330,6 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
   const hasProg     = (d.topPriorities?.length ?? 0) > 0 || !!d.frequency;
   const hasLim      = (d.activeLim?.length ?? 0) > 0;
   const hasRessenti = d.energyScore !== null || d.stressScore !== null || d.sleepScore !== null || d.painScore !== null;
-  const hasProj     = (d.topPriorities?.length ?? 0) > 0 || !!d.concreteGoal;
   const hasZones    = !!(d.zonePriorities && Object.entries(d.zonePriorities).some(([, v]) => v === "forte" || v === "surveillance"));
   const hasComp     = !!(d.bodyComposition && (
     d.bodyComposition.weightKg !== null || d.bodyComposition.fatPct !== null ||
@@ -1132,8 +1337,10 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
     d.bodyComposition.boneMassKg !== null || d.bodyComposition.visceralFat !== null ||
     d.bodyComposition.bmrKcal !== null || d.bodyComposition.metabolicAge !== null
   ));
-  const hasRec  = (d.activeRec?.length ?? 0) > 0 || !!d.frequency || !!d.nextAction;
-  const hasAxes = (d.axes?.length ?? 0) > 0;
+  const hasRec   = (d.activeRec?.length ?? 0) > 0 || !!d.frequency || !!d.nextAction;
+  const hasAxes  = (d.axes?.length ?? 0) > 0;
+  const hasRoadmap = !!(d.mainGoal || d.mainLimitation || d.frequency || d.nextAction || hasAxes);
+  const hasWhyAxes = hasAxes && (d.axes ?? []).some(a => a.max > 0 && a.value / a.max < 0.65);
 
   // ── PAGE 1 : 2 colonnes — gauche : diagnostic / droite : score + analyse + plan ──
   const page1 = `<div class="page">
@@ -1148,9 +1355,8 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
     </div>
     <div class="p1-vsep"></div>
     <div class="p1-right">
-      ${renderScorePanel(total)}
+      ${renderProfileLevel(total)}
       ${hasTests ? renderTests(d.tests) : ""}
-      ${hasTests ? renderCompensationWarning(d.tests) : ""}
       ${hasRessenti ? renderRessenti(d) : ""}
     </div>
   </div>
@@ -1178,13 +1384,14 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
   ${renderFooter2(d.cabinetName, "Page 2 / 3")}
 </div>`;
 
-  // ── PAGE 3 : Composition → Recommandations → Projection éditoriale ─────────
+  // ── PAGE 3 : Feuille de route (principal) → Pourquoi ces axes → Composition ──
   const page3 = `<div class="page">
   ${renderMiniHeader(name, d.dateStr, "3 / 3")}
   <div class="p3-body">
+    ${hasRoadmap ? renderRoadmap(d) : ""}
+    ${hasWhyAxes ? renderWhyAxes(d.axes) : ""}
     ${hasComp ? renderComposition(d.bodyComposition!) : ""}
     ${hasRec  ? renderRecommandations(d.activeRec ?? [], d.frequency, d.nextAction, d.axes, d.tests) : ""}
-    ${hasProj ? renderProjectionEditorial(d.topPriorities, d.concreteGoal) : ""}
   </div>
   ${renderClosing(d)}
   ${renderFooter2(d.cabinetName, "Page 3 / 3")}

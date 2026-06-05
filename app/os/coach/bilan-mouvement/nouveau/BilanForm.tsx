@@ -61,6 +61,7 @@ type FormState = {
   important_notes: string;
   next_action: string;
   pain_evolution: string;
+  main_limitation: string;
 };
 
 // ─── Constantes ──────────────────────────────────────────────
@@ -639,6 +640,7 @@ export function BilanForm({
     important_notes: "",
     next_action: "",
     pain_evolution: "",
+    main_limitation: "",
   });
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
@@ -692,6 +694,7 @@ export function BilanForm({
         seg_trunk_kg,
         zone_priorities,
         sexe, age,
+        main_limitation,
         ...restForm
       } = form;
       const result = await createAssessmentAction({
@@ -733,6 +736,8 @@ export function BilanForm({
         // Migration 0014 — sexe et âge
         ...(sexe != null ? { sexe } : {}),
         ...(age  != null ? { age  } : {}),
+        // Migration 0015 — limitation principale
+        ...(main_limitation ? { main_limitation } : {}),
       });
       if (result.error) {
         setError(result.error);
@@ -1051,7 +1056,16 @@ export function BilanForm({
                   <TextArea
                     value={form.main_goal}
                     onChange={(v) => set("main_goal", v)}
-                    placeholder="Perdre du poids, gagner en force, améliorer ma posture…"
+                    placeholder="Reprise d'activité, réduction des douleurs, améliorer la mobilité…"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label>Limitation principale actuelle</Label>
+                  <TextArea
+                    value={form.main_limitation}
+                    onChange={(v) => set("main_limitation", v)}
+                    placeholder="Difficulté à s'accroupir, fatigue lors des efforts, manque de mobilité…"
                     rows={3}
                   />
                 </div>

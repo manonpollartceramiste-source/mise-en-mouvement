@@ -152,6 +152,7 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
     painEvolution:      assessment.pain_evolution,
     oldInjuries:        assessment.old_injuries,
     operations:         assessment.operations,
+    mainLimitation: (assessment as Record<string, unknown>).main_limitation as string | null ?? null,
     coachName:     coachProfile.display_name,
     coachRole:     null,
     coachPhotoSrc: coachProfile.avatar_url,
