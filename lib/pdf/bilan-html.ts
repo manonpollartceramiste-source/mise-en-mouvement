@@ -599,6 +599,50 @@ body{
 .closing-sub{font-size:13px;color:#9A8C80;margin-top:2pt}
 .closing-contact{font-size:13px;color:#B8A898;margin-top:1pt}
 .closing-conf{font-size:11.5px;color:#C4B8A8;letter-spacing:0.5px;text-transform:uppercase;margin-top:2pt}
+
+/* ── PAGE 4 : CARTOGRAPHIE CORPORELLE ── */
+.p4-body{
+  flex:1;display:flex;flex-direction:column;
+  padding:6mm 12mm 3mm;gap:4mm;min-height:0;overflow:hidden;
+}
+.p4-sils{
+  display:flex;justify-content:center;gap:16mm;align-items:flex-start;flex-shrink:0;
+}
+.p4-sil{display:flex;flex-direction:column;align-items:center;gap:5pt}
+.p4-sil-lbl{
+  font-size:10px;font-weight:700;color:#A89070;
+  letter-spacing:2px;text-transform:uppercase;margin-top:2pt;
+}
+.p4-legend{
+  display:flex;justify-content:center;gap:18pt;flex-shrink:0;
+}
+.p4-legend-item{display:flex;align-items:center;gap:5pt;font-size:12px;color:#7A6A58}
+.p4-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.p4-info{display:flex;gap:4mm;flex-shrink:0;align-items:stretch}
+.p4-analyse{
+  flex:1;background:#FDFCF9;border-radius:6pt;
+  padding:9pt 12pt;border:0.5pt solid rgba(184,149,106,0.2);
+  border-left:3pt solid #B8956A;
+}
+.p4-analyse-lbl{
+  font-size:10px;font-weight:700;color:#A89070;
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:5pt;
+}
+.p4-analyse-txt{font-size:13.5px;color:#3E3028;line-height:1.65}
+.p4-axes{
+  flex:0 0 auto;width:62mm;background:#F7F2EA;border-radius:6pt;
+  padding:9pt 12pt;border:0.5pt solid #EDE5DA;
+}
+.p4-axes-lbl{
+  font-size:10px;font-weight:700;color:#A89070;
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:5pt;
+}
+.p4-axes-list{display:flex;flex-direction:column;gap:3.5pt}
+.p4-axes-item{
+  font-size:13px;color:#4A3C30;line-height:1.35;
+  display:flex;align-items:flex-start;gap:5pt;
+}
+.p4-axes-dot{font-size:5px;color:#B8956A;flex-shrink:0;margin-top:3pt}
 `;
 
 // ─── SVG : radar pentagone ────────────────────────────────────────────────────
@@ -1277,6 +1321,259 @@ function renderClosing(d: BilanPdfData): string {
   </div>`;
 }
 
+// ─── Page 4 : Cartographie corporelle ────────────────────────────────────────
+
+const ZONE_DISPLAY_LABELS: Record<string, string> = {
+  cervicales:        "Ceinture cervicale",
+  dos_haut:          "Ceinture scapulaire",
+  epaules:           "Épaules",
+  pectoraux:         "Pectoraux",
+  grand_dorsal:      "Grand dorsal",
+  lombaires:         "Lombaires",
+  sangle_abdominale: "Sangle abdominale",
+  bassin:            "Bassin",
+  hanches:           "Hanches",
+  fessiers:          "Fessiers",
+  quadriceps:        "Quadriceps",
+  ischio_jambiers:   "Ischio-jambiers",
+  genoux:            "Genoux",
+  mollets:           "Mollets",
+  chevilles:         "Chevilles",
+  pieds:             "Pieds",
+};
+
+const ZONE_MOVEMENT_LABELS: Record<string, string> = {
+  cervicales:        "Mobilité cervicale",
+  dos_haut:          "Stabilité scapulaire",
+  epaules:           "Amplitude des épaules",
+  pectoraux:         "Souplesse pectorale",
+  grand_dorsal:      "Stabilité dorsale",
+  lombaires:         "Stabilité lombaire",
+  sangle_abdominale: "Gainage abdominal",
+  bassin:            "Équilibre du bassin",
+  hanches:           "Amplitude des hanches",
+  fessiers:          "Force des fessiers",
+  quadriceps:        "Renforcement des quadriceps",
+  ischio_jambiers:   "Souplesse ischio-jambiers",
+  genoux:            "Stabilité des genoux",
+  mollets:           "Souplesse des mollets",
+  chevilles:         "Mobilité des chevilles",
+  pieds:             "Stabilité plantaire",
+};
+
+function zoneBodyColor(key: string, zones: Record<string, string>): { fill: string; stroke: string } {
+  const v = zones[key];
+  if (v === "forte")        return { fill: "#7A3C18", stroke: "#5A2C10" };
+  if (v === "surveillance") return { fill: "#C8A87A", stroke: "#A87848" };
+  return { fill: "#BFB4A4", stroke: "#9A8878" };
+}
+
+// SVG silhouette — vue de face (viewBox 0 0 100 268)
+// Drawing order: background body parts first, joints last so they cap junctions cleanly.
+function frontSilhouetteSvg(zones: Record<string, string>): string {
+  const BASE_F = "#BFB4A4", BASE_S = "#9A8878";
+  const sw = `stroke-width="0.6"`;
+  const s = (key: string) => {
+    const c = zoneBodyColor(key, zones);
+    return `fill="${c.fill}" stroke="${c.stroke}" ${sw}`;
+  };
+  const base = `fill="${BASE_F}" stroke="${BASE_S}" ${sw}`;
+  return `<svg viewBox="0 0 100 268" xmlns="http://www.w3.org/2000/svg" style="height:100%;width:auto;display:block">
+  <!-- hands (back layer) -->
+  <ellipse cx="21" cy="153" rx="7" ry="8" ${base}/>
+  <ellipse cx="79" cy="153" rx="7" ry="8" ${base}/>
+  <!-- forearms -->
+  <path d="M18,93 L31,93 L29,147 L16,147 Z" ${base}/>
+  <path d="M69,93 L82,93 L85,147 L72,147 Z" ${base}/>
+  <!-- upper arms -->
+  <path d="M20,42 L33,42 L31,95 L18,95 Z" ${base}/>
+  <path d="M67,42 L80,42 L82,95 L69,95 Z" ${base}/>
+  <!-- feet -->
+  <ellipse cx="39" cy="262" rx="13" ry="6" ${s("pieds")}/>
+  <ellipse cx="61" cy="262" rx="13" ry="6" ${s("pieds")}/>
+  <!-- shins (non-zone from front) -->
+  <path d="M33,214 L49,214 L47,251 L33,251 Z" ${base}/>
+  <path d="M51,214 L67,214 L67,251 L53,251 Z" ${base}/>
+  <!-- thighs / quadriceps -->
+  <path d="M34,142 L50,142 L49,208 L33,208 Z" ${s("quadriceps")}/>
+  <path d="M50,142 L66,142 L67,208 L51,208 Z" ${s("quadriceps")}/>
+  <!-- lower torso / bassin -->
+  <path d="M39,110 L61,110 L60,124 L40,124 Z" ${s("bassin")}/>
+  <!-- mid torso / sangle abdominale -->
+  <path d="M38,82 L62,82 L61,111 L39,111 Z" ${s("sangle_abdominale")}/>
+  <!-- upper torso / pectoraux -->
+  <path d="M37,40 Q50,37 63,40 L63,83 L37,83 Z" ${s("pectoraux")}/>
+  <!-- hip flare / hanches -->
+  <path d="M32,122 L68,122 Q74,133 68,145 L32,145 Q26,133 32,122 Z" ${s("hanches")}/>
+  <!-- knees -->
+  <ellipse cx="41" cy="211" rx="9" ry="5.5" ${s("genoux")}/>
+  <ellipse cx="59" cy="211" rx="9" ry="5.5" ${s("genoux")}/>
+  <!-- ankles -->
+  <rect x="33" y="250" width="14" height="7" rx="2" ${s("chevilles")}/>
+  <rect x="53" y="250" width="14" height="7" rx="2" ${s("chevilles")}/>
+  <!-- shoulders (cap arm-torso junction) -->
+  <ellipse cx="31" cy="46" rx="11" ry="7.5" ${s("epaules")}/>
+  <ellipse cx="69" cy="46" rx="11" ry="7.5" ${s("epaules")}/>
+  <!-- neck / cervicales -->
+  <rect x="45.5" y="32" width="9" height="12" rx="2.5" ${s("cervicales")}/>
+  <!-- head (top layer) -->
+  <ellipse cx="50" cy="18" rx="12" ry="15" ${base}/>
+</svg>`;
+}
+
+// SVG silhouette — vue de dos (mêmes formes, zones différentes)
+function backSilhouetteSvg(zones: Record<string, string>): string {
+  const BASE_F = "#BFB4A4", BASE_S = "#9A8878";
+  const sw = `stroke-width="0.6"`;
+  const s = (key: string) => {
+    const c = zoneBodyColor(key, zones);
+    return `fill="${c.fill}" stroke="${c.stroke}" ${sw}`;
+  };
+  const base = `fill="${BASE_F}" stroke="${BASE_S}" ${sw}`;
+  return `<svg viewBox="0 0 100 268" xmlns="http://www.w3.org/2000/svg" style="height:100%;width:auto;display:block">
+  <!-- hands -->
+  <ellipse cx="21" cy="153" rx="7" ry="8" ${base}/>
+  <ellipse cx="79" cy="153" rx="7" ry="8" ${base}/>
+  <!-- forearms -->
+  <path d="M18,93 L31,93 L29,147 L16,147 Z" ${base}/>
+  <path d="M69,93 L82,93 L85,147 L72,147 Z" ${base}/>
+  <!-- upper arms -->
+  <path d="M20,42 L33,42 L31,95 L18,95 Z" ${base}/>
+  <path d="M67,42 L80,42 L82,95 L69,95 Z" ${base}/>
+  <!-- feet -->
+  <ellipse cx="39" cy="262" rx="13" ry="6" ${s("pieds")}/>
+  <ellipse cx="61" cy="262" rx="13" ry="6" ${s("pieds")}/>
+  <!-- shins / mollets (visible from back) -->
+  <path d="M33,214 L49,214 L47,251 L33,251 Z" ${s("mollets")}/>
+  <path d="M51,214 L67,214 L67,251 L53,251 Z" ${s("mollets")}/>
+  <!-- thighs / ischio-jambiers -->
+  <path d="M34,142 L50,142 L49,208 L33,208 Z" ${s("ischio_jambiers")}/>
+  <path d="M50,142 L66,142 L67,208 L51,208 Z" ${s("ischio_jambiers")}/>
+  <!-- lower torso / lombaires -->
+  <path d="M39,110 L61,110 L60,124 L40,124 Z" ${s("lombaires")}/>
+  <!-- mid torso / grand dorsal -->
+  <path d="M38,82 L62,82 L61,111 L39,111 Z" ${s("grand_dorsal")}/>
+  <!-- upper torso / dos haut -->
+  <path d="M37,40 Q50,37 63,40 L63,83 L37,83 Z" ${s("dos_haut")}/>
+  <!-- hip flare / fessiers -->
+  <path d="M32,122 L68,122 Q74,133 68,145 L32,145 Q26,133 32,122 Z" ${s("fessiers")}/>
+  <!-- knees -->
+  <ellipse cx="41" cy="211" rx="9" ry="5.5" ${s("genoux")}/>
+  <ellipse cx="59" cy="211" rx="9" ry="5.5" ${s("genoux")}/>
+  <!-- ankles -->
+  <rect x="33" y="250" width="14" height="7" rx="2" ${s("chevilles")}/>
+  <rect x="53" y="250" width="14" height="7" rx="2" ${s("chevilles")}/>
+  <!-- shoulders -->
+  <ellipse cx="31" cy="46" rx="11" ry="7.5" ${s("epaules")}/>
+  <ellipse cx="69" cy="46" rx="11" ry="7.5" ${s("epaules")}/>
+  <!-- neck / cervicales -->
+  <rect x="45.5" y="32" width="9" height="12" rx="2.5" ${s("cervicales")}/>
+  <!-- head -->
+  <ellipse cx="50" cy="18" rx="12" ry="15" ${base}/>
+</svg>`;
+}
+
+function bodyMapAnalysis(d: BilanPdfData): string {
+  const zones = (d.zonePriorities ?? {}) as Record<string, string>;
+  const forte = Object.entries(zones).filter(([, v]) => v === "forte").map(([k]) => ZONE_DISPLAY_LABELS[k] ?? k);
+  const surv  = Object.entries(zones).filter(([, v]) => v === "surveillance").map(([k]) => ZONE_DISPLAY_LABELS[k] ?? k);
+
+  const weakAxes = [...(d.axes ?? [])]
+    .filter(a => a.max > 0)
+    .sort((a, b) => (a.value / a.max) - (b.value / b.max))
+    .filter(a => a.value / a.max < 0.75)
+    .slice(0, 2);
+
+  const parts: string[] = [];
+
+  if (forte.length > 0) {
+    const list = forte.slice(0, 3).map(l => l.toLowerCase()).join(", ");
+    let sentence = `Une attention prioritaire est identifiée au niveau ${forte.length === 1 ? "de la" : "de"} ${list}`;
+    if (surv.length > 0) {
+      sentence += `, avec une surveillance recommandée pour ${surv.slice(0, 2).map(l => l.toLowerCase()).join(" et ")}`;
+    }
+    parts.push(sentence);
+  } else if (surv.length > 0) {
+    const list = surv.slice(0, 3).map(l => l.toLowerCase()).join(", ");
+    parts.push(`Un suivi préventif est recommandé au niveau ${surv.length === 1 ? "de la" : "de"} ${list}`);
+  }
+
+  if (weakAxes.length > 0) {
+    const axList = weakAxes.map(a => a.label.toLowerCase()).join(" et ");
+    parts.push(`Les capacités de ${axList} présentent une marge de progression importante`);
+  }
+
+  let text = parts.length > 0 ? parts.join(". ") + ". " : "";
+  text += "Un travail ciblé et progressif permettra d'améliorer durablement votre confort corporel et votre qualité de mouvement au quotidien.";
+  return text;
+}
+
+function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): string {
+  const zones = (d.zonePriorities ?? {}) as Record<string, string>;
+
+  const forteKeys = Object.entries(zones).filter(([, v]) => v === "forte").map(([k]) => k);
+  const survKeys  = Object.entries(zones).filter(([, v]) => v === "surveillance").map(([k]) => k);
+
+  // Axes prioritaires: forte first, then surveillance, then weak axes
+  const axeItems: string[] = [];
+  for (const k of forteKeys)  axeItems.push(ZONE_MOVEMENT_LABELS[k] ?? ZONE_DISPLAY_LABELS[k] ?? k);
+  for (const k of survKeys)   axeItems.push(ZONE_MOVEMENT_LABELS[k] ?? ZONE_DISPLAY_LABELS[k] ?? k);
+
+  const weakAxes = [...(d.axes ?? [])]
+    .filter(a => a.max > 0 && a.value / a.max < 0.6)
+    .sort((a, b) => (a.value / a.max) - (b.value / b.max))
+    .slice(0, 2);
+  for (const ax of weakAxes) {
+    const lbl = ax.label.charAt(0).toUpperCase() + ax.label.slice(1);
+    if (!axeItems.some(i => i.toLowerCase().includes(ax.label.toLowerCase()))) {
+      axeItems.push(lbl);
+    }
+  }
+
+  const axesHtml = axeItems.length > 0 ? `<div class="p4-axes">
+    <div class="p4-axes-lbl">Axes prioritaires</div>
+    <div class="p4-axes-list">
+      ${axeItems.slice(0, 8).map(it => `<div class="p4-axes-item"><span class="p4-axes-dot">◆</span>${esc(it)}</div>`).join("")}
+    </div>
+  </div>` : "";
+
+  const hasForte = forteKeys.length > 0;
+  const hasSurv  = survKeys.length > 0;
+
+  return `<div class="page">
+  ${renderMiniHeader(name, d.dateStr, `4 / ${totalPages}`)}
+  <div class="p4-body">
+    <div>
+      ${sec("Cartographie corporelle")}
+      <div class="p4-analyse-txt" style="font-size:12px;color:#8A7A6A;margin-top:2pt;font-style:italic">Visualisation des zones nécessitant une attention particulière afin d'optimiser votre confort, votre mobilité et votre qualité de mouvement.</div>
+    </div>
+    <div class="p4-sils">
+      <div class="p4-sil">
+        <div style="height:142mm">${frontSilhouetteSvg(zones)}</div>
+        <div class="p4-sil-lbl">Vue de face</div>
+      </div>
+      <div class="p4-sil">
+        <div style="height:142mm">${backSilhouetteSvg(zones)}</div>
+        <div class="p4-sil-lbl">Vue de dos</div>
+      </div>
+    </div>
+    <div class="p4-legend">
+      ${hasSurv || hasForte ? `<div class="p4-legend-item"><div class="p4-legend-dot" style="background:#C8A87A"></div><span>Surveillance légère</span></div>` : ""}
+      ${hasForte ? `<div class="p4-legend-item"><div class="p4-legend-dot" style="background:#7A3C18"></div><span>Priorité de travail</span></div>` : ""}
+      ${!hasSurv && !hasForte ? `<div class="p4-legend-item" style="font-size:12px;color:#B8A898;font-style:italic">Aucune zone renseignée</div>` : ""}
+    </div>
+    <div class="p4-info">
+      <div class="p4-analyse">
+        <div class="p4-analyse-lbl">Analyse du mouvement</div>
+        <div class="p4-analyse-txt">${esc(bodyMapAnalysis(d))}</div>
+      </div>
+      ${axesHtml}
+    </div>
+  </div>
+  ${renderFooter2(d.cabinetName, `Page ${totalPages} / ${totalPages}`)}
+</div>`;
+}
+
 // ─── Générateur principal ─────────────────────────────────────────────────────
 
 export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "coach"): string {
@@ -1295,10 +1592,13 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
     d.bodyComposition.boneMassKg !== null || d.bodyComposition.visceralFat !== null ||
     d.bodyComposition.bmrKcal !== null || d.bodyComposition.metabolicAge !== null
   ));
-  const hasRec   = (d.activeRec?.length ?? 0) > 0;
-  const hasAxes  = (d.axes?.length ?? 0) > 0;
+  const hasRec     = (d.activeRec?.length ?? 0) > 0;
+  const hasAxes    = (d.axes?.length ?? 0) > 0;
   const hasRoadmap = !!(d.mainGoal || d.frequency || d.nextAction || hasAxes);
   const hasWhyAxes = hasAxes && (d.axes ?? []).some(a => a.max > 0 && a.value / a.max < 0.65);
+  const hasBodyMap = hasZones;
+
+  const totalPages = hasBodyMap ? 4 : 3;
 
   // ── PAGE 1 : 2 colonnes — gauche : diagnostic / droite : score + analyse + plan ──
   const page1 = `<div class="page">
@@ -1323,7 +1623,7 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
 
   // ── PAGE 2 : Observations, zones, tests, cartographie ────────────────────
   const page2 = `<div class="page">
-  ${renderMiniHeader(name, d.dateStr, "2 / 3")}
+  ${renderMiniHeader(name, d.dateStr, `2 / ${totalPages}`)}
   <div class="p2-body">
     <div class="p2-upper">
       <div class="p2-obs-col">
@@ -1339,12 +1639,12 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
       ${hasAxes ? renderBigRadar(d.axes) : ""}
     </div>
   </div>
-  ${renderFooter2(d.cabinetName, "Page 2 / 3")}
+  ${renderFooter2(d.cabinetName, `Page 2 / ${totalPages}`)}
 </div>`;
 
   // ── PAGE 3 : Feuille de route (principal) → Pourquoi ces axes → Composition ──
   const page3 = `<div class="page">
-  ${renderMiniHeader(name, d.dateStr, "3 / 3")}
+  ${renderMiniHeader(name, d.dateStr, `3 / ${totalPages}`)}
   <div class="p3-body">
     ${hasRoadmap ? renderRoadmap(d) : ""}
     ${hasWhyAxes ? renderWhyAxes(d.axes) : ""}
@@ -1352,8 +1652,10 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
     ${hasRec  ? renderRecommandations(d.activeRec ?? [], d.axes, d.tests) : ""}
   </div>
   ${renderClosing(d)}
-  ${renderFooter2(d.cabinetName, "Page 3 / 3")}
+  ${renderFooter2(d.cabinetName, `Page 3 / ${totalPages}`)}
 </div>`;
+
+  const page4 = hasBodyMap ? renderBodyMap(d, name, totalPages) : "";
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -1362,6 +1664,6 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
 <title>Bilan Mouvement — ${esc(name)}</title>
 <style>${CSS}</style>
 </head>
-<body>${page1}${page2}${page3}</body>
+<body>${page1}${page2}${page3}${page4}</body>
 </html>`;
 }
