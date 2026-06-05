@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Bilan Mouvement — Sophie Martin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+@page{size:A4 portrait;margin:0}
+html,body{overflow:hidden}
+::-webkit-scrollbar{display:none}
+body{
+  font-family:'Inter',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  font-size:16px;line-height:1.55;
+  background:#F2EEE7;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+}
+.page{
+  width:210mm;height:297mm;overflow:hidden;
+  display:flex;flex-direction:column;
+  background:#F2EEE7;
+  page-break-after:always;
+}
+.page:last-child{page-break-after:auto}
+
+/* ── HEADER ── */
+.hd{
+  flex-shrink:0;background:#1E1812;
+  padding:7pt 12mm;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1.5pt solid #B8956A;
+}
+.hd-brand{display:flex;align-items:center;gap:10pt}
+.hd-logo{
+  height:34px;width:auto;max-width:110px;
+  object-fit:contain;object-position:left center;
+  filter:brightness(0) invert(1) opacity(0.85);
+  flex-shrink:0;
+}
+.hd-sep{width:0.6pt;height:26px;background:rgba(184,149,106,0.45);flex-shrink:0}
+.hd-name{font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:700;color:#F0E8DA;letter-spacing:-0.2px}
+.hd-contact{font-size:11px;color:#7A6A58;margin-top:1pt;letter-spacing:0.2px}
+.hd-right{text-align:right}
+.hd-date-lbl{font-size:10.5px;font-weight:700;color:#B8956A;letter-spacing:2px;text-transform:uppercase}
+.hd-date-val{font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:700;color:#E8DDD0;display:block;margin-top:1pt}
+
+/* ── HERO page 1 — typographique, sans score ── */
+.hero{
+  flex-shrink:0;
+  background:linear-gradient(120deg,#18120A 0%,#261E12 55%,#1E1610 100%);
+  padding:14pt 12mm 12pt;
+  border-bottom:0.5pt solid #3A3020;
+}
+.hero-overline{font-size:11px;font-weight:700;color:#B8956A;letter-spacing:3px;text-transform:uppercase;margin-bottom:6pt}
+.hero-name{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:38px;font-weight:800;color:#F5EFE5;
+  line-height:1;letter-spacing:-0.5px;margin-bottom:7pt;
+}
+.hero-meta{display:flex;align-items:center;gap:11pt}
+.hero-meta-item{font-size:13px;color:#7A6A58}
+.hero-meta-item strong{color:#C4AA7A;font-weight:600}
+.hero-meta-dot{width:3pt;height:3pt;background:rgba(184,149,106,0.4);border-radius:50%;flex-shrink:0}
+
+/* ── SECTION LABEL ── */
+.sec{display:flex;align-items:center;gap:7pt;margin-bottom:4pt;flex-shrink:0}
+.sec-lbl{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap}
+.sec-rule{flex:1;height:0.35pt;background:linear-gradient(90deg,#D4C8B8,transparent)}
+
+/* ── PAGE 1 — 2 colonnes ── */
+.p1-body{
+  flex:1;min-height:0;overflow:hidden;
+  display:flex;padding:5mm 12mm 3mm;gap:0;
+}
+.p1-left{
+  flex:0 0 49%;display:flex;flex-direction:column;
+  padding-right:7mm;
+}
+.p1-vsep{
+  width:0.35pt;background:#E4DDD2;flex-shrink:0;
+  align-self:stretch;
+}
+.p1-right{
+  flex:1;display:flex;flex-direction:column;
+  padding-left:7mm;
+}
+
+/* ── SECTION BLOCK — remplace .card pour la plupart des blocs ── */
+.sblock{flex-shrink:0;padding-bottom:4mm}
+.sblock+.sblock{padding-top:4mm;border-top:0.35pt solid #EDE5DA}
+
+/* ── SCORE PANEL (colonne droite page 1) ── */
+.score-panel{
+  display:flex;flex-direction:column;align-items:center;
+  padding:6pt 0 12pt;gap:3pt;flex-shrink:0;
+}
+.score-panel+.sblock{padding-top:4mm;border-top:0.35pt solid #EDE5DA}
+.score-panel-lbl{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:2pt}
+.score-panel-status{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700}
+.score-panel-interp{font-size:11.5px;color:rgba(184,149,106,0.65);letter-spacing:1px;text-transform:uppercase}
+
+/* ── AXES ── */
+.axis-row{display:flex;align-items:center;gap:7pt;padding:4.5pt 0;border-bottom:0.35pt solid #EDE5DA}
+.axis-row:last-child{border-bottom:none}
+.axis-lbl{font-size:13px;font-weight:600;color:#7A6A58;letter-spacing:0.2px;width:70pt;flex-shrink:0}
+.axis-track{flex:1;height:4pt;border-radius:99pt;background:#E8DDD0;overflow:hidden;min-width:20pt}
+.axis-fill{height:4pt;border-radius:99pt}
+.axis-num{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:700;width:17pt;text-align:right;flex-shrink:0;line-height:1}
+.axis-den{font-size:12px;color:#C0B0A0;width:13pt;flex-shrink:0}
+
+/* ── FORCES & PRIORITÉS ── */
+.fp-wrap{display:flex;gap:0;align-items:flex-start}
+.fp-col{flex:1;min-width:0}
+.fp-col:first-child{padding-right:7pt;border-right:0.35pt solid #E4DDD2}
+.fp-col:last-child{padding-left:7pt}
+.fp-title{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2px;text-transform:uppercase;margin-bottom:5pt}
+.fp-item{font-size:14.5px;color:#1A1410;font-weight:500;padding:2.5pt 0;display:flex;align-items:center;gap:5pt;line-height:1.35}
+.fp-check{color:#2E7D52;font-size:11px;flex-shrink:0}
+.fp-dot{color:#C47040;font-size:11px;flex-shrink:0}
+
+/* ── LIMITATIONS ── */
+.chips{display:flex;flex-wrap:wrap;gap:0;margin-top:3pt}
+.chip{
+  font-size:13.5px;font-weight:500;padding:2.5pt 8pt;border-radius:3pt;
+  background:#EAE2D4;color:#5A4A38;
+  display:inline-block;margin:2pt 2.5pt 0 0;
+  border:0.5pt solid #D8CDB8;
+}
+
+/* ── COMPENSATION ── */
+.comp-warn-pill{
+  display:flex;align-items:flex-start;gap:6pt;padding:5pt 0 5pt 9pt;
+  border-left:2pt solid #C47040;flex-shrink:0;margin-top:3pt;
+}
+.comp-warn-icon{font-size:11px;color:#C47040;flex-shrink:0;margin-top:1pt}
+.comp-warn-text{font-size:13px;color:#7A5020;line-height:1.45;font-style:italic}
+
+/* ── TESTS (page 1) ── */
+.test-row{display:flex;align-items:flex-start;padding:5pt 0;gap:7pt;border-bottom:0.35pt solid #EDE5DA}
+.test-row:last-child{border-bottom:none}
+.test-bar{width:2.5pt;border-radius:99pt;flex-shrink:0;align-self:stretch;min-height:14px;margin-top:2pt}
+.test-body{flex:1;min-width:0}
+.test-top{display:flex;align-items:center;justify-content:space-between;gap:5pt;margin-bottom:2pt}
+.test-name{font-size:15px;font-weight:600;color:#1A1410;line-height:1.3}
+.test-badge{
+  font-size:11.5px;font-weight:700;padding:2pt 6pt;border-radius:2pt;
+  border-width:0.6pt;border-style:solid;letter-spacing:0.3px;
+  text-transform:uppercase;white-space:nowrap;flex-shrink:0;
+}
+.test-obs{font-size:13.5px;color:#9A8C80;font-style:italic;line-height:1.45}
+
+/* ── RESSENTI ── */
+.res-row{display:flex;align-items:center;gap:7pt;padding:4pt 0;border-bottom:0.35pt solid #EDE5DA}
+.res-row:last-child{border-bottom:none}
+.res-lbl{font-size:13px;font-weight:600;color:#7A6A58;width:52pt;flex-shrink:0}
+.res-track{flex:1;height:3pt;border-radius:99pt;background:#E8DDD0;overflow:hidden}
+.res-fill{height:3pt;border-radius:99pt}
+.res-val{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;width:21pt;text-align:right;flex-shrink:0;line-height:1}
+
+/* ── PROGRAMME ── */
+.prog-row{display:flex;gap:8pt;align-items:flex-start;padding:4pt 0;border-bottom:0.35pt solid #EDE5DA}
+.prog-row:last-child{border-bottom:none}
+.prog-num{
+  width:16px;height:16px;border-radius:50%;background:#1E1812;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;border:0.6pt solid #B8956A;margin-top:2pt;
+}
+.prog-num-txt{font-family:'Playfair Display',Georgia,serif;font-size:8px;font-weight:700;color:#E8D5A8}
+.prog-step-lbl{font-size:12px;font-weight:700;color:#B8956A;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:1pt}
+.prog-name{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:#1A1410;line-height:1.2}
+.freq-pill{
+  display:flex;align-items:center;gap:8pt;background:#1E1812;border-radius:4pt;
+  padding:5pt 10pt;margin-top:6pt;border-left:2.5pt solid #B8956A;flex-shrink:0;
+}
+.freq-lbl{font-size:11.5px;font-weight:700;color:#B8956A;letter-spacing:1.2px;text-transform:uppercase}
+.freq-val{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:#F5EFE5}
+
+/* ── FOOTER ── */
+.footer{
+  flex-shrink:0;background:#FDFCF9;height:7mm;display:flex;align-items:center;
+  justify-content:space-between;padding:0 12mm;border-top:0.5pt solid #DDD5C8;
+}
+.footer-centered{
+  flex-shrink:0;background:#FDFCF9;height:7mm;display:flex;align-items:center;
+  justify-content:center;gap:8pt;padding:0 12mm;border-top:0.5pt solid #DDD5C8;
+}
+.footer-txt{font-size:12.5px;color:#B8A898;letter-spacing:0.2px}
+.footer-dot{font-size:5px;color:#C4A87A}
+
+/* ── MINI HEADER pages 2 & 3 ── */
+.mini-hd{
+  flex-shrink:0;background:#1E1812;height:9.5mm;display:flex;align-items:center;
+  justify-content:space-between;padding:0 12mm;
+  border-bottom:0.7pt solid rgba(184,149,106,0.3);
+}
+.mini-left{display:flex;align-items:center;gap:7pt}
+.mini-dia{width:4pt;height:4pt;background:#B8956A;transform:rotate(45deg);flex-shrink:0}
+.mini-client{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-weight:700;color:#F5EFE5}
+.mini-sub{font-size:12.5px;color:#5A4A38}
+.mini-pg{font-size:12.5px;color:#5A4A38}
+
+/* ── PAGE 2 LAYOUT ── */
+.p2-body{
+  flex:1;display:flex;flex-direction:column;
+  padding:4mm 12mm 4mm;gap:1.5mm;min-height:0;overflow:hidden;
+}
+.p2-upper{display:flex;gap:0;align-items:stretch;flex-shrink:0}
+.p2-obs-col{flex:0 0 56%;padding-right:7mm;display:flex;flex-direction:column}
+.p2-vsep{width:0.35pt;background:#E4DDD2;flex-shrink:0;align-self:stretch}
+.p2-side-col{flex:1;padding-left:7mm;display:flex;flex-direction:column;gap:3.5mm}
+.p2-radar{flex-shrink:0;display:flex;justify-content:center}
+
+/* ── OBSERVATIONS (page 2) ── */
+.obs{
+  padding:7pt 12pt 7pt 14pt;border-left:3pt solid #B8956A;
+  background:#FDFCF9;border-radius:0 6pt 6pt 0;flex:1;
+}
+.obs-text{
+  font-family:'Playfair Display',Georgia,serif;font-size:20px;font-style:italic;
+  color:#1E1610;line-height:1.72;margin-bottom:5pt;
+}
+.obs-sub{font-size:16.5px;color:#7A6A5E;line-height:1.65}
+
+/* ── OBJECTIF PROCHAIN BILAN ── */
+.nb{
+  background:#1E1812;border-radius:5pt;padding:7pt 10pt;
+  border-left:3pt solid #B8956A;flex-shrink:0;
+  border-top:0.5pt solid rgba(184,149,106,0.2);
+  border-right:0.5pt solid rgba(184,149,106,0.2);
+  border-bottom:0.5pt solid rgba(184,149,106,0.2);
+}
+.nb .sec-lbl{color:rgba(184,149,106,0.85)}
+.nb .sec-rule{background:linear-gradient(90deg,rgba(184,149,106,0.4),transparent)}
+.nb-row{display:flex;align-items:center;margin-top:5pt}
+.nb-col{display:flex;flex-direction:column;align-items:center;flex:1}
+.nb-lbl{font-size:11px;font-weight:700;color:rgba(184,149,106,0.65);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt;text-align:center}
+.nb-score{font-family:'Playfair Display',Georgia,serif;font-size:27px;font-weight:800;line-height:1;text-align:center}
+.nb-unit{font-size:12px;color:rgba(184,149,106,0.5);margin-left:1pt;font-weight:400}
+.nb-delay{font-family:'Playfair Display',Georgia,serif;font-size:13px;font-weight:700;color:#E8DDD0;text-align:center;line-height:1.3}
+.nb-arrow{font-size:14px;color:#B8956A;padding:0 5pt;flex-shrink:0}
+.nb-sep{width:0.5pt;height:22px;background:rgba(184,149,106,0.35);flex-shrink:0;margin:0 7pt}
+
+/* ── TESTS TABLE (page 2) ── */
+.ttest-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:4.5pt 0;border-bottom:0.35pt solid #EDE5DA;gap:8pt;
+}
+.ttest-row:last-child{border-bottom:none}
+.ttest-name{font-size:15px;font-weight:500;color:#1A1410;flex:1;min-width:0}
+.ttest-badge{
+  font-size:12.5px;font-weight:700;padding:2.5pt 7pt;border-radius:2pt;
+  border-width:0.6pt;border-style:solid;white-space:nowrap;flex-shrink:0;letter-spacing:0.2px;
+}
+
+/* ── ZONES (page 2) ── */
+.z-chips{display:flex;flex-wrap:wrap;margin-top:4pt}
+.z-chip{
+  font-size:14px;font-weight:500;padding:3pt 9pt;border-radius:3pt;
+  border-width:0.6pt;border-style:solid;display:inline-block;margin:2pt 2.5pt 0 0;
+}
+.z-forte{color:#8A2020;background:#F5E0E0;border-color:#D88080}
+.z-surv{color:#7A4010;background:#F5E8D8;border-color:#D8A870}
+
+/* ── RADAR (page 2) ── */
+.card{
+  background:#FDFCF9;border-radius:7pt;padding:8pt 11pt;
+  box-shadow:0 1pt 3pt rgba(30,24,18,0.04),0 3pt 10pt rgba(30,24,18,0.05);
+  border:0.5pt solid rgba(184,149,106,0.09);flex-shrink:0;
+}
+.radar-zone{
+  width:100%;box-sizing:border-box;
+  background:rgba(212,200,178,0.10);
+  border-radius:5pt;
+  border:0.4pt solid rgba(184,149,106,0.14);
+  padding:5pt 14pt 3pt;
+}
+
+/* ── PAGE 3 LAYOUT ── */
+.p3-body{
+  flex:1;display:flex;flex-direction:column;
+  padding:4mm 12mm 2mm;gap:3.5mm;min-height:0;overflow:hidden;
+}
+.p3-section{flex-shrink:0}
+
+/* ── COMPOSITION ÉDITORIALE (page 3) ── */
+.comp-editorial{
+  display:flex;align-items:stretch;margin-top:4pt;
+}
+.comp-stat{
+  flex:1;text-align:center;padding:0 8pt;
+  border-right:0.35pt solid #E4DDD2;
+}
+.comp-stat:first-child{padding-left:0}
+.comp-stat:last-child{border-right:none;padding-right:0}
+.comp-stat-v{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:23px;font-weight:700;color:#1A1410;line-height:1;
+}
+.comp-stat-u{font-size:13px;color:#9A8C80;margin-left:1pt;font-weight:400}
+.comp-stat-k{
+  font-size:10px;font-weight:600;color:#A89070;
+  letter-spacing:1px;text-transform:uppercase;margin-top:3pt;
+}
+
+/* ── SEGMENTAIRE MUSCULAIRE (page 3) ── */
+.seg-sub-hd{display:flex;align-items:center;gap:6pt;margin:4pt 0 3pt;flex-shrink:0}
+.seg-sub-lbl{font-size:9.5px;font-weight:700;color:#C0B0A0;letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
+.seg-sub-rule{flex:1;height:0.3pt;background:linear-gradient(90deg,#DDD5C8,transparent)}
+.seg-row{display:flex;align-items:stretch}
+.seg-stat{flex:1;text-align:center;padding:0 5pt;border-right:0.35pt solid #E4DDD2}
+.seg-stat:first-child{padding-left:0}
+.seg-stat:last-child{border-right:none;padding-right:0}
+.seg-stat-v{font-family:'Playfair Display',Georgia,serif;font-size:21px;font-weight:700;color:#3A2E24;line-height:1}
+.seg-stat-u{font-size:11px;color:#9A8C80;font-weight:400;margin-left:1pt}
+.seg-stat-k{font-size:9.5px;font-weight:600;color:#B8A898;letter-spacing:0.8px;text-transform:uppercase;margin-top:3pt}
+
+/* ── RECOMMANDATIONS COACH (page 3) ── */
+.rec-chips{display:flex;flex-wrap:wrap;margin-top:2pt}
+.rec-chip{
+  font-size:13px;font-weight:500;padding:2.5pt 8pt;border-radius:3pt;
+  border:0.5pt solid #D4C4AC;background:#EDE3D0;color:#4A3C30;
+  display:inline-block;margin:2pt 3pt 0 0;
+}
+.rec-freq{
+  display:flex;align-items:center;gap:6pt;margin-top:4pt;
+  padding-top:4pt;border-top:0.35pt solid #EDE5DA;
+}
+.rec-freq-lbl{font-size:11px;font-weight:700;color:#A89070;letter-spacing:2px;text-transform:uppercase}
+.rec-freq-val{font-family:'Playfair Display',Georgia,serif;font-size:19px;font-weight:700;color:#1A1410}
+.rec-action{
+  font-size:14px;font-weight:500;color:#5A4A38;line-height:1.5;margin-top:4pt;
+  padding:5pt 10pt;background:transparent;
+  border-left:2pt solid #B8956A;
+}
+.rec-detail{
+  font-size:14px;color:#3E3028;line-height:1.55;margin-top:4pt;
+  font-style:italic;padding-top:5pt;border-top:0.35pt solid #EDE5DA;
+}
+
+/* ── PROJECTION ÉDITORIALE (page 3) ── */
+.proj-editorial{
+  background:#1E1812;border-radius:6pt;
+  padding:12pt 14pt 14pt;
+  border-left:3pt solid #B8956A;
+  border-top:0.5pt solid rgba(184,149,106,0.2);
+  border-right:0.5pt solid rgba(184,149,106,0.2);
+  border-bottom:0.5pt solid rgba(184,149,106,0.2);
+  flex-shrink:0;
+}
+.proj-editorial .sec-lbl{color:rgba(184,149,106,0.85)}
+.proj-editorial .sec-rule{background:linear-gradient(90deg,rgba(184,149,106,0.4),transparent)}
+.proj-ed-steps{display:flex;align-items:stretch;margin-top:10pt;gap:0}
+.proj-ed-step{
+  flex:1;padding:0 14pt;
+  border-right:0.5pt solid rgba(184,149,106,0.18);
+}
+.proj-ed-step:first-child{padding-left:0}
+.proj-ed-step:last-child{border-right:none;padding-right:0}
+.proj-ed-num{
+  width:22px;height:22px;border-radius:50%;
+  background:rgba(184,149,106,0.12);
+  font-family:'Playfair Display',Georgia,serif;font-size:10px;font-weight:700;color:#C4A87A;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:7pt;border:0.6pt solid rgba(184,149,106,0.35);
+}
+.proj-ed-week{
+  font-size:11px;font-weight:700;color:rgba(184,149,106,0.65);
+  letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4pt;
+}
+.proj-ed-title{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:17px;font-weight:700;color:#F5EFE5;
+  margin-bottom:5pt;line-height:1.2;
+}
+.proj-ed-desc{font-size:14px;color:#9A8878;line-height:1.5}
+
+/* ── PROFIL NIVEAU (remplace score panel) ── */
+.profile-level{
+  display:flex;flex-direction:column;align-items:center;
+  padding:8pt 0 14pt;gap:4pt;flex-shrink:0;
+}
+.profile-level+.sblock{padding-top:4mm;border-top:0.35pt solid #EDE5DA}
+.profile-level-lbl{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:2pt}
+.profile-level-badge{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:26px;font-weight:700;letter-spacing:0.5px;
+  line-height:1.1;text-align:center;margin-bottom:2pt;
+}
+.profile-level-desc{
+  font-size:13px;color:#9A8880;line-height:1.55;text-align:center;
+  max-width:120pt;font-style:italic;
+}
+
+/* ── INTERPRÉTATION AXE ── */
+.axis-interp{
+  font-size:10.5px;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;
+  width:62pt;text-align:right;flex-shrink:0;
+}
+
+/* ── FEUILLE DE ROUTE (page 3, élément principal) ── */
+.roadmap{
+  background:#1E1812;border-radius:7pt;
+  padding:7pt 12pt 7pt;
+  border-left:3pt solid #B8956A;
+  border-top:0.5pt solid rgba(184,149,106,0.2);
+  border-right:0.5pt solid rgba(184,149,106,0.2);
+  border-bottom:0.5pt solid rgba(184,149,106,0.2);
+  flex-shrink:0;
+}
+.roadmap .sec-lbl{color:rgba(184,149,106,0.85)}
+.roadmap .sec-rule{background:linear-gradient(90deg,rgba(184,149,106,0.4),transparent)}
+.roadmap-meta{
+  display:flex;gap:0;padding:4pt 0;
+  border-bottom:0.5pt solid rgba(184,149,106,0.18);
+}
+.roadmap-meta-item{flex:1;padding:0 10pt}
+.roadmap-meta-item:first-child{padding-left:0}
+.roadmap-meta-item+.roadmap-meta-item{border-left:0.5pt solid rgba(184,149,106,0.18)}
+.roadmap-meta-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1.5pt}
+.roadmap-meta-val{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:#E8D5A8;line-height:1.2}
+.roadmap-proj{padding:4pt 0;border-bottom:0.5pt solid rgba(184,149,106,0.18)}
+.roadmap-proj-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt}
+.roadmap-bullets{display:flex;flex-direction:column}
+.roadmap-bullet{display:flex;align-items:baseline;gap:5pt;padding:1.5pt 0}
+.roadmap-bullet-dot{font-size:5.5px;color:#B8956A;flex-shrink:0;line-height:1}
+.roadmap-bullet-text{font-size:12.5px;color:#D0C4B8;line-height:1.35}
+.roadmap-action{padding-top:4pt}
+.roadmap-action-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1.5pt}
+.roadmap-action-val{font-size:13px;font-weight:500;color:#E8DDD0;line-height:1.4;font-style:italic}
+
+/* ── POURQUOI CES AXES (page 3) ── */
+.why-grid{display:flex;gap:8pt;margin-top:4pt}
+.why-item{
+  flex:1;padding:5pt 9pt;
+  background:rgba(245,239,229,0.5);border-radius:5pt;
+  border:0.4pt solid #E4DDD2;
+}
+.why-item-label{font-size:10.5px;font-weight:700;color:#B8956A;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3pt}
+.why-item-text{font-size:13px;color:#4A3C30;line-height:1.5}
+
+/* ── CLOSING (page 3) ── */
+.closing{padding:2pt 12mm 2pt;text-align:center;flex-shrink:0}
+.closing-rule{display:flex;align-items:center;margin-bottom:5pt}
+.closing-line{flex:1;height:0.4pt;background:linear-gradient(90deg,transparent,#DDD5C8 30%,#DDD5C8 70%,transparent)}
+.closing-dia{width:4pt;height:4pt;background:#B8956A;transform:rotate(45deg);margin:0 8pt;flex-shrink:0}
+.closing-name{font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:700;color:#1A1410}
+.closing-sub{font-size:13px;color:#9A8C80;margin-top:2pt}
+.closing-contact{font-size:13px;color:#B8A898;margin-top:1pt}
+.closing-conf{font-size:11.5px;color:#C4B8A8;letter-spacing:0.5px;text-transform:uppercase;margin-top:2pt}
+
+/* ── PAGE 4 : CARTOGRAPHIE CORPORELLE ── */
+.p4-body{
+  flex:1;display:flex;flex-direction:column;
+  padding:6mm 12mm 3mm;gap:4mm;min-height:0;overflow:hidden;
+}
+.p4-sils{
+  display:flex;justify-content:center;gap:16mm;align-items:flex-start;flex-shrink:0;
+}
+.p4-sil{display:flex;flex-direction:column;align-items:center;gap:5pt}
+.p4-sil-lbl{
+  font-size:10px;font-weight:700;color:#A89070;
+  letter-spacing:2px;text-transform:uppercase;margin-top:2pt;
+}
+.p4-legend{
+  display:flex;justify-content:center;gap:18pt;flex-shrink:0;
+}
+.p4-legend-item{display:flex;align-items:center;gap:5pt;font-size:12px;color:#7A6A58}
+.p4-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.p4-info{display:flex;gap:4mm;flex-shrink:0;align-items:stretch}
+.p4-analyse{
+  flex:1;background:#FDFCF9;border-radius:6pt;
+  padding:9pt 12pt;border:0.5pt solid rgba(184,149,106,0.2);
+  border-left:3pt solid #B8956A;
+}
+.p4-analyse-lbl{
+  font-size:10px;font-weight:700;color:#A89070;
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:5pt;
+}
+.p4-analyse-txt{font-size:13.5px;color:#3E3028;line-height:1.65}
+.p4-axes{
+  flex:0 0 auto;width:62mm;background:#F7F2EA;border-radius:6pt;
+  padding:9pt 12pt;border:0.5pt solid #EDE5DA;
+}
+.p4-axes-lbl{
+  font-size:10px;font-weight:700;color:#A89070;
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:5pt;
+}
+.p4-axes-list{display:flex;flex-direction:column;gap:3.5pt}
+.p4-axes-item{
+  font-size:13px;color:#4A3C30;line-height:1.35;
+  display:flex;align-items:flex-start;gap:5pt;
+}
+.p4-axes-dot{font-size:5px;color:#B8956A;flex-shrink:0;margin-top:3pt}
+</style>
+</head>
+<body><div class="page">
+  <div class="hd">
+    <div class="hd-brand">
+      <img class="hd-logo" src="" alt=""
+    onerror="this.style.display='none'">
+      <div class="hd-sep"></div>
+      <div>
+        <div class="hd-name">Mise en Mouvement</div>
+        <div class="hd-contact">06 12 34 56 78 · contact@miseenmouvement.fr  ·  12 rue des Acacias · 75017 Paris</div>
+      </div>
+    </div>
+    <div class="hd-right">
+      <span class="hd-date-lbl">Bilan du</span>
+      <span class="hd-date-val">5 juin 2026</span>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="hero-overline">Bilan mouvement personnalisé</div>
+    <div class="hero-name">Sophie Martin</div>
+    <div class="hero-meta">
+      <span class="hero-meta-item"><strong>Femme</strong></span><div class="hero-meta-dot"></div><span class="hero-meta-item"><strong>38</strong>&nbsp;ans</span><div class="hero-meta-dot"></div><span class="hero-meta-item">5 juin 2026</span>
+    </div>
+    <div class="hero-meta" style="margin-top:4pt">
+      <span class="hero-meta-item">Coach&nbsp;: <strong>Manon Pollart</strong></span>
+      <div class="hero-meta-dot"></div><span class="hero-meta-item" style="font-style:italic">Je suis prêt(e) à progresser régulièrement</span>
+    </div>
+  </div>
+  <div class="p1-body">
+    <div class="p1-left">
+      <div class="sblock">
+    <div class="sec"><span class="sec-lbl">ÉVALUATION DES 5 AXES</span><div class="sec-rule"></div></div>
+    <div class="axis-row">
+      <span class="axis-lbl">Mobilité</span>
+      <div class="axis-track"><div class="axis-fill" style="width:55.0%;background:#B8956A"></div></div>
+      <span class="axis-num" style="color:#B8956A">11</span>
+      <span class="axis-den">/20</span>
+      <span class="axis-interp" style="color:#B8956A">Bon niveau</span>
+    </div><div class="axis-row">
+      <span class="axis-lbl">Stabilité</span>
+      <div class="axis-track"><div class="axis-fill" style="width:45.0%;background:#C47040"></div></div>
+      <span class="axis-num" style="color:#C47040">9</span>
+      <span class="axis-den">/20</span>
+      <span class="axis-interp" style="color:#C47040">À développer</span>
+    </div><div class="axis-row">
+      <span class="axis-lbl">Force</span>
+      <div class="axis-track"><div class="axis-fill" style="width:70.0%;background:#B8956A"></div></div>
+      <span class="axis-num" style="color:#B8956A">14</span>
+      <span class="axis-den">/20</span>
+      <span class="axis-interp" style="color:#B8956A">Bon niveau</span>
+    </div><div class="axis-row">
+      <span class="axis-lbl">Posture</span>
+      <div class="axis-track"><div class="axis-fill" style="width:65.0%;background:#B8956A"></div></div>
+      <span class="axis-num" style="color:#B8956A">13</span>
+      <span class="axis-den">/20</span>
+      <span class="axis-interp" style="color:#B8956A">Bon niveau</span>
+    </div><div class="axis-row">
+      <span class="axis-lbl">Coordination</span>
+      <div class="axis-track"><div class="axis-fill" style="width:75.0%;background:#2E7D52"></div></div>
+      <span class="axis-num" style="color:#2E7D52">15</span>
+      <span class="axis-den">/20</span>
+      <span class="axis-interp" style="color:#B8956A">Bon niveau</span>
+    </div>
+  </div>
+      <div class="sblock">
+    <div class="fp-wrap">
+      <div class="fp-col">
+        <div class="fp-title">Points forts</div>
+        <div class="fp-item"><span class="fp-check">✓</span>Coordination</div><div class="fp-item"><span class="fp-check">✓</span>Force</div>
+      </div>
+      <div class="fp-col">
+        <div class="fp-title">Priorités</div>
+        <div class="fp-item"><span class="fp-dot">•</span>Stabilité</div><div class="fp-item"><span class="fp-dot">•</span>Mobilité</div>
+      </div>
+    </div>
+  </div>
+      <div class="sblock">
+    <div class="sec"><span class="sec-lbl">PROGRAMME RECOMMANDÉ</span><div class="sec-rule"></div></div>
+    <div class="prog-row">
+    <div class="prog-num"><span class="prog-num-txt">1</span></div>
+    <div>
+      <div class="prog-step-lbl">Maintenant</div>
+      <div class="prog-name">Mobilité</div>
+    </div>
+  </div><div class="prog-row">
+    <div class="prog-num"><span class="prog-num-txt">2</span></div>
+    <div>
+      <div class="prog-step-lbl">Ensuite</div>
+      <div class="prog-name">Renforcement</div>
+    </div>
+  </div><div class="prog-row">
+    <div class="prog-num"><span class="prog-num-txt">3</span></div>
+    <div>
+      <div class="prog-step-lbl">Puis</div>
+      <div class="prog-name">Rééquilibrage postural</div>
+    </div>
+  </div>
+    <div class="freq-pill">
+    <span class="freq-lbl">Fréquence</span>
+    <span class="freq-val">2x/semaine</span>
+  </div>
+  </div>
+      <div class="sblock">
+    <div class="sec"><span class="sec-lbl">LIMITATIONS QUOTIDIENNES</span><div class="sec-rule"></div></div>
+    <div class="chips"><span class="chip">Raideurs au réveil</span><span class="chip">Douleurs liées au travail</span></div>
+  </div>
+    </div>
+    <div class="p1-vsep"></div>
+    <div class="p1-right">
+      <div class="profile-level">
+    <div class="profile-level-lbl">Profil actuel</div>
+    <div class="profile-level-badge" style="color:#B8956A">BIEN ENGAGÉ</div>
+    <div class="profile-level-desc">Votre corps répond bien. Quelques axes à optimiser pour gagner en confort et en efficacité.</div>
+  </div>
+      <div class="sblock">
+    <div class="sec"><span class="sec-lbl">TESTS DE MOUVEMENT</span><div class="sec-rule"></div></div>
+    <div class="test-row">
+      <div class="test-bar" style="background:#C47040"></div>
+      <div class="test-body">
+        <div class="test-top">
+          <span class="test-name">Squat</span>
+          <span class="test-badge" style="background:#FDF9F2;border-color:#E8CFA0;color:#7A5020">OBSERVATION</span>
+        </div>
+        <div class="test-obs">Genou droit en valgus</div>
+      </div>
+    </div><div class="test-row">
+      <div class="test-bar" style="background:#C44444"></div>
+      <div class="test-body">
+        <div class="test-top">
+          <span class="test-name">Équilibre unipodal</span>
+          <span class="test-badge" style="background:#FEF4F4;border-color:#F0C0C0;color:#8A2828">DOULEUR</span>
+        </div>
+        <div class="test-obs">Instabilité marquée côté gauche</div>
+      </div>
+    </div><div class="test-row">
+      <div class="test-bar" style="background:#2E7D52"></div>
+      <div class="test-body">
+        <div class="test-top">
+          <span class="test-name">Bras au-dessus de la tête</span>
+          <span class="test-badge" style="background:#F2FBF6;border-color:#A4DEBA;color:#1A5C38">OPTIMAL</span>
+        </div>
+        
+      </div>
+    </div><div class="test-row">
+      <div class="test-bar" style="background:#C47040"></div>
+      <div class="test-body">
+        <div class="test-top">
+          <span class="test-name">Hip hinge</span>
+          <span class="test-badge" style="background:#FDF9F2;border-color:#E8CFA0;color:#7A5020">OBSERVATION</span>
+        </div>
+        <div class="test-obs">Compensation lombaire</div>
+      </div>
+    </div>
+  </div>
+      <div class="sblock">
+    <div class="sec"><span class="sec-lbl">RESSENTI SUBJECTIF</span><div class="sec-rule"></div></div>
+    <div class="res-row">
+      <span class="res-lbl">Énergie</span>
+      <div class="res-track"><div class="res-fill" style="width:60%;background:#B8956A"></div></div>
+      <span class="res-val" style="color:#B8956A">6</span>
+    </div><div class="res-row">
+      <span class="res-lbl">Stress</span>
+      <div class="res-track"><div class="res-fill" style="width:70%;background:#C47040"></div></div>
+      <span class="res-val" style="color:#C47040">7</span>
+    </div><div class="res-row">
+      <span class="res-lbl">Sommeil</span>
+      <div class="res-track"><div class="res-fill" style="width:50%;background:#B8956A"></div></div>
+      <span class="res-val" style="color:#B8956A">5</span>
+    </div><div class="res-row">
+      <span class="res-lbl">Douleur</span>
+      <div class="res-track"><div class="res-fill" style="width:40%;background:#B8956A"></div></div>
+      <span class="res-val" style="color:#B8956A">4</span>
+    </div>
+  </div>
+    </div>
+  </div>
+  <div class="footer">
+    <span class="footer-txt">Mise en Mouvement</span>
+    <span class="footer-dot">◆</span>
+    <span class="footer-txt">06 12 34 56 78 · contact@miseenmouvement.fr  ·  12 rue des Acacias · 75017 Paris</span>
+  </div>
+</div><div class="page">
+  <div class="mini-hd">
+    <div class="mini-left">
+      <div class="mini-dia"></div>
+      <span class="mini-client">Sophie Martin</span>
+      <span class="mini-sub">· Feuille de route</span>
+    </div>
+    <span class="mini-pg">5 juin 2026 · Page 2 / 4</span>
+  </div>
+  <div class="p2-body">
+    <div class="p2-upper">
+      <div class="p2-obs-col">
+        <div class="obs">
+    <div class="sec"><span class="sec-lbl">CE QUE NOUS AVONS OBSERVÉ</span><div class="sec-rule"></div></div>
+    <div class="obs-text">Tous vos axes sont bien développés, avec une répartition équilibrée sur les 5 dimensions évaluées.</div>
+    <div class="obs-sub">L'objectif du prochain cycle est de consolider ces acquis et d'atteindre un niveau d'excellence durable.</div>
+  </div>
+      </div>
+      <div class="p2-vsep"></div>
+      <div class="p2-side-col">
+        <div class="card">
+    <div class="sec"><span class="sec-lbl">ZONES PRIORITAIRES</span><div class="sec-rule"></div></div>
+    <div style="display:flex;gap:10pt;margin-bottom:5pt;margin-top:4pt">
+    <span style="font-size:8.5px;font-weight:700;color:#8A2020;letter-spacing:1px;text-transform:uppercase">● Priorité</span>
+    <span style="font-size:8.5px;font-weight:700;color:#7A4010;letter-spacing:1px;text-transform:uppercase">● Surveillance</span>
+  </div>
+    <div class="z-chips"><span class="z-chip z-forte">Épaules</span><span class="z-chip z-forte">Hanches</span><span class="z-chip z-surv">Lombaires</span><span class="z-chip z-surv">Ceinture scapulaire</span><span class="z-chip z-surv">Genoux</span></div>
+  </div>
+        <div class="card">
+    <div class="sec"><span class="sec-lbl">DÉTAIL DES TESTS</span><div class="sec-rule"></div></div>
+    <div class="ttest-row">
+      <span class="ttest-name">Squat</span>
+      <span class="ttest-badge" style="background:#FDF9F2;border-color:#E8CFA0;color:#7A5020">À surveiller</span>
+    </div><div class="ttest-row">
+      <span class="ttest-name">Équilibre unipodal</span>
+      <span class="ttest-badge" style="background:#FEF4F4;border-color:#F0C0C0;color:#8A2828">Douleur</span>
+    </div><div class="ttest-row">
+      <span class="ttest-name">Bras au-dessus de la tête</span>
+      <span class="ttest-badge" style="background:#F2FBF6;border-color:#A4DEBA;color:#1A5C38">Optimal</span>
+    </div><div class="ttest-row">
+      <span class="ttest-name">Hip hinge</span>
+      <span class="ttest-badge" style="background:#FDF9F2;border-color:#E8CFA0;color:#7A5020">À surveiller</span>
+    </div>
+  </div>
+      </div>
+    </div>
+    <div class="p2-radar">
+      <div class="radar-zone">
+    <div class="sec"><span class="sec-lbl">CARTOGRAPHIE DU MOUVEMENT</span><div class="sec-rule"></div></div>
+    <div style="display:flex;justify-content:center;align-items:center;padding:4pt 0 3pt">
+      <svg width="465" height="465" viewBox="0 0 370 370"
+    xmlns="http://www.w3.org/2000/svg">
+  <polygon points="210.0,176.9 200.4,206.2 169.6,206.2 160.0,176.9 185.0,158.8" fill="none"
+      stroke="rgba(184,149,106,0.22)"
+      stroke-width="0.55"/><polygon points="234.9,168.8 215.9,227.5 154.1,227.5 135.1,168.8 185.0,132.5" fill="none"
+      stroke="rgba(184,149,106,0.22)"
+      stroke-width="0.55"/><polygon points="259.9,160.7 231.3,248.7 138.7,248.7 110.1,160.7 185.0,106.3" fill="none"
+      stroke="rgba(184,149,106,0.22)"
+      stroke-width="0.55"/><polygon points="284.9,152.6 246.7,269.9 123.3,269.9 85.1,152.6 185.0,80.0" fill="rgba(242,238,231,0.55)"
+      stroke="rgba(184,149,106,0.50)"
+      stroke-width="0.9"/>
+  <line x1="185" y1="185" x2="284.9" y2="152.6"
+      stroke="rgba(184,149,106,0.25)" stroke-width="0.55"/><line x1="185" y1="185" x2="246.7" y2="269.9"
+      stroke="rgba(184,149,106,0.25)" stroke-width="0.55"/><line x1="185" y1="185" x2="123.3" y2="269.9"
+      stroke="rgba(184,149,106,0.25)" stroke-width="0.55"/><line x1="185" y1="185" x2="85.1" y2="152.6"
+      stroke="rgba(184,149,106,0.25)" stroke-width="0.55"/><line x1="185" y1="185" x2="185.0" y2="80.0"
+      stroke="rgba(184,149,106,0.25)" stroke-width="0.55"/>
+  <polygon points="239.9,167.2 212.8,223.2 141.8,244.5 120.1,163.9 185.0,106.3" fill="rgba(184,149,106,0.16)" stroke="#B8956A"
+    stroke-width="1.7" stroke-linejoin="round"/>
+  <text x="304.8" y="151.1" text-anchor="start"
+      font-family="'Inter',sans-serif" font-size="13" font-weight="600" fill="#8A7A6A" style="letter-spacing:0.4px">Mobilité</text>
+<text x="304.8" y="171.1" text-anchor="start"
+      font-family="'Playfair Display',Georgia,serif" font-size="14" font-weight="700" fill="#C4A87A">11<tspan font-family="'Inter',sans-serif" font-size="10" font-weight="400" fill="rgba(184,149,106,0.55)"> /20</tspan></text><text x="259.1" y="299.9" text-anchor="start"
+      font-family="'Inter',sans-serif" font-size="13" font-weight="600" fill="#8A7A6A" style="letter-spacing:0.4px">Stabilité</text>
+<text x="259.1" y="319.9" text-anchor="start"
+      font-family="'Playfair Display',Georgia,serif" font-size="14" font-weight="700" fill="#C4A87A">9<tspan font-family="'Inter',sans-serif" font-size="10" font-weight="400" fill="rgba(184,149,106,0.55)"> /20</tspan></text><text x="110.9" y="299.9" text-anchor="end"
+      font-family="'Inter',sans-serif" font-size="13" font-weight="600" fill="#8A7A6A" style="letter-spacing:0.4px">Force</text>
+<text x="110.9" y="319.9" text-anchor="end"
+      font-family="'Playfair Display',Georgia,serif" font-size="14" font-weight="700" fill="#C4A87A">14<tspan font-family="'Inter',sans-serif" font-size="10" font-weight="400" fill="rgba(184,149,106,0.55)"> /20</tspan></text><text x="65.2" y="151.1" text-anchor="end"
+      font-family="'Inter',sans-serif" font-size="13" font-weight="600" fill="#8A7A6A" style="letter-spacing:0.4px">Posture</text>
+<text x="65.2" y="171.1" text-anchor="end"
+      font-family="'Playfair Display',Georgia,serif" font-size="14" font-weight="700" fill="#C4A87A">13<tspan font-family="'Inter',sans-serif" font-size="10" font-weight="400" fill="rgba(184,149,106,0.55)"> /20</tspan></text><text x="185.0" y="56.0" text-anchor="middle"
+      font-family="'Inter',sans-serif" font-size="13" font-weight="600" fill="#8A7A6A" style="letter-spacing:0.4px">Coordination</text>
+<text x="185.0" y="76.0" text-anchor="middle"
+      font-family="'Playfair Display',Georgia,serif" font-size="14" font-weight="700" fill="#C4A87A">15<tspan font-family="'Inter',sans-serif" font-size="10" font-weight="400" fill="rgba(184,149,106,0.55)"> /20</tspan></text>
+</svg>
+    </div>
+  </div>
+    </div>
+  </div>
+  <div class="footer-centered">
+    <span class="footer-txt">Mise en Mouvement</span>
+    <span class="footer-dot">◆</span>
+    <span class="footer-txt">Rapport confidentiel</span>
+    <span class="footer-dot">◆</span>
+    <span class="footer-txt">Page 2 / 4</span>
+  </div>
+</div><div class="page">
+  <div class="mini-hd">
+    <div class="mini-left">
+      <div class="mini-dia"></div>
+      <span class="mini-client">Sophie Martin</span>
+      <span class="mini-sub">· Feuille de route</span>
+    </div>
+    <span class="mini-pg">5 juin 2026 · Page 3 / 4</span>
+  </div>
+  <div class="p3-body">
+    <div class="roadmap">
+    <div class="sec"><span class="sec-lbl">VOTRE FEUILLE DE ROUTE</span><div class="sec-rule"></div></div>
+    <div class="roadmap-meta"><div class="roadmap-meta-item">
+          <div class="roadmap-meta-lbl">Axe prioritaire</div>
+          <div class="roadmap-meta-val">Stabilité</div>
+        </div><div class="roadmap-meta-item">
+          <div class="roadmap-meta-lbl">Fréquence</div>
+          <div class="roadmap-meta-val">2x/semaine</div>
+        </div><div class="roadmap-meta-item">
+          <div class="roadmap-meta-lbl">Objectif</div>
+          <div class="roadmap-meta-val">Retrouver une mobilité fonctionnelle sans douleur</div>
+        </div></div>
+    <div class="roadmap-proj">
+    <div class="roadmap-proj-lbl">Projection à 6 semaines</div>
+    <div class="roadmap-bullets"><div class="roadmap-bullet"><span class="roadmap-bullet-dot">◆</span><span class="roadmap-bullet-text">Meilleur contrôle postural et réduction des compensations musculaires</span></div><div class="roadmap-bullet"><span class="roadmap-bullet-dot">◆</span><span class="roadmap-bullet-text">Amélioration de votre amplitude articulaire et réduction des raideurs quotidiennes</span></div><div class="roadmap-bullet"><span class="roadmap-bullet-dot">◆</span><span class="roadmap-bullet-text">Rééquilibrage musculaire et soulagement des tensions chroniques</span></div></div>
+  </div>
+    <div class="roadmap-action">
+        <div class="roadmap-action-lbl">Prochaine étape</div>
+        <div class="roadmap-action-val">Séance bilan mobilité épaule droite</div>
+      </div>
+  </div>
+    <div class="p3-section">
+    <div class="sec"><span class="sec-lbl">POURQUOI TRAVAILLER CES AXES ?</span><div class="sec-rule"></div></div>
+    <div class="why-grid"><div class="why-item">
+      <div class="why-item-label">Stabilité</div>
+      <div class="why-item-text">Un meilleur contrôle postural protège vos articulations et élimine les compensations musculaires.</div>
+    </div><div class="why-item">
+      <div class="why-item-label">Mobilité</div>
+      <div class="why-item-text">Gagner en mobilité facilite les gestes du quotidien et réduit les tensions articulaires persistantes.</div>
+    </div></div>
+  </div>
+    <div class="p3-section">
+    <div class="sec"><span class="sec-lbl">COMPOSITION CORPORELLE</span><div class="sec-rule"></div></div>
+    <div class="comp-editorial"><div class="comp-stat">
+    <div class="comp-stat-v">62,4<span class="comp-stat-u">kg</span></div>
+    <div class="comp-stat-k">Poids</div>
+  </div><div class="comp-stat">
+    <div class="comp-stat-v">27,3<span class="comp-stat-u">%</span></div>
+    <div class="comp-stat-k">Masse grasse</div>
+  </div><div class="comp-stat">
+    <div class="comp-stat-v">35,1<span class="comp-stat-u">%</span></div>
+    <div class="comp-stat-k">Masse musc.</div>
+  </div><div class="comp-stat">
+    <div class="comp-stat-v">52,8<span class="comp-stat-u">%</span></div>
+    <div class="comp-stat-k">Hydratation</div>
+  </div></div>
+    
+    <div class="seg-sub-hd">
+      <span class="seg-sub-lbl">Masse segmentaire</span>
+      <div class="seg-sub-rule"></div>
+    </div>
+    <div class="seg-row"><div class="seg-stat">
+      <div class="seg-stat-v">2,0<span class="seg-stat-u">kg</span></div>
+      <div class="seg-stat-k">Bras G.</div>
+    </div><div class="seg-stat">
+      <div class="seg-stat-v">2,1<span class="seg-stat-u">kg</span></div>
+      <div class="seg-stat-k">Bras D.</div>
+    </div><div class="seg-stat">
+      <div class="seg-stat-v">21,3<span class="seg-stat-u">kg</span></div>
+      <div class="seg-stat-k">Tronc</div>
+    </div><div class="seg-stat">
+      <div class="seg-stat-v">8,4<span class="seg-stat-u">kg</span></div>
+      <div class="seg-stat-k">Jambe G.</div>
+    </div><div class="seg-stat">
+      <div class="seg-stat-v">8,6<span class="seg-stat-u">kg</span></div>
+      <div class="seg-stat-k">Jambe D.</div>
+    </div></div>
+  </div>
+    <div class="p3-section">
+    <div class="sec"><span class="sec-lbl">RECOMMANDATIONS COACH</span><div class="sec-rule"></div></div>
+    <div class="rec-chips"><span class="rec-chip">Mobilité</span><span class="rec-chip">Renforcement</span><span class="rec-chip">Rééquilibrage postural</span></div>
+    <div class="rec-detail">Priorité : stabilité et mobilité — compensations à corriger.</div>
+  </div>
+  </div>
+  <div class="closing">
+    <div class="closing-rule">
+      <div class="closing-line"></div>
+      <div class="closing-dia"></div>
+      <div class="closing-line"></div>
+    </div>
+    <div class="closing-name">Mise en Mouvement</div>
+    <div class="closing-sub">Cabinet spécialisé mouvement &amp; performance</div>
+    <div class="closing-contact">06 12 34 56 78 · contact@miseenmouvement.fr  ·  12 rue des Acacias · 75017 Paris</div>
+    <div class="closing-conf">Document confidentiel · 5 juin 2026</div>
+  </div>
+  <div class="footer-centered">
+    <span class="footer-txt">Mise en Mouvement</span>
+    <span class="footer-dot">◆</span>
+    <span class="footer-txt">Rapport confidentiel</span>
+    <span class="footer-dot">◆</span>
+    <span class="footer-txt">Page 3 / 4</span>
+  </div>
+</div><div class="page">
+  <div class="mini-hd">
+    <div class="mini-left">
+      <div class="mini-dia"></div>
+      <span class="mini-client">Sophie Martin</span>
+      <span class="mini-sub">· Feuille de route</span>
+    </div>
+    <span class="mini-pg">5 juin 2026 · Page 4 / 4</span>
+  </div>
+  <div class="p4-body">
+    <div>
+      <div class="sec"><span class="sec-lbl">CARTOGRAPHIE CORPORELLE</span><div class="sec-rule"></div></div>
+      <div class="p4-analyse-txt" style="font-size:12px;color:#8A7A6A;margin-top:2pt;font-style:italic">Visualisation des zones nécessitant une attention particulière afin d'optimiser votre confort, votre mobilité et votre qualité de mouvement.</div>
+    </div>
+    <div class="p4-sils">
+      <div class="p4-sil">
+        <div style="height:142mm"><svg viewBox="0 0 100 268" xmlns="http://www.w3.org/2000/svg" style="height:100%;width:auto;display:block">
+  <!-- hands (back layer) -->
+  <ellipse cx="21" cy="153" rx="7" ry="8" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <ellipse cx="79" cy="153" rx="7" ry="8" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- forearms -->
+  <path d="M18,93 L31,93 L29,147 L16,147 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <path d="M69,93 L82,93 L85,147 L72,147 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- upper arms -->
+  <path d="M20,42 L33,42 L31,95 L18,95 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <path d="M67,42 L80,42 L82,95 L69,95 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- feet -->
+  <ellipse cx="39" cy="262" rx="13" ry="6" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <ellipse cx="61" cy="262" rx="13" ry="6" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- shins (non-zone from front) -->
+  <path d="M33,214 L49,214 L47,251 L33,251 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <path d="M51,214 L67,214 L67,251 L53,251 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- thighs / quadriceps -->
+  <path d="M34,142 L50,142 L49,208 L33,208 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <path d="M50,142 L66,142 L67,208 L51,208 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- lower torso / bassin -->
+  <path d="M39,110 L61,110 L60,124 L40,124 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- mid torso / sangle abdominale -->
+  <path d="M38,82 L62,82 L61,111 L39,111 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- upper torso / pectoraux -->
+  <path d="M37,40 Q50,37 63,40 L63,83 L37,83 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- hip flare / hanches -->
+  <path d="M32,122 L68,122 Q74,133 68,145 L32,145 Q26,133 32,122 Z" fill="#7A3C18" stroke="#5A2C10" stroke-width="0.6"/>
+  <!-- knees -->
+  <ellipse cx="41" cy="211" rx="9" ry="5.5" fill="#C8A87A" stroke="#A87848" stroke-width="0.6"/>
+  <ellipse cx="59" cy="211" rx="9" ry="5.5" fill="#C8A87A" stroke="#A87848" stroke-width="0.6"/>
+  <!-- ankles -->
+  <rect x="33" y="250" width="14" height="7" rx="2" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <rect x="53" y="250" width="14" height="7" rx="2" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- shoulders (cap arm-torso junction) -->
+  <ellipse cx="31" cy="46" rx="11" ry="7.5" fill="#7A3C18" stroke="#5A2C10" stroke-width="0.6"/>
+  <ellipse cx="69" cy="46" rx="11" ry="7.5" fill="#7A3C18" stroke="#5A2C10" stroke-width="0.6"/>
+  <!-- neck / cervicales -->
+  <rect x="45.5" y="32" width="9" height="12" rx="2.5" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- head (top layer) -->
+  <ellipse cx="50" cy="18" rx="12" ry="15" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+</svg></div>
+        <div class="p4-sil-lbl">Vue de face</div>
+      </div>
+      <div class="p4-sil">
+        <div style="height:142mm"><svg viewBox="0 0 100 268" xmlns="http://www.w3.org/2000/svg" style="height:100%;width:auto;display:block">
+  <!-- hands -->
+  <ellipse cx="21" cy="153" rx="7" ry="8" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <ellipse cx="79" cy="153" rx="7" ry="8" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- forearms -->
+  <path d="M18,93 L31,93 L29,147 L16,147 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <path d="M69,93 L82,93 L85,147 L72,147 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- upper arms -->
+  <path d="M20,42 L33,42 L31,95 L18,95 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <path d="M67,42 L80,42 L82,95 L69,95 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- feet -->
+  <ellipse cx="39" cy="262" rx="13" ry="6" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <ellipse cx="61" cy="262" rx="13" ry="6" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- shins / mollets (visible from back) -->
+  <path d="M33,214 L49,214 L47,251 L33,251 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <path d="M51,214 L67,214 L67,251 L53,251 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- thighs / ischio-jambiers -->
+  <path d="M34,142 L50,142 L49,208 L33,208 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <path d="M50,142 L66,142 L67,208 L51,208 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- lower torso / lombaires -->
+  <path d="M39,110 L61,110 L60,124 L40,124 Z" fill="#C8A87A" stroke="#A87848" stroke-width="0.6"/>
+  <!-- mid torso / grand dorsal -->
+  <path d="M38,82 L62,82 L61,111 L39,111 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- upper torso / dos haut -->
+  <path d="M37,40 Q50,37 63,40 L63,83 L37,83 Z" fill="#C8A87A" stroke="#A87848" stroke-width="0.6"/>
+  <!-- hip flare / fessiers -->
+  <path d="M32,122 L68,122 Q74,133 68,145 L32,145 Q26,133 32,122 Z" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- knees -->
+  <ellipse cx="41" cy="211" rx="9" ry="5.5" fill="#C8A87A" stroke="#A87848" stroke-width="0.6"/>
+  <ellipse cx="59" cy="211" rx="9" ry="5.5" fill="#C8A87A" stroke="#A87848" stroke-width="0.6"/>
+  <!-- ankles -->
+  <rect x="33" y="250" width="14" height="7" rx="2" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <rect x="53" y="250" width="14" height="7" rx="2" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- shoulders -->
+  <ellipse cx="31" cy="46" rx="11" ry="7.5" fill="#7A3C18" stroke="#5A2C10" stroke-width="0.6"/>
+  <ellipse cx="69" cy="46" rx="11" ry="7.5" fill="#7A3C18" stroke="#5A2C10" stroke-width="0.6"/>
+  <!-- neck / cervicales -->
+  <rect x="45.5" y="32" width="9" height="12" rx="2.5" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+  <!-- head -->
+  <ellipse cx="50" cy="18" rx="12" ry="15" fill="#BFB4A4" stroke="#9A8878" stroke-width="0.6"/>
+</svg></div>
+        <div class="p4-sil-lbl">Vue de dos</div>
+      </div>
+    </div>
+    <div class="p4-legend">
+      <div class="p4-legend-item"><div class="p4-legend-dot" style="background:#C8A87A"></div><span>Surveillance légère</span></div>
+      <div class="p4-legend-item"><div class="p4-legend-dot" style="background:#7A3C18"></div><span>Priorité de travail</span></div>
+      
+    </div>
+    <div class="p4-info">
+      <div class="p4-analyse">
+        <div class="p4-analyse-lbl">Analyse du mouvement</div>
+        <div class="p4-analyse-txt">Une attention prioritaire est identifiée au niveau de épaules, hanches, avec une surveillance recommandée pour lombaires et ceinture scapulaire. Les capacités de stabilité et mobilité présentent une marge de progression importante. Un travail ciblé et progressif permettra d'améliorer durablement votre confort corporel et votre qualité de mouvement au quotidien.</div>
+      </div>
+      <div class="p4-axes">
+    <div class="p4-axes-lbl">Axes prioritaires</div>
+    <div class="p4-axes-list">
+      <div class="p4-axes-item"><span class="p4-axes-dot">◆</span>Amplitude des épaules</div><div class="p4-axes-item"><span class="p4-axes-dot">◆</span>Amplitude des hanches</div><div class="p4-axes-item"><span class="p4-axes-dot">◆</span>Stabilité lombaire</div><div class="p4-axes-item"><span class="p4-axes-dot">◆</span>Stabilité scapulaire</div><div class="p4-axes-item"><span class="p4-axes-dot">◆</span>Stabilité des genoux</div><div class="p4-axes-item"><span class="p4-axes-dot">◆</span>Mobilité</div>
+    </div>
+  </div>
+    </div>
+  </div>
+  <div class="footer-centered">
+    <span class="footer-txt">Mise en Mouvement</span>
+    <span class="footer-dot">◆</span>
+    <span class="footer-txt">Rapport confidentiel</span>
+    <span class="footer-dot">◆</span>
+    <span class="footer-txt">Page 4 / 4</span>
+  </div>
+</div></body>
+</html>

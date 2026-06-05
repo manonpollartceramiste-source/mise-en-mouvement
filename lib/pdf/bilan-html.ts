@@ -1576,7 +1576,11 @@ function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): strin
 
 // ─── Générateur principal ─────────────────────────────────────────────────────
 
-export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "coach"): string {
+export function generateBilanHtml(
+  d: BilanPdfData,
+  _mode: "client" | "coach" = "coach",
+  options?: { forceBodyMap?: boolean },
+): string {
   const name    = formatName(d.clientName || "Client");
   const total   = d.total ?? 0;
   const footer1 = [d.contactLine, d.addressLine].filter(Boolean).join("  ·  ") || `Document confidentiel · ${d.dateStr}`;
@@ -1596,7 +1600,7 @@ export function generateBilanHtml(d: BilanPdfData, _mode: "client" | "coach" = "
   const hasAxes    = (d.axes?.length ?? 0) > 0;
   const hasRoadmap = !!(d.mainGoal || d.frequency || d.nextAction || hasAxes);
   const hasWhyAxes = hasAxes && (d.axes ?? []).some(a => a.max > 0 && a.value / a.max < 0.65);
-  const hasBodyMap = hasZones;
+  const hasBodyMap = hasZones || (options?.forceBodyMap === true);
 
   const totalPages = hasBodyMap ? 4 : 3;
 

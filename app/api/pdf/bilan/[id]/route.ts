@@ -268,8 +268,11 @@ export async function GET(
 ) {
   const { id } = await params;
   const url = new URL(_req.url);
-  const isPreview = url.searchParams.get("preview") === "1";
-  const pdfMode = url.searchParams.get("mode") === "client" ? "client" : "coach";
+  const isPreview  = url.searchParams.get("preview")  === "1";
+  const pdfMode    = url.searchParams.get("mode") === "client" ? "client" : "coach";
+  // Debug params — page 4 validation only, no effect in production data
+  const debugP4    = url.searchParams.get("debug_p4")  === "1"; // inject test zones
+  const forceP4    = url.searchParams.get("force_p4")  === "1"; // show p4 with neutral silhouettes
 
   let result: Awaited<ReturnType<typeof buildBilanData>>;
   try {
@@ -295,7 +298,16 @@ export async function GET(
     return new Response(result.error, { status: 404 });
   }
 
-  const html = generateBilanHtml(result.data, pdfMode);
+  // ── Debug overrides (query params only) ──────────────────────────────────
+  if (debugP4) {
+    result.data.zonePriorities = {
+      epaules:   "forte",
+      hanches:   "forte",
+      lombaires: "surveillance",
+    };
+  }
+
+  const html = generateBilanHtml(result.data, pdfMode, { forceBodyMap: forceP4 });
   console.log(`[PDF] ✓ HTML généré — slug="${result.slug}" preview=${isPreview}`);
 
   // ── Preview : renvoie l'HTML brut (iframe dans le viewer) ─────────────────
