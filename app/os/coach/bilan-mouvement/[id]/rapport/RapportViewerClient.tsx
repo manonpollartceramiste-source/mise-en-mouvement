@@ -62,11 +62,6 @@ export default function RapportViewerClient({ id }: { id: string }) {
           </div>
         )}
 
-        {/* Bandeau de diagnostic — à supprimer une fois page 4 confirmée */}
-        <div style={debugBanner}>
-          VERSION TEST ROUTE ACTIVE — v{bust}
-        </div>
-
         {/* Aperçu défilant — toutes les pages */}
         <div style={scroll}>
           <div style={a4Wrap}>
@@ -174,17 +169,6 @@ const errorBanner: React.CSSProperties = {
   fontSize: 12,
   padding: "10px 24px",
   fontFamily: "system-ui, sans-serif",
-};
-
-const debugBanner: React.CSSProperties = {
-  background: "#1a3a1a",
-  borderBottom: "1px solid #2a6a2a",
-  color: "#6eff6e",
-  fontSize: 13,
-  fontWeight: 700,
-  padding: "8px 24px",
-  fontFamily: "monospace",
-  textAlign: "center",
 };
 
 const scroll: React.CSSProperties = {

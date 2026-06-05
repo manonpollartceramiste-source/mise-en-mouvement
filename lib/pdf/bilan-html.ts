@@ -603,43 +603,49 @@ body{
 /* ── PAGE 4 : CARTOGRAPHIE CORPORELLE ── */
 .p4-body{
   flex:1;display:flex;flex-direction:column;
-  padding:6mm 12mm 3mm;gap:4mm;min-height:0;overflow:hidden;
+  padding:5mm 14mm 4mm;gap:3mm;min-height:0;overflow:hidden;
+}
+.p4-subtitle{
+  font-size:11.5px;color:#8A7A6A;margin:2pt 0 0;line-height:1.55;font-style:italic;
 }
 .p4-sils{
-  display:flex;justify-content:center;gap:16mm;align-items:flex-start;flex-shrink:0;
+  display:flex;justify-content:center;gap:20mm;align-items:flex-end;flex-shrink:0;
 }
-.p4-sil{display:flex;flex-direction:column;align-items:center;gap:5pt}
+.p4-sil{display:flex;flex-direction:column;align-items:center;gap:5pt;flex-shrink:0}
 .p4-sil-lbl{
-  font-size:10px;font-weight:700;color:#A89070;
-  letter-spacing:2px;text-transform:uppercase;margin-top:2pt;
+  font-size:9px;font-weight:700;color:#A89070;
+  letter-spacing:3px;text-transform:uppercase;
 }
 .p4-legend{
-  display:flex;justify-content:center;gap:18pt;flex-shrink:0;
+  display:flex;justify-content:center;gap:20pt;flex-shrink:0;
+  padding:5pt 0;
+  border-top:0.5pt solid rgba(184,149,106,0.22);
+  border-bottom:0.5pt solid rgba(184,149,106,0.22);
 }
-.p4-legend-item{display:flex;align-items:center;gap:5pt;font-size:12px;color:#7A6A58}
-.p4-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.p4-info{display:flex;gap:4mm;flex-shrink:0;align-items:stretch}
+.p4-legend-item{display:flex;align-items:center;gap:7pt;font-size:11.5px;color:#5A4A3A}
+.p4-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.p4-info{display:flex;gap:4mm;flex:1;min-height:0;align-items:stretch}
 .p4-analyse{
   flex:1;background:#FDFCF9;border-radius:6pt;
   padding:9pt 12pt;border:0.5pt solid rgba(184,149,106,0.2);
-  border-left:3pt solid #B8956A;
+  border-left:2.5pt solid #B8956A;overflow:hidden;
 }
 .p4-analyse-lbl{
-  font-size:10px;font-weight:700;color:#A89070;
-  letter-spacing:2px;text-transform:uppercase;margin-bottom:5pt;
+  font-size:9.5px;font-weight:700;color:#A89070;
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:4pt;
 }
-.p4-analyse-txt{font-size:13.5px;color:#3E3028;line-height:1.65}
+.p4-analyse-txt{font-size:12.5px;color:#3E3028;line-height:1.65}
 .p4-axes{
-  flex:0 0 auto;width:62mm;background:#F7F2EA;border-radius:6pt;
-  padding:9pt 12pt;border:0.5pt solid #EDE5DA;
+  flex:0 0 auto;width:58mm;background:#F7F2EA;border-radius:6pt;
+  padding:9pt 12pt;border:0.5pt solid #EDE5DA;overflow:hidden;
 }
 .p4-axes-lbl{
-  font-size:10px;font-weight:700;color:#A89070;
-  letter-spacing:2px;text-transform:uppercase;margin-bottom:5pt;
+  font-size:9.5px;font-weight:700;color:#A89070;
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:4pt;
 }
-.p4-axes-list{display:flex;flex-direction:column;gap:3.5pt}
+.p4-axes-list{display:flex;flex-direction:column;gap:3pt}
 .p4-axes-item{
-  font-size:13px;color:#4A3C30;line-height:1.35;
+  font-size:12px;color:#4A3C30;line-height:1.35;
   display:flex;align-items:flex-start;gap:5pt;
 }
 .p4-axes-dot{font-size:5px;color:#B8956A;flex-shrink:0;margin-top:3pt}
@@ -1363,9 +1369,10 @@ const ZONE_MOVEMENT_LABELS: Record<string, string> = {
 
 function zoneBodyColor(key: string, zones: Record<string, string>): { fill: string; stroke: string } {
   const v = zones[key];
-  if (v === "forte")        return { fill: "#7A3C18", stroke: "#5A2C10" };
-  if (v === "surveillance") return { fill: "#C8A87A", stroke: "#A87848" };
-  return { fill: "#BFB4A4", stroke: "#9A8878" };
+  if (v === "forte")        return { fill: "#7A3C18", stroke: "#5A2C10" };   // Priorité — terracotta
+  if (v === "ameliorer")    return { fill: "#C8956A", stroke: "#A87848" };   // À améliorer — amber
+  if (v === "surveillance") return { fill: "#D4C4A4", stroke: "#B8A880" };   // Surveillance — or pâle
+  return                           { fill: "#C8C0B4", stroke: "#A89888" };   // Neutre
 }
 
 // SVG silhouette — vue de face (viewBox 0 0 100 268)
@@ -1474,14 +1481,14 @@ function backSilhouetteSvg(zones: Record<string, string>): string {
 }
 
 function bodyMapAnalysis(d: BilanPdfData): string {
-  const zones = (d.zonePriorities ?? {}) as Record<string, string>;
-  const forte = Object.entries(zones).filter(([, v]) => v === "forte").map(([k]) => ZONE_DISPLAY_LABELS[k] ?? k);
-  const surv  = Object.entries(zones).filter(([, v]) => v === "surveillance").map(([k]) => ZONE_DISPLAY_LABELS[k] ?? k);
+  const zones     = (d.zonePriorities ?? {}) as Record<string, string>;
+  const forte     = Object.entries(zones).filter(([, v]) => v === "forte").map(([k]) => ZONE_DISPLAY_LABELS[k] ?? k);
+  const ameliorer = Object.entries(zones).filter(([, v]) => v === "ameliorer").map(([k]) => ZONE_DISPLAY_LABELS[k] ?? k);
+  const surv      = Object.entries(zones).filter(([, v]) => v === "surveillance").map(([k]) => ZONE_DISPLAY_LABELS[k] ?? k);
 
   const weakAxes = [...(d.axes ?? [])]
-    .filter(a => a.max > 0)
+    .filter(a => a.max > 0 && a.value / a.max < 0.75)
     .sort((a, b) => (a.value / a.max) - (b.value / b.max))
-    .filter(a => a.value / a.max < 0.75)
     .slice(0, 2);
 
   const parts: string[] = [];
@@ -1489,13 +1496,17 @@ function bodyMapAnalysis(d: BilanPdfData): string {
   if (forte.length > 0) {
     const list = forte.slice(0, 3).map(l => l.toLowerCase()).join(", ");
     let sentence = `Une attention prioritaire est identifiée au niveau ${forte.length === 1 ? "de la" : "de"} ${list}`;
-    if (surv.length > 0) {
-      sentence += `, avec une surveillance recommandée pour ${surv.slice(0, 2).map(l => l.toLowerCase()).join(" et ")}`;
-    }
+    const secondary = [...ameliorer, ...surv].slice(0, 2).map(l => l.toLowerCase());
+    if (secondary.length > 0) sentence += `, avec un suivi recommandé pour ${secondary.join(" et ")}`;
+    parts.push(sentence);
+  } else if (ameliorer.length > 0) {
+    const list = ameliorer.slice(0, 3).map(l => l.toLowerCase()).join(", ");
+    let sentence = `Un travail ciblé est recommandé au niveau ${ameliorer.length === 1 ? "de la" : "de"} ${list}`;
+    if (surv.length > 0) sentence += `, avec une surveillance préventive pour ${surv.slice(0, 2).map(l => l.toLowerCase()).join(" et ")}`;
     parts.push(sentence);
   } else if (surv.length > 0) {
     const list = surv.slice(0, 3).map(l => l.toLowerCase()).join(", ");
-    parts.push(`Un suivi préventif est recommandé au niveau ${surv.length === 1 ? "de la" : "de"} ${list}`);
+    parts.push(`Un suivi préventif est conseillé au niveau ${surv.length === 1 ? "de la" : "de"} ${list}`);
   }
 
   if (weakAxes.length > 0) {
@@ -1511,13 +1522,15 @@ function bodyMapAnalysis(d: BilanPdfData): string {
 function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): string {
   const zones = (d.zonePriorities ?? {}) as Record<string, string>;
 
-  const forteKeys = Object.entries(zones).filter(([, v]) => v === "forte").map(([k]) => k);
-  const survKeys  = Object.entries(zones).filter(([, v]) => v === "surveillance").map(([k]) => k);
+  const forteKeys     = Object.entries(zones).filter(([, v]) => v === "forte").map(([k]) => k);
+  const ameliorerKeys = Object.entries(zones).filter(([, v]) => v === "ameliorer").map(([k]) => k);
+  const survKeys      = Object.entries(zones).filter(([, v]) => v === "surveillance").map(([k]) => k);
 
-  // Axes prioritaires: forte first, then surveillance, then weak axes
+  // Axes prioritaires — classés par priorité décroissante
   const axeItems: string[] = [];
-  for (const k of forteKeys)  axeItems.push(ZONE_MOVEMENT_LABELS[k] ?? ZONE_DISPLAY_LABELS[k] ?? k);
-  for (const k of survKeys)   axeItems.push(ZONE_MOVEMENT_LABELS[k] ?? ZONE_DISPLAY_LABELS[k] ?? k);
+  for (const k of forteKeys)     axeItems.push(ZONE_MOVEMENT_LABELS[k] ?? ZONE_DISPLAY_LABELS[k] ?? k);
+  for (const k of ameliorerKeys) axeItems.push(ZONE_MOVEMENT_LABELS[k] ?? ZONE_DISPLAY_LABELS[k] ?? k);
+  for (const k of survKeys)      axeItems.push(ZONE_MOVEMENT_LABELS[k] ?? ZONE_DISPLAY_LABELS[k] ?? k);
 
   const weakAxes = [...(d.axes ?? [])]
     .filter(a => a.max > 0 && a.value / a.max < 0.6)
@@ -1533,34 +1546,40 @@ function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): strin
   const axesHtml = axeItems.length > 0 ? `<div class="p4-axes">
     <div class="p4-axes-lbl">Axes prioritaires</div>
     <div class="p4-axes-list">
-      ${axeItems.slice(0, 8).map(it => `<div class="p4-axes-item"><span class="p4-axes-dot">◆</span>${esc(it)}</div>`).join("")}
+      ${axeItems.slice(0, 7).map(it => `<div class="p4-axes-item"><span class="p4-axes-dot">◆</span>${esc(it)}</div>`).join("")}
     </div>
   </div>` : "";
-
-  const hasForte = forteKeys.length > 0;
-  const hasSurv  = survKeys.length > 0;
 
   return `<div class="page">
   ${renderMiniHeader(name, d.dateStr, `4 / ${totalPages}`)}
   <div class="p4-body">
     <div>
       ${sec("Cartographie corporelle")}
-      <div class="p4-analyse-txt" style="font-size:12px;color:#8A7A6A;margin-top:2pt;font-style:italic">Visualisation des zones nécessitant une attention particulière afin d'optimiser votre confort, votre mobilité et votre qualité de mouvement.</div>
+      <div class="p4-subtitle">Visualisation des zones nécessitant une attention particulière afin d'optimiser votre mobilité et votre qualité de mouvement.</div>
     </div>
     <div class="p4-sils">
       <div class="p4-sil">
-        <div style="height:142mm">${frontSilhouetteSvg(zones)}</div>
+        <div style="height:138mm">${frontSilhouetteSvg(zones)}</div>
         <div class="p4-sil-lbl">Vue de face</div>
       </div>
       <div class="p4-sil">
-        <div style="height:142mm">${backSilhouetteSvg(zones)}</div>
+        <div style="height:138mm">${backSilhouetteSvg(zones)}</div>
         <div class="p4-sil-lbl">Vue de dos</div>
       </div>
     </div>
     <div class="p4-legend">
-      ${hasSurv || hasForte ? `<div class="p4-legend-item"><div class="p4-legend-dot" style="background:#C8A87A"></div><span>Surveillance légère</span></div>` : ""}
-      ${hasForte ? `<div class="p4-legend-item"><div class="p4-legend-dot" style="background:#7A3C18"></div><span>Priorité de travail</span></div>` : ""}
-      ${!hasSurv && !hasForte ? `<div class="p4-legend-item" style="font-size:12px;color:#B8A898;font-style:italic">Aucune zone renseignée</div>` : ""}
+      <div class="p4-legend-item">
+        <div class="p4-legend-dot" style="background:#D4C4A4;border:0.5pt solid #B8A880"></div>
+        <span>Surveillance</span>
+      </div>
+      <div class="p4-legend-item">
+        <div class="p4-legend-dot" style="background:#C8956A"></div>
+        <span>À améliorer</span>
+      </div>
+      <div class="p4-legend-item">
+        <div class="p4-legend-dot" style="background:#7A3C18"></div>
+        <span>Priorité de travail</span>
+      </div>
     </div>
     <div class="p4-info">
       <div class="p4-analyse">
@@ -1600,7 +1619,6 @@ export function generateBilanHtml(
   const hasAxes    = (d.axes?.length ?? 0) > 0;
   const hasRoadmap = !!(d.mainGoal || d.frequency || d.nextAction || hasAxes);
   const hasWhyAxes = hasAxes && (d.axes ?? []).some(a => a.max > 0 && a.value / a.max < 0.65);
-  // Page 4 toujours présente — injectée directement dans route.ts
   const totalPages = 4;
 
   // ── PAGE 1 : 2 colonnes — gauche : diagnostic / droite : score + analyse + plan ──
@@ -1658,6 +1676,8 @@ export function generateBilanHtml(
   ${renderFooter2(d.cabinetName, `Page 3 / ${totalPages}`)}
 </div>`;
 
+  const page4 = renderBodyMap(d, name, totalPages);
+
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -1665,6 +1685,6 @@ export function generateBilanHtml(
 <title>Bilan Mouvement — ${esc(name)}</title>
 <style>${CSS}</style>
 </head>
-<body>${page1}${page2}${page3}</body>
+<body>${page1}${page2}${page3}${page4}</body>
 </html>`;
 }
