@@ -1367,116 +1367,160 @@ const ZONE_MOVEMENT_LABELS: Record<string, string> = {
   pieds:             "Stabilité plantaire",
 };
 
-function zoneBodyColor(key: string, zones: Record<string, string>): { fill: string; stroke: string } {
+function zoneBodyColor(key: string, zones: Record<string, string>): { fill: string; stroke: string; opacity: number } {
   const v = zones[key];
-  if (v === "forte")        return { fill: "#7A3C18", stroke: "#5A2C10" };   // Priorité — terracotta
-  if (v === "ameliorer")    return { fill: "#C8956A", stroke: "#A87848" };   // À améliorer — amber
-  if (v === "surveillance") return { fill: "#D4C4A4", stroke: "#B8A880" };   // Surveillance — or pâle
-  return                           { fill: "#C8C0B4", stroke: "#A89888" };   // Neutre
+  if (v === "forte")        return { fill: "#8B5A30", stroke: "#7A4820", opacity: 0.44 };
+  if (v === "ameliorer")    return { fill: "#B89660", stroke: "#9A7A40", opacity: 0.40 };
+  if (v === "surveillance") return { fill: "#C8B888", stroke: "#B0A070", opacity: 0.35 };
+  return                           { fill: "none",   stroke: "none",    opacity: 0    };
 }
 
 // SVG silhouette — vue de face (viewBox 0 0 100 268)
-// Drawing order: background body parts first, joints last so they cap junctions cleanly.
+// Body parts drawn in neutral taupe; zone overlays rendered as semi-transparent halos.
 function frontSilhouetteSvg(zones: Record<string, string>): string {
-  const BASE_F = "#BFB4A4", BASE_S = "#9A8878";
-  const sw = `stroke-width="0.6"`;
-  const s = (key: string) => {
+  const B  = `fill="#CBC3B8" stroke="#9A8A78" stroke-width="0.35"`;
+  const BJ = `fill="#BEB6AA" stroke="#9A8A78" stroke-width="0.35"`;
+
+  const zo = (key: string, cx: number, cy: number, rx: number, ry: number): string => {
     const c = zoneBodyColor(key, zones);
-    return `fill="${c.fill}" stroke="${c.stroke}" ${sw}`;
+    if (c.fill === "none") return "";
+    return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${c.fill}" fill-opacity="${c.opacity}" stroke="${c.stroke}" stroke-width="0.25" stroke-opacity="0.5"/>`;
   };
-  const base = `fill="${BASE_F}" stroke="${BASE_S}" ${sw}`;
+
   return `<svg viewBox="0 0 100 268" xmlns="http://www.w3.org/2000/svg" style="height:100%;width:auto;display:block">
-  <!-- hands (back layer) -->
-  <ellipse cx="21" cy="153" rx="7" ry="8" ${base}/>
-  <ellipse cx="79" cy="153" rx="7" ry="8" ${base}/>
-  <!-- forearms -->
-  <path d="M18,93 L31,93 L29,147 L16,147 Z" ${base}/>
-  <path d="M69,93 L82,93 L85,147 L72,147 Z" ${base}/>
-  <!-- upper arms -->
-  <path d="M20,42 L33,42 L31,95 L18,95 Z" ${base}/>
-  <path d="M67,42 L80,42 L82,95 L69,95 Z" ${base}/>
-  <!-- feet -->
-  <ellipse cx="39" cy="262" rx="13" ry="6" ${s("pieds")}/>
-  <ellipse cx="61" cy="262" rx="13" ry="6" ${s("pieds")}/>
-  <!-- shins (non-zone from front) -->
-  <path d="M33,214 L49,214 L47,251 L33,251 Z" ${base}/>
-  <path d="M51,214 L67,214 L67,251 L53,251 Z" ${base}/>
-  <!-- thighs / quadriceps -->
-  <path d="M34,142 L50,142 L49,208 L33,208 Z" ${s("quadriceps")}/>
-  <path d="M50,142 L66,142 L67,208 L51,208 Z" ${s("quadriceps")}/>
-  <!-- lower torso / bassin -->
-  <path d="M39,110 L61,110 L60,124 L40,124 Z" ${s("bassin")}/>
-  <!-- mid torso / sangle abdominale -->
-  <path d="M38,82 L62,82 L61,111 L39,111 Z" ${s("sangle_abdominale")}/>
-  <!-- upper torso / pectoraux -->
-  <path d="M37,40 Q50,37 63,40 L63,83 L37,83 Z" ${s("pectoraux")}/>
-  <!-- hip flare / hanches -->
-  <path d="M32,122 L68,122 Q74,133 68,145 L32,145 Q26,133 32,122 Z" ${s("hanches")}/>
-  <!-- knees -->
-  <ellipse cx="41" cy="211" rx="9" ry="5.5" ${s("genoux")}/>
-  <ellipse cx="59" cy="211" rx="9" ry="5.5" ${s("genoux")}/>
-  <!-- ankles -->
-  <rect x="33" y="250" width="14" height="7" rx="2" ${s("chevilles")}/>
-  <rect x="53" y="250" width="14" height="7" rx="2" ${s("chevilles")}/>
-  <!-- shoulders (cap arm-torso junction) -->
-  <ellipse cx="31" cy="46" rx="11" ry="7.5" ${s("epaules")}/>
-  <ellipse cx="69" cy="46" rx="11" ry="7.5" ${s("epaules")}/>
-  <!-- neck / cervicales -->
-  <rect x="45.5" y="32" width="9" height="12" rx="2.5" ${s("cervicales")}/>
-  <!-- head (top layer) -->
-  <ellipse cx="50" cy="18" rx="12" ry="15" ${base}/>
+  <!-- back layer: arms -->
+  <path d="M 16,40 C 15,54 14.5,80 15,93 C 15.5,94.5 23,94.5 23.5,93 C 24,80 23.5,54 24,40 Z" ${B}/>
+  <path d="M 76,40 C 77,54 76.5,80 77,93 C 77.5,94.5 85,94.5 85.5,93 C 86,80 85.5,54 84,40 Z" ${B}/>
+  <path d="M 15.5,93 C 15,107 14.5,140 15,148 L 22,148 C 22.5,140 22,107 22.5,93 Z" ${B}/>
+  <path d="M 77.5,93 C 77,107 77.5,140 78,148 L 85,148 C 85.5,140 85,107 84.5,93 Z" ${B}/>
+  <ellipse cx="18.5" cy="156" rx="5.5" ry="7" ${B}/>
+  <ellipse cx="81.5" cy="156" rx="5.5" ry="7" ${B}/>
+  <!-- feet — organic shape -->
+  <path d="M 27,253 C 24.5,257 25.5,262 33,263 C 40,264 47,261 47,257 C 47,253 44,252 41,252 Z" ${B}/>
+  <path d="M 73,253 C 75.5,257 74.5,262 67,263 C 60,264 53,261 53,257 C 53,253 56,252 59,252 Z" ${B}/>
+  <!-- shins — smooth taper -->
+  <path d="M 33.5,212 C 33,224 33,245 34.5,252 C 35,253 43,253 43.5,252 C 45,245 45,224 44.5,212 Z" ${B}/>
+  <path d="M 55.5,212 C 55,224 55,245 56.5,252 C 57,253 65,253 65.5,252 C 67,245 67,224 66.5,212 Z" ${B}/>
+  <!-- thighs — gentle curves -->
+  <path d="M 34,147 C 32.5,162 32,196 34,208 C 34.5,210 44,210 44.5,208 C 46,196 45.5,162 44,147 Z" ${B}/>
+  <path d="M 56,147 C 54.5,162 54,196 56,208 C 56.5,210 65.5,210 66,208 C 68,196 67.5,162 66,147 Z" ${B}/>
+  <!-- pelvis -->
+  <path d="M 39,110 C 38.5,114 38.5,121 40,125 L 60,125 C 61.5,121 61.5,114 61,110 Z" ${B}/>
+  <!-- abdomen — subtle hourglass -->
+  <path d="M 37,82 C 36.5,90 37,107 38.5,111 L 61.5,111 C 63,107 63.5,90 63,82 Z" ${B}/>
+  <!-- chest / upper torso -->
+  <path d="M 36,40 C 35.5,52 35.5,72 37,83 L 63,83 C 64.5,72 64.5,52 64,40 Z" ${B}/>
+  <!-- hip flare — organic curves -->
+  <path d="M 30,122 C 26,128 26,140 31,147 L 69,147 C 74,140 74,128 70,122 Z" ${B}/>
+  <!-- zone overlays — soft semi-transparent halos -->
+  ${zo("cervicales",        50,  34,  6.5, 4.5)}
+  ${zo("pectoraux",         50,  61,  14,  14 )}
+  ${zo("sangle_abdominale", 50,  96,  12,  14 )}
+  ${zo("bassin",            50, 118,  12,  6  )}
+  ${zo("hanches",           29, 134,   9,  10 )}
+  ${zo("hanches",           71, 134,   9,  10 )}
+  ${zo("quadriceps",        39, 178,   9,  28 )}
+  ${zo("quadriceps",        61, 178,   9,  28 )}
+  ${zo("genoux",            39, 210,  8.5, 5.5)}
+  ${zo("genoux",            61, 210,  8.5, 5.5)}
+  ${zo("chevilles",         39, 252,   7,  4  )}
+  ${zo("chevilles",         61, 252,   7,  4  )}
+  ${zo("pieds",             34, 259,  10,  5  )}
+  ${zo("pieds",             66, 259,  10,  5  )}
+  <!-- joint caps — smooth, on top of body parts -->
+  <ellipse cx="18.5" cy="92.5" rx="6" ry="3.5" ${BJ}/>
+  <ellipse cx="81.5" cy="92.5" rx="6" ry="3.5" ${BJ}/>
+  <ellipse cx="39"   cy="210"  rx="9" ry="5.5" ${BJ}/>
+  <ellipse cx="61"   cy="210"  rx="9" ry="5.5" ${BJ}/>
+  <ellipse cx="27"   cy="43"   rx="10" ry="6.5" ${BJ}/>
+  <ellipse cx="73"   cy="43"   rx="10" ry="6.5" ${BJ}/>
+  <ellipse cx="39"   cy="252"  rx="7.5" ry="4" ${BJ}/>
+  <ellipse cx="61"   cy="252"  rx="7.5" ry="4" ${BJ}/>
+  <!-- shoulder and knee zone overlays drawn after caps so they remain visible -->
+  ${zo("epaules", 27, 43, 10, 7)}
+  ${zo("epaules", 73, 43, 10, 7)}
+  ${zo("genoux",  39, 210, 8.5, 5.5)}
+  ${zo("genoux",  61, 210, 8.5, 5.5)}
+  <!-- neck -->
+  <path d="M 45.5,29 C 45,31 45,36 45.5,38 L 54.5,38 C 55,36 55,31 54.5,29 Z" ${B}/>
+  ${zo("cervicales", 50, 34, 6, 4.5)}
+  <!-- head -->
+  <ellipse cx="50" cy="16.5" rx="11.5" ry="13.5" ${B}/>
 </svg>`;
 }
 
 // SVG silhouette — vue de dos (mêmes formes, zones différentes)
 function backSilhouetteSvg(zones: Record<string, string>): string {
-  const BASE_F = "#BFB4A4", BASE_S = "#9A8878";
-  const sw = `stroke-width="0.6"`;
-  const s = (key: string) => {
+  const B  = `fill="#CBC3B8" stroke="#9A8A78" stroke-width="0.35"`;
+  const BJ = `fill="#BEB6AA" stroke="#9A8A78" stroke-width="0.35"`;
+
+  const zo = (key: string, cx: number, cy: number, rx: number, ry: number): string => {
     const c = zoneBodyColor(key, zones);
-    return `fill="${c.fill}" stroke="${c.stroke}" ${sw}`;
+    if (c.fill === "none") return "";
+    return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${c.fill}" fill-opacity="${c.opacity}" stroke="${c.stroke}" stroke-width="0.25" stroke-opacity="0.5"/>`;
   };
-  const base = `fill="${BASE_F}" stroke="${BASE_S}" ${sw}`;
+
   return `<svg viewBox="0 0 100 268" xmlns="http://www.w3.org/2000/svg" style="height:100%;width:auto;display:block">
-  <!-- hands -->
-  <ellipse cx="21" cy="153" rx="7" ry="8" ${base}/>
-  <ellipse cx="79" cy="153" rx="7" ry="8" ${base}/>
-  <!-- forearms -->
-  <path d="M18,93 L31,93 L29,147 L16,147 Z" ${base}/>
-  <path d="M69,93 L82,93 L85,147 L72,147 Z" ${base}/>
-  <!-- upper arms -->
-  <path d="M20,42 L33,42 L31,95 L18,95 Z" ${base}/>
-  <path d="M67,42 L80,42 L82,95 L69,95 Z" ${base}/>
-  <!-- feet -->
-  <ellipse cx="39" cy="262" rx="13" ry="6" ${s("pieds")}/>
-  <ellipse cx="61" cy="262" rx="13" ry="6" ${s("pieds")}/>
-  <!-- shins / mollets (visible from back) -->
-  <path d="M33,214 L49,214 L47,251 L33,251 Z" ${s("mollets")}/>
-  <path d="M51,214 L67,214 L67,251 L53,251 Z" ${s("mollets")}/>
-  <!-- thighs / ischio-jambiers -->
-  <path d="M34,142 L50,142 L49,208 L33,208 Z" ${s("ischio_jambiers")}/>
-  <path d="M50,142 L66,142 L67,208 L51,208 Z" ${s("ischio_jambiers")}/>
-  <!-- lower torso / lombaires -->
-  <path d="M39,110 L61,110 L60,124 L40,124 Z" ${s("lombaires")}/>
+  <!-- back layer: arms -->
+  <path d="M 16,40 C 15,54 14.5,80 15,93 C 15.5,94.5 23,94.5 23.5,93 C 24,80 23.5,54 24,40 Z" ${B}/>
+  <path d="M 76,40 C 77,54 76.5,80 77,93 C 77.5,94.5 85,94.5 85.5,93 C 86,80 85.5,54 84,40 Z" ${B}/>
+  <path d="M 15.5,93 C 15,107 14.5,140 15,148 L 22,148 C 22.5,140 22,107 22.5,93 Z" ${B}/>
+  <path d="M 77.5,93 C 77,107 77.5,140 78,148 L 85,148 C 85.5,140 85,107 84.5,93 Z" ${B}/>
+  <ellipse cx="18.5" cy="156" rx="5.5" ry="7" ${B}/>
+  <ellipse cx="81.5" cy="156" rx="5.5" ry="7" ${B}/>
+  <!-- feet — organic shape (back view: heel visible) -->
+  <path d="M 28,253 C 26,256 27,261 34,263 C 41,264 47,261 47,257 C 47,253 44,252 41,252 Z" ${B}/>
+  <path d="M 72,253 C 74,256 73,261 66,263 C 59,264 53,261 53,257 C 53,253 56,252 59,252 Z" ${B}/>
+  <!-- shins — smooth taper -->
+  <path d="M 33.5,212 C 33,224 33,245 34.5,252 C 35,253 43,253 43.5,252 C 45,245 45,224 44.5,212 Z" ${B}/>
+  <path d="M 55.5,212 C 55,224 55,245 56.5,252 C 57,253 65,253 65.5,252 C 67,245 67,224 66.5,212 Z" ${B}/>
+  <!-- thighs — gentle curves -->
+  <path d="M 34,147 C 32.5,162 32,196 34,208 C 34.5,210 44,210 44.5,208 C 46,196 45.5,162 44,147 Z" ${B}/>
+  <path d="M 56,147 C 54.5,162 54,196 56,208 C 56.5,210 65.5,210 66,208 C 68,196 67.5,162 66,147 Z" ${B}/>
+  <!-- pelvis -->
+  <path d="M 39,110 C 38.5,114 38.5,121 40,125 L 60,125 C 61.5,121 61.5,114 61,110 Z" ${B}/>
   <!-- mid torso / grand dorsal -->
-  <path d="M38,82 L62,82 L61,111 L39,111 Z" ${s("grand_dorsal")}/>
+  <path d="M 37,82 C 36.5,90 37,107 38.5,111 L 61.5,111 C 63,107 63.5,90 63,82 Z" ${B}/>
   <!-- upper torso / dos haut -->
-  <path d="M37,40 Q50,37 63,40 L63,83 L37,83 Z" ${s("dos_haut")}/>
-  <!-- hip flare / fessiers -->
-  <path d="M32,122 L68,122 Q74,133 68,145 L32,145 Q26,133 32,122 Z" ${s("fessiers")}/>
-  <!-- knees -->
-  <ellipse cx="41" cy="211" rx="9" ry="5.5" ${s("genoux")}/>
-  <ellipse cx="59" cy="211" rx="9" ry="5.5" ${s("genoux")}/>
-  <!-- ankles -->
-  <rect x="33" y="250" width="14" height="7" rx="2" ${s("chevilles")}/>
-  <rect x="53" y="250" width="14" height="7" rx="2" ${s("chevilles")}/>
-  <!-- shoulders -->
-  <ellipse cx="31" cy="46" rx="11" ry="7.5" ${s("epaules")}/>
-  <ellipse cx="69" cy="46" rx="11" ry="7.5" ${s("epaules")}/>
-  <!-- neck / cervicales -->
-  <rect x="45.5" y="32" width="9" height="12" rx="2.5" ${s("cervicales")}/>
+  <path d="M 36,40 C 35.5,52 35.5,72 37,83 L 63,83 C 64.5,72 64.5,52 64,40 Z" ${B}/>
+  <!-- hip flare — organic curves (fessiers) -->
+  <path d="M 30,122 C 26,128 26,140 31,147 L 69,147 C 74,140 74,128 70,122 Z" ${B}/>
+  <!-- zone overlays — soft semi-transparent halos -->
+  ${zo("cervicales",    50,  34,  6.5, 4.5)}
+  ${zo("dos_haut",      50,  61,  15,  15 )}
+  ${zo("grand_dorsal",  50,  96,  13,  13 )}
+  ${zo("lombaires",     50, 116,  11,  6  )}
+  ${zo("fessiers",      38, 136,  10,  12 )}
+  ${zo("fessiers",      62, 136,  10,  12 )}
+  ${zo("ischio_jambiers", 39, 178,  9,  28 )}
+  ${zo("ischio_jambiers", 61, 178,  9,  28 )}
+  ${zo("mollets",       39, 232,   8,  14 )}
+  ${zo("mollets",       61, 232,   8,  14 )}
+  ${zo("genoux",        39, 210,  8.5, 5.5)}
+  ${zo("genoux",        61, 210,  8.5, 5.5)}
+  ${zo("chevilles",     39, 252,   7,  4  )}
+  ${zo("chevilles",     61, 252,   7,  4  )}
+  ${zo("pieds",         34, 259,  10,  5  )}
+  ${zo("pieds",         66, 259,  10,  5  )}
+  <!-- joint caps -->
+  <ellipse cx="18.5" cy="92.5" rx="6" ry="3.5" ${BJ}/>
+  <ellipse cx="81.5" cy="92.5" rx="6" ry="3.5" ${BJ}/>
+  <ellipse cx="39"   cy="210"  rx="9" ry="5.5" ${BJ}/>
+  <ellipse cx="61"   cy="210"  rx="9" ry="5.5" ${BJ}/>
+  <ellipse cx="27"   cy="43"   rx="10" ry="6.5" ${BJ}/>
+  <ellipse cx="73"   cy="43"   rx="10" ry="6.5" ${BJ}/>
+  <ellipse cx="39"   cy="252"  rx="7.5" ry="4" ${BJ}/>
+  <ellipse cx="61"   cy="252"  rx="7.5" ry="4" ${BJ}/>
+  <!-- shoulder and knee zone overlays drawn after caps -->
+  ${zo("epaules",     27,  43, 10,  7  )}
+  ${zo("epaules",     73,  43, 10,  7  )}
+  ${zo("genoux",      39, 210, 8.5, 5.5)}
+  ${zo("genoux",      61, 210, 8.5, 5.5)}
+  <!-- neck -->
+  <path d="M 45.5,29 C 45,31 45,36 45.5,38 L 54.5,38 C 55,36 55,31 54.5,29 Z" ${B}/>
+  ${zo("cervicales", 50, 34, 6, 4.5)}
   <!-- head -->
-  <ellipse cx="50" cy="18" rx="12" ry="15" ${base}/>
+  <ellipse cx="50" cy="16.5" rx="11.5" ry="13.5" ${B}/>
 </svg>`;
 }
 
@@ -1569,15 +1613,15 @@ function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): strin
     </div>
     <div class="p4-legend">
       <div class="p4-legend-item">
-        <div class="p4-legend-dot" style="background:#D4C4A4;border:0.5pt solid #B8A880"></div>
+        <div class="p4-legend-dot" style="background:#C8B888;border:0.5pt solid #B0A070"></div>
         <span>Surveillance</span>
       </div>
       <div class="p4-legend-item">
-        <div class="p4-legend-dot" style="background:#C8956A"></div>
+        <div class="p4-legend-dot" style="background:#B89660;border:0.5pt solid #9A7A40"></div>
         <span>À améliorer</span>
       </div>
       <div class="p4-legend-item">
-        <div class="p4-legend-dot" style="background:#7A3C18"></div>
+        <div class="p4-legend-dot" style="background:#8B5A30;border:0.5pt solid #7A4820"></div>
         <span>Priorité de travail</span>
       </div>
     </div>
