@@ -1600,9 +1600,8 @@ export function generateBilanHtml(
   const hasAxes    = (d.axes?.length ?? 0) > 0;
   const hasRoadmap = !!(d.mainGoal || d.frequency || d.nextAction || hasAxes);
   const hasWhyAxes = hasAxes && (d.axes ?? []).some(a => a.max > 0 && a.value / a.max < 0.65);
-  const hasBodyMap = hasZones || (options?.forceBodyMap === true);
-
-  const totalPages = hasBodyMap ? 4 : 3;
+  // Page 4 toujours présente — injectée directement dans route.ts
+  const totalPages = 4;
 
   // ── PAGE 1 : 2 colonnes — gauche : diagnostic / droite : score + analyse + plan ──
   const page1 = `<div class="page">
@@ -1659,8 +1658,6 @@ export function generateBilanHtml(
   ${renderFooter2(d.cabinetName, `Page 3 / ${totalPages}`)}
 </div>`;
 
-  const page4 = hasBodyMap ? renderBodyMap(d, name, totalPages) : "";
-
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -1668,6 +1665,6 @@ export function generateBilanHtml(
 <title>Bilan Mouvement — ${esc(name)}</title>
 <style>${CSS}</style>
 </head>
-<body>${page1}${page2}${page3}${page4}</body>
+<body>${page1}${page2}${page3}</body>
 </html>`;
 }

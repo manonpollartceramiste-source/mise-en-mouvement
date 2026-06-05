@@ -5,8 +5,10 @@ import { useState } from "react";
 export default function RapportViewerClient({ id }: { id: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
+  // Cache-buster : chaque chargement de la page force un nouveau fetch de l'iframe
+  const [bust] = useState(() => Date.now());
 
-  const previewUrl  = `/api/pdf/bilan/${id}?preview=1`;
+  const previewUrl  = `/api/pdf/bilan/${id}?preview=1&v=${bust}`;
   const downloadUrl = `/api/pdf/bilan/${id}`;
 
   async function handleDownload() {
@@ -60,6 +62,11 @@ export default function RapportViewerClient({ id }: { id: string }) {
           </div>
         )}
 
+        {/* Bandeau de diagnostic — à supprimer une fois page 4 confirmée */}
+        <div style={debugBanner}>
+          VERSION TEST ROUTE ACTIVE — v{bust}
+        </div>
+
         {/* Aperçu défilant — toutes les pages */}
         <div style={scroll}>
           <div style={a4Wrap}>
@@ -71,7 +78,7 @@ export default function RapportViewerClient({ id }: { id: string }) {
             />
           </div>
           <div style={hint}>
-            Aperçu complet 3 pages (défilez pour voir toutes les pages) · Le PDF est généré par Chrome via Playwright
+            Aperçu complet 4 pages (défilez pour voir toutes les pages) · Le PDF est généré par Chrome via Playwright
           </div>
         </div>
       </div>
@@ -169,6 +176,17 @@ const errorBanner: React.CSSProperties = {
   fontFamily: "system-ui, sans-serif",
 };
 
+const debugBanner: React.CSSProperties = {
+  background: "#1a3a1a",
+  borderBottom: "1px solid #2a6a2a",
+  color: "#6eff6e",
+  fontSize: 13,
+  fontWeight: 700,
+  padding: "8px 24px",
+  fontFamily: "monospace",
+  textAlign: "center",
+};
+
 const scroll: React.CSSProperties = {
   flex: 1,
   minHeight: 0,
@@ -178,20 +196,20 @@ const scroll: React.CSSProperties = {
   alignItems: "center", gap: 0,
 };
 
-// 3 pages A4 : 3 × 297 mm à 96 dpi = 3 × 1122.5 px → 3368 px
+// 4 pages A4 : 4 × 297 mm à 96 dpi = 4 × 1122.5 px → 4490 px
 const a4Wrap: React.CSSProperties = {
   width: "794px",
-  height: "3368px",    // hauteur explicite = empêche le flex de comprimer le wrapper
+  height: "4490px",    // hauteur explicite = empêche le flex de comprimer le wrapper
   flexShrink: 0,       // flex item ne rétrécit pas quand le conteneur est trop petit
   boxShadow: "0 8px 48px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4)",
   borderRadius: 2,
   overflow: "hidden",
 };
 
-// 3 A4 pages : 3 × 297 mm à 96 dpi = 3 × 1122.5 px → 3368 px
+// 4 A4 pages : 4 × 297 mm à 96 dpi = 4 × 1122.5 px → 4490 px
 const iframeFull: React.CSSProperties = {
   width: "794px",
-  height: "3368px",
+  height: "4490px",
   border: "none",
   display: "block",
   pointerEvents: "none",

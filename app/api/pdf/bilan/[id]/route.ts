@@ -308,11 +308,21 @@ export async function GET(
   }
 
   const html = generateBilanHtml(result.data, pdfMode, { forceBodyMap: forceP4 });
-  console.log(`[PDF] ✓ HTML généré — slug="${result.slug}" preview=${isPreview}`);
+
+  // ── Page 4 test — injectée directement ici pour contourner tout cache ─────
+  const testPage4 = `<div class="page" style="align-items:center">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;width:100%;padding:20mm;box-sizing:border-box">
+    <div style="font-size:42px;font-weight:900;color:#1E1812;text-align:center;font-family:sans-serif;line-height:1.1">PAGE 4 TEST<br>CARTOGRAPHIE</div>
+    <div style="font-size:16px;color:#7A6A58;font-family:sans-serif">Cartographie corporelle</div>
+  </div>
+  <div style="flex-shrink:0;padding:10px 20mm;border-top:0.5pt solid rgba(184,149,106,0.4);width:100%;box-sizing:border-box;text-align:center;font-size:11px;color:#7A6A58;font-family:sans-serif;letter-spacing:0.5px">Page 4 / 4</div>
+</div>`;
+  const finalHtml = html.replace("</body>", testPage4 + "\n</body>");
+  console.log(`[PDF] ✓ HTML généré — slug="${result.slug}" preview=${isPreview} finalLength=${finalHtml.length}`);
 
   // ── Preview : renvoie l'HTML brut (iframe dans le viewer) ─────────────────
   if (isPreview) {
-    return new Response(html, {
+    return new Response(finalHtml, {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         "X-Frame-Options": "SAMEORIGIN",
@@ -323,7 +333,7 @@ export async function GET(
   // ── PDF : Playwright render ───────────────────────────────────────────────
   console.log("[PDF] Lancement Playwright…");
   try {
-    const pdfBuffer = await renderPdf(html);
+    const pdfBuffer = await renderPdf(finalHtml);
     console.log(`[PDF] ✓ PDF généré — ${pdfBuffer.length} bytes`);
 
     return new Response(new Uint8Array(pdfBuffer), {
