@@ -55,6 +55,7 @@ export type BilanPdfData = {
     segTrunk: number | null;
   } | null;
   zonePriorities: Record<string, "forte" | "surveillance" | "ras"> | null;
+  bodyMapUrl: string;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -608,14 +609,10 @@ body{
 .p4-subtitle{
   font-size:11.5px;color:#8A7A6A;margin:2pt 0 0;line-height:1.55;font-style:italic;
 }
-.p4-sils{
-  display:flex;justify-content:center;gap:20mm;align-items:flex-end;flex-shrink:0;
-}
-.p4-sil{display:flex;flex-direction:column;align-items:center;gap:5pt;flex-shrink:0}
-.p4-sil-lbl{
-  font-size:9px;font-weight:700;color:#A89070;
-  letter-spacing:3px;text-transform:uppercase;
-}
+.p4-bodymap{display:flex;justify-content:center;flex-shrink:0;}
+.p4-bodymap-wrap{position:relative;display:inline-block;line-height:0;}
+.p4-bodymap-img{height:122mm;width:auto;display:block;}
+.p4-bodymap-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
 .p4-legend{
   display:flex;justify-content:center;gap:20pt;flex-shrink:0;
   padding:5pt 0;
@@ -1367,268 +1364,9 @@ const ZONE_MOVEMENT_LABELS: Record<string, string> = {
   pieds:             "Stabilité plantaire",
 };
 
-function zoneBodyColor(key: string, zones: Record<string, string>): { fill: string; stroke: string; opacity: number } {
-  const v = zones[key];
-  if (v === "forte")        return { fill: "#8B5A30", stroke: "#7A4820", opacity: 0.44 };
-  if (v === "ameliorer")    return { fill: "#B89660", stroke: "#9A7A40", opacity: 0.40 };
-  if (v === "surveillance") return { fill: "#C8B888", stroke: "#B0A070", opacity: 0.35 };
-  return                           { fill: "none",   stroke: "none",    opacity: 0    };
-}
 
-// SVG silhouette anatomique — vue de face
-// Style: schéma médical simplifié (kinésithérapie / bilan corporel)
-// Corps en taupe clair + lignes anatomiques fines + halos de zone semi-transparents.
-function frontSilhouetteSvg(zones: Record<string, string>): string {
-  const bc = `fill="#E3DDD6" stroke="#9A8A78" stroke-width="0.42"`;
-  const bj = `fill="#D5CFC8" stroke="#9A8A78" stroke-width="0.35"`;
-  const al = `fill="none" stroke="#B8A890" stroke-width="0.28" stroke-linecap="round"`;
+// Silhouettes SVG remplacées par l'image body-map.png (voir renderBodyMap)
 
-  const zo = (key: string, cx: number, cy: number, rx: number, ry: number): string => {
-    const c = zoneBodyColor(key, zones);
-    if (c.fill === "none") return "";
-    return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${c.fill}" fill-opacity="${c.opacity}" stroke="${c.stroke}" stroke-width="0.3" stroke-opacity="0.55"/>`;
-  };
-
-  return `<svg viewBox="0 0 100 268" xmlns="http://www.w3.org/2000/svg" style="height:100%;width:auto;display:block">
-
-  <!-- ═══ BRAS (couche arrière) ═══ -->
-  <!-- Bras gauche — bézier effilé -->
-  <path ${bc} d="M 22.5,44 C 21,50 19.5,74 19.5,95 C 20,97 27,97 27.5,95 C 27.5,74 26,50 25,44 Z"/>
-  <!-- Avant-bras gauche -->
-  <path ${bc} d="M 20,95 C 19.5,110 19,140 19.5,151 C 20,152 26.5,152 27,151 C 27.5,140 27,110 26.5,95 Z"/>
-  <!-- Main gauche — ovale organique -->
-  <path ${bc} d="M 18,151 C 16.5,154 16,162 18.5,166 C 20.5,168 26,168 27.5,164 C 29,160 28.5,153 27,151 Z"/>
-  <!-- Bras droit -->
-  <path ${bc} d="M 75,44 C 76.5,50 79,74 79.5,95 C 79,97 72,97 71.5,95 C 72,74 73.5,50 74.5,44 Z"/>
-  <!-- Avant-bras droit -->
-  <path ${bc} d="M 80,95 C 80.5,110 81,140 80.5,151 C 80,152 73.5,152 73,151 C 72.5,140 73,110 73.5,95 Z"/>
-  <!-- Main droite -->
-  <path ${bc} d="M 82,151 C 83.5,154 84,162 81.5,166 C 79.5,168 74,168 72.5,164 C 71,160 71.5,153 73,151 Z"/>
-
-  <!-- ═══ JAMBES ═══ -->
-  <!-- Pieds — formes organiques -->
-  <path ${bc} d="M 25,254 C 22.5,258 23.5,263 32,264 C 39,265 46.5,262 46.5,257 C 46.5,254 43.5,252 40,252 Z"/>
-  <path ${bc} d="M 75,254 C 77.5,258 76.5,263 68,264 C 61,265 53.5,262 53.5,257 C 53.5,254 56.5,252 60,252 Z"/>
-  <!-- Tibias — effilés avec crête tibiale -->
-  <path ${bc} d="M 33,219 C 32,231 32,248 33.5,253 C 34.5,254 43.5,254 44.5,253 C 46,248 46,231 45,219 Z"/>
-  <path ${bc} d="M 55,219 C 54,231 54,248 55.5,253 C 56.5,254 65.5,254 66.5,253 C 68,248 68,231 67,219 Z"/>
-  <!-- Cuisses — courbes naturelles -->
-  <path ${bc} d="M 33,149 C 31.5,165 31,198 33,212 C 34,214 44.5,214 45.5,212 C 47,198 46.5,165 44.5,149 Z"/>
-  <path ${bc} d="M 55.5,149 C 54,165 53.5,198 55.5,212 C 56.5,214 67,214 68,212 C 69.5,198 69,165 67,149 Z"/>
-
-  <!-- ═══ TRONC ═══ -->
-  <!-- Thorax / pectoraux — légère évasure aux épaules -->
-  <path ${bc} d="M 36,40 C 35.5,52 35.5,68 37,82 L 63,82 C 64.5,68 64.5,52 64,40 Z"/>
-  <!-- Abdomen — sablier subtil -->
-  <path ${bc} d="M 37,81 C 36.5,92 36.5,108 38,113 L 62,113 C 63.5,108 63.5,92 63,81 Z"/>
-  <!-- Bassin / hanches — flare pelvien organique -->
-  <path ${bc} d="M 30,118 C 25.5,126 25.5,140 30,149 L 70,149 C 74.5,140 74.5,126 70,118 C 64,112 57,109 50,109 C 43,109 36,112 30,118 Z"/>
-
-  <!-- ═══ LIGNES ANATOMIQUES (vue face) ═══ -->
-  <!-- Clavicules -->
-  <path ${al} d="M 47,39 C 42.5,38.5 35,40 26.5,44"/>
-  <path ${al} d="M 53,39 C 57.5,38.5 65,40 73.5,44"/>
-  <!-- Ligne sternale -->
-  <line ${al} x1="50" y1="39" x2="50" y2="68"/>
-  <!-- Limite inférieure pectorale -->
-  <path ${al} d="M 37,66 C 43.5,69 50,70 62.5,66"/>
-  <!-- Linea alba -->
-  <line ${al} x1="50" y1="69" x2="50" y2="112"/>
-  <!-- Intersections tendineuses abdominales -->
-  <path ${al} d="M 38,82 C 44,84.5 50,84.5 62,82"/>
-  <path ${al} d="M 37.5,96 C 44,98.5 50,98.5 62.5,96"/>
-  <!-- Ligament inguinal -->
-  <path ${al} d="M 38,113 C 41,122 47.5,128 50,130"/>
-  <path ${al} d="M 62,113 C 59,122 52.5,128 50,130"/>
-  <!-- Crête iliaque (arc) -->
-  <path ${al} d="M 31,118 C 37,115 50,114 63,115 C 67,115.5 68.5,117 69,118"/>
-  <!-- Définition biceps -->
-  <path ${al} d="M 24.5,52 C 24,66 23.5,82 24,92"/>
-  <path ${al} d="M 75.5,52 C 76,66 76.5,82 76,92"/>
-  <!-- Ligne rectus femoris (cuisse) -->
-  <path ${al} d="M 38,152 C 38,175 38.5,200 39,211"/>
-  <path ${al} d="M 62,152 C 62,175 61.5,200 61,211"/>
-  <!-- Crête tibiale -->
-  <path ${al} d="M 39.5,221 C 39,234 39,249 39.5,253"/>
-  <path ${al} d="M 60.5,221 C 61,234 61,249 60.5,253"/>
-
-  <!-- ═══ ZONES ANATOMIQUES (halos semi-transparents) ═══ -->
-  ${zo("cervicales",        50,  34,   7,  5  )}
-  ${zo("pectoraux",         50,  59,  14,  14 )}
-  ${zo("sangle_abdominale", 50,  97,  12,  15 )}
-  ${zo("bassin",            50, 130,  18,  12 )}
-  ${zo("hanches",           29, 134,  10,  10 )}
-  ${zo("hanches",           71, 134,  10,  10 )}
-  ${zo("quadriceps",        39, 182,   9,  30 )}
-  ${zo("quadriceps",        61, 182,   9,  30 )}
-  ${zo("genoux",            39, 214,   8,   6 )}
-  ${zo("genoux",            61, 214,   8,   6 )}
-  ${zo("chevilles",         39, 253,   7.5, 4 )}
-  ${zo("chevilles",         61, 253,   7.5, 4 )}
-  ${zo("pieds",             34, 260,  11,   5.5)}
-  ${zo("pieds",             66, 260,  11,   5.5)}
-
-  <!-- ═══ ARTICULATIONS ═══ -->
-  <!-- Rotules -->
-  <ellipse ${bj} cx="39" cy="214" rx="7" ry="5"/>
-  <ellipse ${bj} cx="61" cy="214" rx="7" ry="5"/>
-  <!-- Malléoles -->
-  <ellipse ${bj} cx="39" cy="253" rx="7.5" ry="4"/>
-  <ellipse ${bj} cx="61" cy="253" rx="7.5" ry="4"/>
-  <!-- Coudes -->
-  <ellipse ${bj} cx="23" cy="95" rx="6.5" ry="4"/>
-  <ellipse ${bj} cx="77" cy="95" rx="6.5" ry="4"/>
-  <!-- Épaules (caps) -->
-  <ellipse ${bj} cx="26.5" cy="44" rx="11" ry="7"/>
-  <ellipse ${bj} cx="73.5" cy="44" rx="11" ry="7"/>
-  <!-- Zones épaules après les caps -->
-  ${zo("epaules", 26.5, 44, 11, 7)}
-  ${zo("epaules", 73.5, 44, 11, 7)}
-  <!-- Zones genoux après les rotules -->
-  ${zo("genoux", 39, 214, 7, 5)}
-  ${zo("genoux", 61, 214, 7, 5)}
-
-  <!-- ═══ COU ═══ -->
-  <!-- Sterno-cléido-mastoïdien (gauche) -->
-  <path ${al} d="M 46.5,27 C 45,30 44,37 45.5,40"/>
-  <!-- Sterno-cléido-mastoïdien (droit) -->
-  <path ${al} d="M 53.5,27 C 55,30 56,37 54.5,40"/>
-  <path ${bc} d="M 46,27 C 45.5,30 45.5,36 46,39 L 54,39 C 54.5,36 54.5,30 54,27 Z"/>
-  ${zo("cervicales", 50, 33, 6.5, 5)}
-
-  <!-- ═══ TÊTE ═══ -->
-  <ellipse ${bc} cx="50" cy="15" rx="11" ry="13"/>
-  <!-- Repères faciaux (très discrets, style anatomique) -->
-  <line fill="none" stroke="#C8BFB2" stroke-width="0.2" x1="50" y1="7" x2="50" y2="25"/>
-  <line fill="none" stroke="#C8BFB2" stroke-width="0.18" x1="43.5" y1="14" x2="56.5" y2="14"/>
-</svg>`;
-}
-
-// SVG silhouette anatomique — vue de dos
-// Style: schéma médical simplifié (kinésithérapie / bilan corporel)
-function backSilhouetteSvg(zones: Record<string, string>): string {
-  const bc = `fill="#E3DDD6" stroke="#9A8A78" stroke-width="0.42"`;
-  const bj = `fill="#D5CFC8" stroke="#9A8A78" stroke-width="0.35"`;
-  const al = `fill="none" stroke="#B8A890" stroke-width="0.28" stroke-linecap="round"`;
-
-  const zo = (key: string, cx: number, cy: number, rx: number, ry: number): string => {
-    const c = zoneBodyColor(key, zones);
-    if (c.fill === "none") return "";
-    return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${c.fill}" fill-opacity="${c.opacity}" stroke="${c.stroke}" stroke-width="0.3" stroke-opacity="0.55"/>`;
-  };
-
-  return `<svg viewBox="0 0 100 268" xmlns="http://www.w3.org/2000/svg" style="height:100%;width:auto;display:block">
-
-  <!-- ═══ BRAS (couche arrière) ═══ -->
-  <path ${bc} d="M 22.5,44 C 21,50 19.5,74 19.5,95 C 20,97 27,97 27.5,95 C 27.5,74 26,50 25,44 Z"/>
-  <path ${bc} d="M 20,95 C 19.5,110 19,140 19.5,151 C 20,152 26.5,152 27,151 C 27.5,140 27,110 26.5,95 Z"/>
-  <path ${bc} d="M 18,151 C 16.5,154 16,162 18.5,166 C 20.5,168 26,168 27.5,164 C 29,160 28.5,153 27,151 Z"/>
-  <path ${bc} d="M 75,44 C 76.5,50 79,74 79.5,95 C 79,97 72,97 71.5,95 C 72,74 73.5,50 74.5,44 Z"/>
-  <path ${bc} d="M 80,95 C 80.5,110 81,140 80.5,151 C 80,152 73.5,152 73,151 C 72.5,140 73,110 73.5,95 Z"/>
-  <path ${bc} d="M 82,151 C 83.5,154 84,162 81.5,166 C 79.5,168 74,168 72.5,164 C 71,160 71.5,153 73,151 Z"/>
-
-  <!-- ═══ JAMBES ═══ -->
-  <!-- Pieds (vue dos : talons) -->
-  <path ${bc} d="M 26,254 C 24,258 25,263 33,264 C 40,265 46.5,262 46.5,257 C 46.5,254 43.5,252 40,252 Z"/>
-  <path ${bc} d="M 74,254 C 76,258 75,263 67,264 C 60,265 53.5,262 53.5,257 C 53.5,254 56.5,252 60,252 Z"/>
-  <!-- Tibias -->
-  <path ${bc} d="M 33,219 C 32,231 32,248 33.5,253 C 34.5,254 43.5,254 44.5,253 C 46,248 46,231 45,219 Z"/>
-  <path ${bc} d="M 55,219 C 54,231 54,248 55.5,253 C 56.5,254 65.5,254 66.5,253 C 68,248 68,231 67,219 Z"/>
-  <!-- Cuisses -->
-  <path ${bc} d="M 33,149 C 31.5,165 31,198 33,212 C 34,214 44.5,214 45.5,212 C 47,198 46.5,165 44.5,149 Z"/>
-  <path ${bc} d="M 55.5,149 C 54,165 53.5,198 55.5,212 C 56.5,214 67,214 68,212 C 69.5,198 69,165 67,149 Z"/>
-
-  <!-- ═══ TRONC ═══ -->
-  <!-- Dorsal supérieur / trapèzes -->
-  <path ${bc} d="M 36,40 C 35.5,52 35.5,68 37,82 L 63,82 C 64.5,68 64.5,52 64,40 Z"/>
-  <!-- Grand dorsal / bas du dos -->
-  <path ${bc} d="M 37,81 C 36.5,92 36.5,108 38,113 L 62,113 C 63.5,108 63.5,92 63,81 Z"/>
-  <!-- Bassin / fessiers -->
-  <path ${bc} d="M 30,118 C 25.5,126 25.5,140 30,149 L 70,149 C 74.5,140 74.5,126 70,118 C 64,112 57,109 50,109 C 43,109 36,112 30,118 Z"/>
-
-  <!-- ═══ LIGNES ANATOMIQUES (vue dos) ═══ -->
-  <!-- Colonne vertébrale -->
-  <line ${al} x1="50" y1="40" x2="50" y2="115"/>
-  <!-- Contour trapèze — forme losange -->
-  <path ${al} d="M 47,39 C 43,40 33,44 27,50 C 31.5,56 39,61 44.5,63 C 47,64 50,65 50,65 C 50,65 53,64 55.5,63 C 61,61 68.5,56 73,50 C 67,44 57,40 53,39"/>
-  <!-- Bords des omoplates -->
-  <path ${al} d="M 36,45 C 34.5,52 34.5,63 37,68 C 39,70 44,68.5 44,62 C 43.5,58 42.5,52 42,46"/>
-  <path ${al} d="M 64,45 C 65.5,52 65.5,63 63,68 C 61,70 56,68.5 56,62 C 56.5,58 57.5,52 58,46"/>
-  <!-- Épine des omoplates -->
-  <path ${al} d="M 37,48 C 40,47.5 43.5,47 44,46"/>
-  <path ${al} d="M 63,48 C 60,47.5 56.5,47 56,46"/>
-  <!-- Rhomboïdes / ligne médiane scapulaire -->
-  <path ${al} d="M 50,44 C 48,52 44.5,60 44,65"/>
-  <path ${al} d="M 50,44 C 52,52 55.5,60 56,65"/>
-  <!-- Érecteurs du rachis -->
-  <line ${al} x1="47" y1="55" x2="46.5" y2="114"/>
-  <line ${al} x1="53" y1="55" x2="53.5" y2="114"/>
-  <!-- Crête iliaque (arc postérieur) -->
-  <path ${al} d="M 33,117 C 39,115 50,114 61,115 C 65.5,115.5 68,117 67,119"/>
-  <!-- Pli fessier (pli sous-fessier) -->
-  <path ${al} d="M 33.5,148 C 40,151 50,151 60,151 C 64,151 66.5,149 66.5,148"/>
-  <!-- Biceps fémoraux (ischio-jambiers) -->
-  <path ${al} d="M 35,152 C 36,172 37.5,200 38.5,211"/>
-  <path ${al} d="M 43,152 C 43.5,172 44,200 44,211"/>
-  <path ${al} d="M 57,152 C 56.5,172 56,200 56,211"/>
-  <path ${al} d="M 65,152 C 64,172 62.5,200 61.5,211"/>
-  <!-- Gastrocnémien (losange du mollet) -->
-  <path ${al} d="M 39.5,222 C 37.5,231 37,240 38.5,248"/>
-  <path ${al} d="M 39.5,222 C 41.5,231 42,240 40.5,248"/>
-  <path ${al} d="M 60.5,222 C 58.5,231 58,240 59.5,248"/>
-  <path ${al} d="M 60.5,222 C 62.5,231 63,240 61.5,248"/>
-  <!-- Tendon d'Achille -->
-  <line ${al} x1="39.5" y1="248" x2="39.5" y2="253"/>
-  <line ${al} x1="60.5" y1="248" x2="60.5" y2="253"/>
-  <!-- Triceps brachial -->
-  <path ${al} d="M 23.5,52 C 23,66 22.5,82 23,92"/>
-  <path ${al} d="M 76.5,52 C 77,66 77.5,82 77,92"/>
-
-  <!-- ═══ ZONES ANATOMIQUES ═══ -->
-  ${zo("cervicales",      50,  34,   7,  5  )}
-  ${zo("dos_haut",        50,  51,  20,  12 )}
-  ${zo("grand_dorsal",    50,  97,  14,  16 )}
-  ${zo("lombaires",       50, 115,  12,   6 )}
-  ${zo("fessiers",        38, 133,  11,  13 )}
-  ${zo("fessiers",        62, 133,  11,  13 )}
-  ${zo("ischio_jambiers", 39, 182,   9,  30 )}
-  ${zo("ischio_jambiers", 61, 182,   9,  30 )}
-  ${zo("mollets",         39, 234,   8,  14 )}
-  ${zo("mollets",         61, 234,   8,  14 )}
-  ${zo("genoux",          39, 214,   8,   6 )}
-  ${zo("genoux",          61, 214,   8,   6 )}
-  ${zo("chevilles",       39, 253,   7.5, 4 )}
-  ${zo("chevilles",       61, 253,   7.5, 4 )}
-  ${zo("pieds",           34, 260,  11,   5.5)}
-  ${zo("pieds",           66, 260,  11,   5.5)}
-
-  <!-- ═══ ARTICULATIONS ═══ -->
-  <ellipse ${bj} cx="39" cy="214" rx="7" ry="5"/>
-  <ellipse ${bj} cx="61" cy="214" rx="7" ry="5"/>
-  <ellipse ${bj} cx="39" cy="253" rx="7.5" ry="4"/>
-  <ellipse ${bj} cx="61" cy="253" rx="7.5" ry="4"/>
-  <ellipse ${bj} cx="23" cy="95" rx="6.5" ry="4"/>
-  <ellipse ${bj} cx="77" cy="95" rx="6.5" ry="4"/>
-  <ellipse ${bj} cx="26.5" cy="44" rx="11" ry="7"/>
-  <ellipse ${bj} cx="73.5" cy="44" rx="11" ry="7"/>
-  ${zo("epaules",  26.5, 44, 11, 7)}
-  ${zo("epaules",  73.5, 44, 11, 7)}
-  ${zo("genoux",   39, 214, 7, 5)}
-  ${zo("genoux",   61, 214, 7, 5)}
-
-  <!-- ═══ COU ═══ -->
-  <!-- Trapèze supérieur (lignes cervicales postérieures) -->
-  <path ${al} d="M 46.5,27 C 44.5,30 44,37 45.5,40"/>
-  <path ${al} d="M 53.5,27 C 55.5,30 56,37 54.5,40"/>
-  <path ${bc} d="M 46,27 C 45.5,30 45.5,36 46,39 L 54,39 C 54.5,36 54.5,30 54,27 Z"/>
-  ${zo("cervicales", 50, 33, 6.5, 5)}
-
-  <!-- ═══ TÊTE (vue dos) ═══ -->
-  <ellipse ${bc} cx="50" cy="15" rx="11" ry="13"/>
-  <!-- Ligne médiane crânienne -->
-  <line fill="none" stroke="#C8BFB2" stroke-width="0.2" x1="50" y1="5" x2="50" y2="25"/>
-</svg>`;
-}
 
 function bodyMapAnalysis(d: BilanPdfData): string {
   const zones     = (d.zonePriorities ?? {}) as Record<string, string>;
@@ -1672,11 +1410,68 @@ function bodyMapAnalysis(d: BilanPdfData): string {
 function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): string {
   const zones = (d.zonePriorities ?? {}) as Record<string, string>;
 
+  // Zone color helper — fills only (no stroke), semi-transparent
+  const zc = (key: string): { fill: string; opacity: number } => {
+    const v = zones[key];
+    if (v === "forte")        return { fill: "#8B5A30", opacity: 0.42 };
+    if (v === "ameliorer")    return { fill: "#B89660", opacity: 0.38 };
+    if (v === "surveillance") return { fill: "#C8B888", opacity: 0.32 };
+    return                           { fill: "none",   opacity: 0    };
+  };
+
+  // Ellipse overlay on the 1536×1024 image coordinate system
+  const zo = (key: string, cx: number, cy: number, rx: number, ry: number): string => {
+    const { fill, opacity } = zc(key);
+    if (fill === "none") return "";
+    return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill}" fill-opacity="${opacity}"/>`;
+  };
+
+  // ── Zone overlays — coordonnées calées sur body-map.png (1536×1024)
+  // Image : vue face (gauche, centre x≈375) · vue dos (droite, centre x≈1155)
+  // Hauteur figure : y≈50 → y≈975 (925 px)
+  const zonesSvg = `
+    <!-- VUE FACE — figure gauche, centre x≈375 -->
+    ${zo("cervicales",        375, 175,  50,  38)}
+    ${zo("epaules",           215, 218,  65,  50)}
+    ${zo("epaules",           535, 218,  65,  50)}
+    ${zo("pectoraux",         375, 295, 110,  85)}
+    ${zo("sangle_abdominale", 375, 415,  80,  85)}
+    ${zo("bassin",            375, 495, 115,  52)}
+    ${zo("hanches",           245, 535,  65,  65)}
+    ${zo("hanches",           505, 535,  65,  65)}
+    ${zo("quadriceps",        295, 668,  62, 118)}
+    ${zo("quadriceps",        455, 668,  62, 118)}
+    ${zo("genoux",            293, 782,  53,  42)}
+    ${zo("genoux",            457, 782,  53,  42)}
+    ${zo("chevilles",         288, 920,  42,  28)}
+    ${zo("chevilles",         462, 920,  42,  28)}
+    ${zo("pieds",             275, 963,  65,  30)}
+    ${zo("pieds",             475, 963,  65,  30)}
+    <!-- VUE DOS — figure droite, centre x≈1155 -->
+    ${zo("cervicales",        1155, 175,  50,  38)}
+    ${zo("epaules",            975, 218,  65,  50)}
+    ${zo("epaules",           1335, 218,  65,  50)}
+    ${zo("dos_haut",          1155, 268, 165,  90)}
+    ${zo("grand_dorsal",      1155, 405, 120,  98)}
+    ${zo("lombaires",         1155, 498,  90,  44)}
+    ${zo("fessiers",          1082, 555,  75,  85)}
+    ${zo("fessiers",          1228, 555,  75,  85)}
+    ${zo("ischio_jambiers",   1075, 668,  62, 118)}
+    ${zo("ischio_jambiers",   1235, 668,  62, 118)}
+    ${zo("genoux",            1072, 782,  53,  42)}
+    ${zo("genoux",            1238, 782,  53,  42)}
+    ${zo("mollets",           1068, 858,  48,  64)}
+    ${zo("mollets",           1242, 858,  48,  64)}
+    ${zo("chevilles",         1063, 920,  42,  28)}
+    ${zo("chevilles",         1247, 920,  42,  28)}
+    ${zo("pieds",             1050, 963,  65,  30)}
+    ${zo("pieds",             1260, 963,  65,  30)}`;
+
+  // Axes prioritaires — classés par priorité décroissante
   const forteKeys     = Object.entries(zones).filter(([, v]) => v === "forte").map(([k]) => k);
   const ameliorerKeys = Object.entries(zones).filter(([, v]) => v === "ameliorer").map(([k]) => k);
   const survKeys      = Object.entries(zones).filter(([, v]) => v === "surveillance").map(([k]) => k);
 
-  // Axes prioritaires — classés par priorité décroissante
   const axeItems: string[] = [];
   for (const k of forteKeys)     axeItems.push(ZONE_MOVEMENT_LABELS[k] ?? ZONE_DISPLAY_LABELS[k] ?? k);
   for (const k of ameliorerKeys) axeItems.push(ZONE_MOVEMENT_LABELS[k] ?? ZONE_DISPLAY_LABELS[k] ?? k);
@@ -1707,14 +1502,12 @@ function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): strin
       ${sec("Cartographie corporelle")}
       <div class="p4-subtitle">Visualisation des zones nécessitant une attention particulière afin d'optimiser votre mobilité et votre qualité de mouvement.</div>
     </div>
-    <div class="p4-sils">
-      <div class="p4-sil">
-        <div style="height:138mm">${frontSilhouetteSvg(zones)}</div>
-        <div class="p4-sil-lbl">Vue de face</div>
-      </div>
-      <div class="p4-sil">
-        <div style="height:138mm">${backSilhouetteSvg(zones)}</div>
-        <div class="p4-sil-lbl">Vue de dos</div>
+    <div class="p4-bodymap">
+      <div class="p4-bodymap-wrap">
+        <img class="p4-bodymap-img" src="${esc(d.bodyMapUrl)}" alt="Cartographie corporelle"/>
+        <svg class="p4-bodymap-svg" viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/svg">
+          ${zonesSvg}
+        </svg>
       </div>
     </div>
     <div class="p4-legend">

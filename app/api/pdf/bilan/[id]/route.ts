@@ -124,11 +124,13 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
       }).catch(() => null)
     : null;
 
+  const bodyMapUrl = `${baseUrl}/pdf-assets/body-map.png`;
+
   const data: BilanPdfData = {
     clientName,
     sexe: (assessment.sexe as "femme" | "homme" | null | undefined) ?? null,
     age:  (assessment.age as number | null | undefined) ?? null,
-    cabinetName, logoSrc, hasCustomLogo,
+    cabinetName, logoSrc, hasCustomLogo, bodyMapUrl,
     contactLine, addressLine, dateStr,
     total, axes,
     activeLim, activeRec,

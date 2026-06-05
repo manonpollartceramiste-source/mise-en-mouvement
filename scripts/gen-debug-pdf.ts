@@ -79,6 +79,7 @@ const mockData: BilanPdfData = {
     dos_haut:  "surveillance",
     genoux:    "surveillance",
   },
+  bodyMapUrl: "http://localhost:3000/pdf-assets/body-map.png",
 };
 
 const html = generateBilanHtml(mockData, "coach");
