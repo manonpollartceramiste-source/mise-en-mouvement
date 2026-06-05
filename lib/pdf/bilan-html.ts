@@ -215,7 +215,7 @@ body{
 .hero-meta-dot{width:3pt;height:3pt;background:rgba(184,149,106,0.4);border-radius:50%;flex-shrink:0}
 
 /* ── SECTION LABEL ── */
-.sec{display:flex;align-items:center;gap:7pt;margin-bottom:6pt;flex-shrink:0}
+.sec{display:flex;align-items:center;gap:7pt;margin-bottom:4pt;flex-shrink:0}
 .sec-lbl{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap}
 .sec-rule{flex:1;height:0.35pt;background:linear-gradient(90deg,#D4C8B8,transparent)}
 
@@ -430,13 +430,13 @@ body{
 /* ── PAGE 3 LAYOUT ── */
 .p3-body{
   flex:1;display:flex;flex-direction:column;
-  padding:9mm 12mm 4mm;gap:8mm;min-height:0;overflow:hidden;
+  padding:4mm 12mm 2mm;gap:3.5mm;min-height:0;overflow:hidden;
 }
 .p3-section{flex-shrink:0}
 
 /* ── COMPOSITION ÉDITORIALE (page 3) ── */
 .comp-editorial{
-  display:flex;align-items:stretch;margin-top:8pt;
+  display:flex;align-items:stretch;margin-top:4pt;
 }
 .comp-stat{
   flex:1;text-align:center;padding:0 8pt;
@@ -446,47 +446,47 @@ body{
 .comp-stat:last-child{border-right:none;padding-right:0}
 .comp-stat-v{
   font-family:'Playfair Display',Georgia,serif;
-  font-size:29px;font-weight:700;color:#1A1410;line-height:1;
+  font-size:23px;font-weight:700;color:#1A1410;line-height:1;
 }
-.comp-stat-u{font-size:15px;color:#9A8C80;margin-left:1pt;font-weight:400}
+.comp-stat-u{font-size:13px;color:#9A8C80;margin-left:1pt;font-weight:400}
 .comp-stat-k{
-  font-size:11px;font-weight:600;color:#A89070;
-  letter-spacing:1px;text-transform:uppercase;margin-top:4pt;
+  font-size:10px;font-weight:600;color:#A89070;
+  letter-spacing:1px;text-transform:uppercase;margin-top:3pt;
 }
 
 /* ── SEGMENTAIRE MUSCULAIRE (page 3) ── */
-.seg-sub-hd{display:flex;align-items:center;gap:6pt;margin:8pt 0 5pt;flex-shrink:0}
+.seg-sub-hd{display:flex;align-items:center;gap:6pt;margin:4pt 0 3pt;flex-shrink:0}
 .seg-sub-lbl{font-size:9.5px;font-weight:700;color:#C0B0A0;letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
 .seg-sub-rule{flex:1;height:0.3pt;background:linear-gradient(90deg,#DDD5C8,transparent)}
 .seg-row{display:flex;align-items:stretch}
 .seg-stat{flex:1;text-align:center;padding:0 5pt;border-right:0.35pt solid #E4DDD2}
 .seg-stat:first-child{padding-left:0}
 .seg-stat:last-child{border-right:none;padding-right:0}
-.seg-stat-v{font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:#3A2E24;line-height:1}
-.seg-stat-u{font-size:13px;color:#9A8C80;font-weight:400;margin-left:1pt}
-.seg-stat-k{font-size:10.5px;font-weight:600;color:#B8A898;letter-spacing:0.8px;text-transform:uppercase;margin-top:4pt}
+.seg-stat-v{font-family:'Playfair Display',Georgia,serif;font-size:21px;font-weight:700;color:#3A2E24;line-height:1}
+.seg-stat-u{font-size:11px;color:#9A8C80;font-weight:400;margin-left:1pt}
+.seg-stat-k{font-size:9.5px;font-weight:600;color:#B8A898;letter-spacing:0.8px;text-transform:uppercase;margin-top:3pt}
 
 /* ── RECOMMANDATIONS COACH (page 3) ── */
-.rec-chips{display:flex;flex-wrap:wrap;margin-top:5pt}
+.rec-chips{display:flex;flex-wrap:wrap;margin-top:2pt}
 .rec-chip{
-  font-size:14px;font-weight:500;padding:3pt 9pt;border-radius:3pt;
+  font-size:13px;font-weight:500;padding:2.5pt 8pt;border-radius:3pt;
   border:0.5pt solid #D4C4AC;background:#EDE3D0;color:#4A3C30;
   display:inline-block;margin:2pt 3pt 0 0;
 }
 .rec-freq{
-  display:flex;align-items:center;gap:6pt;margin-top:7pt;
-  padding-top:6pt;border-top:0.35pt solid #EDE5DA;
+  display:flex;align-items:center;gap:6pt;margin-top:4pt;
+  padding-top:4pt;border-top:0.35pt solid #EDE5DA;
 }
-.rec-freq-lbl{font-size:11.5px;font-weight:700;color:#A89070;letter-spacing:2px;text-transform:uppercase}
-.rec-freq-val{font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;color:#1A1410}
+.rec-freq-lbl{font-size:11px;font-weight:700;color:#A89070;letter-spacing:2px;text-transform:uppercase}
+.rec-freq-val{font-family:'Playfair Display',Georgia,serif;font-size:19px;font-weight:700;color:#1A1410}
 .rec-action{
-  font-size:17px;font-weight:500;color:#5A4A38;line-height:1.6;margin-top:7pt;
-  padding:8pt 11pt;background:transparent;
+  font-size:14px;font-weight:500;color:#5A4A38;line-height:1.5;margin-top:4pt;
+  padding:5pt 10pt;background:transparent;
   border-left:2pt solid #B8956A;
 }
 .rec-detail{
-  font-size:18.5px;color:#3E3028;line-height:1.8;margin-top:8pt;
-  font-style:italic;padding-top:7pt;border-top:0.35pt solid #EDE5DA;
+  font-size:14px;color:#3E3028;line-height:1.55;margin-top:4pt;
+  font-style:italic;padding-top:5pt;border-top:0.35pt solid #EDE5DA;
 }
 
 /* ── PROJECTION ÉDITORIALE (page 3) ── */
@@ -552,7 +552,7 @@ body{
 /* ── FEUILLE DE ROUTE (page 3, élément principal) ── */
 .roadmap{
   background:#1E1812;border-radius:7pt;
-  padding:12pt 14pt 14pt;
+  padding:8pt 13pt 9pt;
   border-left:3pt solid #B8956A;
   border-top:0.5pt solid rgba(184,149,106,0.2);
   border-right:0.5pt solid rgba(184,149,106,0.2);
@@ -562,47 +562,47 @@ body{
 .roadmap .sec-lbl{color:rgba(184,149,106,0.85)}
 .roadmap .sec-rule{background:linear-gradient(90deg,rgba(184,149,106,0.4),transparent)}
 .roadmap-context{
-  display:flex;gap:0;margin-top:9pt;padding-bottom:8pt;
+  display:flex;gap:0;margin-top:5pt;padding-bottom:4pt;
   border-bottom:0.5pt solid rgba(184,149,106,0.18);
 }
 .roadmap-ctx-item{flex:1;padding:0 12pt}
 .roadmap-ctx-item:first-child{padding-left:0}
 .roadmap-ctx-item+.roadmap-ctx-item{border-left:0.5pt solid rgba(184,149,106,0.18)}
-.roadmap-ctx-lbl{font-size:10px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt}
-.roadmap-ctx-val{font-family:'Playfair Display',Georgia,serif;font-size:15.5px;font-weight:700;color:#F5EFE5;line-height:1.35}
+.roadmap-ctx-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2pt}
+.roadmap-ctx-val{font-family:'Playfair Display',Georgia,serif;font-size:13.5px;font-weight:700;color:#F5EFE5;line-height:1.3}
 .roadmap-meta{
-  display:flex;gap:0;padding:8pt 0;
+  display:flex;gap:0;padding:5pt 0;
   border-bottom:0.5pt solid rgba(184,149,106,0.18);
 }
 .roadmap-meta-item{flex:1;padding:0 12pt}
 .roadmap-meta-item:first-child{padding-left:0}
 .roadmap-meta-item+.roadmap-meta-item{border-left:0.5pt solid rgba(184,149,106,0.18)}
-.roadmap-meta-lbl{font-size:10px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt}
-.roadmap-meta-val{font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:700;color:#E8D5A8;line-height:1.2}
-.roadmap-proj{padding:8pt 0;border-bottom:0.5pt solid rgba(184,149,106,0.18)}
-.roadmap-proj-lbl{font-size:10px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7pt}
+.roadmap-meta-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2pt}
+.roadmap-meta-val{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;color:#E8D5A8;line-height:1.2}
+.roadmap-proj{padding:5pt 0;border-bottom:0.5pt solid rgba(184,149,106,0.18)}
+.roadmap-proj-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4pt}
 .roadmap-proj-steps{display:flex;gap:0}
 .roadmap-proj-step{flex:1;padding:0 10pt;border-right:0.5pt solid rgba(184,149,106,0.18)}
 .roadmap-proj-step:first-child{padding-left:0}
 .roadmap-proj-step:last-child{border-right:none;padding-right:0}
-.roadmap-proj-week{font-size:9px;font-weight:700;color:rgba(184,149,106,0.5);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3pt}
-.roadmap-proj-title{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-weight:700;color:#F5EFE5;line-height:1.3}
-.roadmap-action{padding-top:8pt}
-.roadmap-action-lbl{font-size:10px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt}
-.roadmap-action-val{font-size:16px;font-weight:500;color:#E8DDD0;line-height:1.5;font-style:italic}
+.roadmap-proj-week{font-size:9px;font-weight:700;color:rgba(184,149,106,0.5);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:2pt}
+.roadmap-proj-title{font-family:'Playfair Display',Georgia,serif;font-size:13px;font-weight:700;color:#F5EFE5;line-height:1.3}
+.roadmap-action{padding-top:5pt}
+.roadmap-action-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2pt}
+.roadmap-action-val{font-size:14.5px;font-weight:500;color:#E8DDD0;line-height:1.45;font-style:italic}
 
 /* ── POURQUOI CES AXES (page 3) ── */
-.why-grid{display:flex;gap:9pt;margin-top:7pt}
+.why-grid{display:flex;gap:8pt;margin-top:4pt}
 .why-item{
-  flex:1;padding:8pt 10pt;
+  flex:1;padding:5pt 9pt;
   background:rgba(245,239,229,0.5);border-radius:5pt;
   border:0.4pt solid #E4DDD2;
 }
-.why-item-label{font-size:11px;font-weight:700;color:#B8956A;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4pt}
-.why-item-text{font-size:14.5px;color:#4A3C30;line-height:1.65}
+.why-item-label{font-size:10.5px;font-weight:700;color:#B8956A;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3pt}
+.why-item-text{font-size:13px;color:#4A3C30;line-height:1.5}
 
 /* ── CLOSING (page 3) ── */
-.closing{padding:3pt 12mm 4mm;text-align:center;flex-shrink:0;position:relative;top:-20px}
+.closing{padding:2pt 12mm 2pt;text-align:center;flex-shrink:0}
 .closing-rule{display:flex;align-items:center;margin-bottom:5pt}
 .closing-line{flex:1;height:0.4pt;background:linear-gradient(90deg,transparent,#DDD5C8 30%,#DDD5C8 70%,transparent)}
 .closing-dia{width:4pt;height:4pt;background:#B8956A;transform:rotate(45deg);margin:0 8pt;flex-shrink:0}
