@@ -224,6 +224,15 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
             Rapport PDF
           </Link>
           <Link
+            href={`/os/coach/bilan-mouvement/${assessment.id}/modifier`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-taupe-300/60 bg-white px-4 py-2 text-sm font-medium text-taupe-600 transition-colors hover:bg-sand-100"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11.5 2.5a2.121 2.121 0 1 1 3 3L5 15H1v-4L11.5 2.5z"/>
+            </svg>
+            Modifier
+          </Link>
+          <Link
             href={`/os/coach/bilan-mouvement/nouveau?client=${assessment.client_id}`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-taupe-300/60 px-4 py-2 text-sm font-medium text-taupe-600 transition-colors hover:bg-sand-100"
           >

@@ -3,8 +3,8 @@
 import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import type { Profile, AssessmentTestEntry } from "@/lib/os/types";
-import { createAssessmentAction } from "../actions";
+import type { Profile, AssessmentTestEntry, MovementAssessment } from "@/lib/os/types";
+import { createAssessmentAction, updateAssessmentAction } from "../actions";
 
 // ─── Types locaux ────────────────────────────────────────────
 
@@ -570,78 +570,146 @@ function NumberInput({
   );
 }
 
+// ─── Helpers hors composant ───────────────────────────────────
+
+function initTests(): Tests {
+  return Object.fromEntries(
+    MOVEMENT_TESTS.map(({ key }) => [
+      key,
+      { score: 1 as const, score10: null, observation: "", note: "", zone: "" },
+    ]),
+  );
+}
+
+function assessmentToFormState(a: MovementAssessment): FormState {
+  const tests = { ...initTests(), ...(a.movement_tests ?? {}) };
+  return {
+    client_id:             a.client_id,
+    assessed_at:           a.assessed_at.slice(0, 16),
+    sexe:                  a.sexe ?? null,
+    age:                   a.age ?? null,
+    energy_score:          a.energy_score,
+    stress_score:          a.stress_score,
+    sleep_score:           a.sleep_score,
+    pain_score:            a.pain_score,
+    weight_kg:             a.weight_kg ?? null,
+    fat_pct:               a.fat_pct ?? null,
+    muscle_pct:            a.muscle_pct ?? null,
+    water_pct:             a.water_pct ?? null,
+    bone_mass_kg:          a.bone_mass_kg ?? null,
+    visceral_fat:          a.visceral_fat ?? null,
+    bmr_kcal:              a.bmr_kcal ?? null,
+    metabolic_age:         a.metabolic_age ?? null,
+    seg_arm_right_kg:      a.seg_arm_right_kg ?? null,
+    seg_arm_left_kg:       a.seg_arm_left_kg ?? null,
+    seg_leg_right_kg:      a.seg_leg_right_kg ?? null,
+    seg_leg_left_kg:       a.seg_leg_left_kg ?? null,
+    seg_trunk_kg:          a.seg_trunk_kg ?? null,
+    main_goal:             a.main_goal ?? "",
+    concrete_goal:         a.concrete_goal ?? "",
+    old_injuries:          a.old_injuries ?? "",
+    operations:            a.operations ?? "",
+    work_type:             a.work_type ?? null,
+    sport_practiced:       a.sport_practiced ?? "",
+    activity_level:        a.activity_level ?? "",
+    sitting_hours_per_day: a.sitting_hours_per_day ?? null,
+    pain_zones:            a.pain_zones ?? "",
+    mobility_score:        a.mobility_score,
+    stability_score:       a.stability_score,
+    strength_score:        a.strength_score,
+    posture_score:         a.posture_score,
+    coordination_score:    a.coordination_score,
+    movement_tests:        tests as Tests,
+    daily_limitations:     a.daily_limitations ?? {},
+    recommendations:       a.recommendations ?? {},
+    zone_priorities:       (a.zone_priorities ?? {}) as ZonePriorityMap,
+    axis_notes:            a.axis_notes ?? {},
+    frequency:             a.frequency ?? null,
+    engagement:            (
+      a.engagement === "J'ai besoin d'être guidé(e) pour démarrer" ||
+      a.engagement === "Je suis prêt(e) à progresser régulièrement" ||
+      a.engagement === "Je suis pleinement engagé(e) dans ma transformation"
+    ) ? a.engagement : null,
+    important_notes:       a.important_notes ?? "",
+    next_action:           a.next_action ?? "",
+    pain_evolution:        a.pain_evolution ?? "",
+    main_limitation:       (a as Record<string, unknown>).main_limitation as string ?? "",
+  };
+}
+
 // ─── Composant principal ──────────────────────────────────────
 
 export function BilanForm({
   clients,
   preselectedClientId,
+  assessmentId,
+  initialData,
 }: {
   clients: Profile[];
   preselectedClientId?: string;
+  assessmentId?: string;
+  initialData?: MovementAssessment;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  const isEditMode = !!assessmentId;
   const nowISO = new Date().toISOString().slice(0, 16);
   const defaultClient = preselectedClientId ?? clients[0]?.id ?? "";
 
-  const initTests = (): Tests =>
-    Object.fromEntries(
-      MOVEMENT_TESTS.map(({ key }) => [
-        key,
-        { score: 1 as const, score10: null, observation: "", note: "", zone: "" },
-      ]),
-    );
-
-  const [form, setForm] = useState<FormState>({
-    client_id: defaultClient,
-    assessed_at: nowISO,
-    sexe: null,
-    age: null,
-    energy_score: null,
-    stress_score: null,
-    sleep_score: null,
-    pain_score: null,
-    weight_kg: null,
-    fat_pct: null,
-    muscle_pct: null,
-    water_pct: null,
-    bone_mass_kg: null,
-    visceral_fat: null,
-    bmr_kcal: null,
-    metabolic_age: null,
-    seg_arm_right_kg: null,
-    seg_arm_left_kg: null,
-    seg_leg_right_kg: null,
-    seg_leg_left_kg: null,
-    seg_trunk_kg: null,
-    main_goal: "",
-    concrete_goal: "",
-    old_injuries: "",
-    operations: "",
-    work_type: null,
-    sport_practiced: "",
-    activity_level: "",
-    sitting_hours_per_day: null,
-    pain_zones: "",
-    mobility_score: null,
-    stability_score: null,
-    strength_score: null,
-    posture_score: null,
-    coordination_score: null,
-    movement_tests: initTests(),
-    daily_limitations: {},
-    recommendations: {},
-    zone_priorities: {},
-    axis_notes: {},
-    frequency: null,
-    engagement: null,
-    important_notes: "",
-    next_action: "",
-    pain_evolution: "",
-    main_limitation: "",
-  });
+  const [form, setForm] = useState<FormState>(
+    initialData
+      ? assessmentToFormState(initialData)
+      : {
+          client_id: defaultClient,
+          assessed_at: nowISO,
+          sexe: null,
+          age: null,
+          energy_score: null,
+          stress_score: null,
+          sleep_score: null,
+          pain_score: null,
+          weight_kg: null,
+          fat_pct: null,
+          muscle_pct: null,
+          water_pct: null,
+          bone_mass_kg: null,
+          visceral_fat: null,
+          bmr_kcal: null,
+          metabolic_age: null,
+          seg_arm_right_kg: null,
+          seg_arm_left_kg: null,
+          seg_leg_right_kg: null,
+          seg_leg_left_kg: null,
+          seg_trunk_kg: null,
+          main_goal: "",
+          concrete_goal: "",
+          old_injuries: "",
+          operations: "",
+          work_type: null,
+          sport_practiced: "",
+          activity_level: "",
+          sitting_hours_per_day: null,
+          pain_zones: "",
+          mobility_score: null,
+          stability_score: null,
+          strength_score: null,
+          posture_score: null,
+          coordination_score: null,
+          movement_tests: initTests(),
+          daily_limitations: {},
+          recommendations: {},
+          zone_priorities: {},
+          axis_notes: {},
+          frequency: null,
+          engagement: null,
+          important_notes: "",
+          next_action: "",
+          pain_evolution: "",
+          main_limitation: "",
+        },
+  );
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -697,7 +765,7 @@ export function BilanForm({
         main_limitation,
         ...restForm
       } = form;
-      const result = await createAssessmentAction({
+      const payload = {
         ...restForm,
         assessed_at: new Date(form.assessed_at).toISOString(),
         movement_tests: Object.keys(form.movement_tests).length ? form.movement_tests : null,
@@ -738,11 +806,23 @@ export function BilanForm({
         ...(age  != null ? { age  } : {}),
         // Migration 0015 — limitation principale
         ...(main_limitation ? { main_limitation } : {}),
-      });
-      if (result.error) {
-        setError(result.error);
-      } else if (result.id) {
-        router.push(`/os/coach/bilan-mouvement/${result.id}`);
+      };
+
+      if (isEditMode) {
+        const result = await updateAssessmentAction(assessmentId!, payload);
+        if (result.error) {
+          setError(result.error);
+        } else {
+          router.refresh();
+          router.push(`/os/coach/bilan-mouvement/${assessmentId}`);
+        }
+      } else {
+        const result = await createAssessmentAction(payload);
+        if (result.error) {
+          setError(result.error);
+        } else if (result.id) {
+          router.push(`/os/coach/bilan-mouvement/${result.id}`);
+        }
       }
     });
   }
@@ -780,7 +860,7 @@ export function BilanForm({
               disabled={isPending}
               className="rounded-xl bg-ink-900 px-4 py-2 text-xs font-semibold text-sand-50 transition-all hover:bg-taupe-800 active:scale-95 disabled:opacity-50"
             >
-              {isPending ? "Enregistrement…" : "Enregistrer"}
+              {isPending ? "Enregistrement…" : isEditMode ? "Mettre à jour" : "Enregistrer"}
             </button>
           </div>
         </div>
@@ -814,18 +894,24 @@ export function BilanForm({
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
                   Client
                 </label>
-                <select
-                  value={form.client_id}
-                  onChange={(e) => set("client_id", e.target.value)}
-                  className="w-full rounded-2xl border border-taupe-200/70 bg-sand-50/60 px-5 py-3.5 text-base font-medium text-ink-900 focus:border-taupe-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-taupe-500/20"
-                >
-                  <option value="">— Sélectionner un client —</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.display_name}
-                    </option>
-                  ))}
-                </select>
+                {isEditMode ? (
+                  <div className="w-full rounded-2xl border border-taupe-200/40 bg-sand-100/60 px-5 py-3.5 text-base font-medium text-taupe-600">
+                    {clients.find((c) => c.id === form.client_id)?.display_name ?? form.client_id}
+                  </div>
+                ) : (
+                  <select
+                    value={form.client_id}
+                    onChange={(e) => set("client_id", e.target.value)}
+                    className="w-full rounded-2xl border border-taupe-200/70 bg-sand-50/60 px-5 py-3.5 text-base font-medium text-ink-900 focus:border-taupe-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-taupe-500/20"
+                  >
+                    <option value="">— Sélectionner un client —</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.display_name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -867,12 +953,22 @@ export function BilanForm({
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
                   Date du bilan
                 </label>
-                <input
-                  type="datetime-local"
-                  value={form.assessed_at}
-                  onChange={(e) => set("assessed_at", e.target.value)}
-                  className="w-full rounded-2xl border border-taupe-200/70 bg-sand-50/60 px-5 py-3.5 text-sm text-ink-900 focus:border-taupe-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-taupe-500/20"
-                />
+                {isEditMode ? (
+                  <div className="w-full rounded-2xl border border-taupe-200/40 bg-sand-100/60 px-5 py-3.5 text-sm capitalize text-taupe-600">
+                    {new Date(form.assessed_at).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </div>
+                ) : (
+                  <input
+                    type="datetime-local"
+                    value={form.assessed_at}
+                    onChange={(e) => set("assessed_at", e.target.value)}
+                    className="w-full rounded-2xl border border-taupe-200/70 bg-sand-50/60 px-5 py-3.5 text-sm text-ink-900 focus:border-taupe-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-taupe-500/20"
+                  />
+                )}
               </div>
             </div>
           </div>
