@@ -644,24 +644,30 @@ export function BilanForm({
   preselectedClientId,
   assessmentId,
   initialData,
+  isSuivi,
 }: {
   clients: Profile[];
   preselectedClientId?: string;
   assessmentId?: string;
   initialData?: MovementAssessment;
+  isSuivi?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const isEditMode = !!assessmentId;
+  const isClientLocked = isEditMode || !!isSuivi;
   const nowISO = new Date().toISOString().slice(0, 16);
   const defaultClient = preselectedClientId ?? clients[0]?.id ?? "";
 
-  const [form, setForm] = useState<FormState>(
-    initialData
-      ? assessmentToFormState(initialData)
-      : {
+  const [form, setForm] = useState<FormState>(() => {
+    if (initialData) {
+      const state = assessmentToFormState(initialData);
+      if (isSuivi) state.assessed_at = nowISO;
+      return state;
+    }
+    return {
           client_id: defaultClient,
           assessed_at: nowISO,
           sexe: null,
@@ -708,8 +714,8 @@ export function BilanForm({
           next_action: "",
           pain_evolution: "",
           main_limitation: "",
-        },
-  );
+        };
+  });
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -860,7 +866,7 @@ export function BilanForm({
               disabled={isPending}
               className="rounded-xl bg-ink-900 px-4 py-2 text-xs font-semibold text-sand-50 transition-all hover:bg-taupe-800 active:scale-95 disabled:opacity-50"
             >
-              {isPending ? "Enregistrement…" : isEditMode ? "Mettre à jour" : "Enregistrer"}
+              {isPending ? "Enregistrement…" : isSuivi ? "Créer le suivi" : isEditMode ? "Mettre à jour" : "Enregistrer"}
             </button>
           </div>
         </div>
@@ -894,7 +900,7 @@ export function BilanForm({
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
                   Client
                 </label>
-                {isEditMode ? (
+                {isClientLocked ? (
                   <div className="w-full rounded-2xl border border-taupe-200/40 bg-sand-100/60 px-5 py-3.5 text-base font-medium text-taupe-600">
                     {clients.find((c) => c.id === form.client_id)?.display_name ?? form.client_id}
                   </div>
