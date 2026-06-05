@@ -1,9 +1,24 @@
+import { readFileSync } from "fs";
+import { join } from "path";
 import { getOsProfileWithRole, getAssessmentById, getProfileById } from "@/lib/supabase/os-server";
 import { loadSettings } from "@/lib/content/settings.server";
 import { loadImages } from "@/lib/content/images.server";
 import { generateBilanHtml, type BilanPdfData } from "@/lib/pdf/bilan-html";
 import type { AssessmentTestEntry } from "@/lib/os/types";
 import QRCode from "qrcode";
+
+// body-map.png lue depuis le disque et encodée en base64 au démarrage du module.
+// Nécessaire car page.setContent() ne résout pas les URL http:// — seules les data URLs fonctionnent.
+function loadBodyMapDataUrl(): string {
+  try {
+    const buf = readFileSync(join(process.cwd(), "public", "pdf-assets", "body-map.png"));
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    console.warn("[PDF] body-map.png introuvable — image anatomique absente");
+    return "";
+  }
+}
+const BODY_MAP_DATA_URL = loadBodyMapDataUrl();
 
 // ─── Route config ─────────────────────────────────────────────────────────────
 
@@ -124,13 +139,11 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
       }).catch(() => null)
     : null;
 
-  const bodyMapUrl = `${baseUrl}/pdf-assets/body-map.png`;
-
   const data: BilanPdfData = {
     clientName,
     sexe: (assessment.sexe as "femme" | "homme" | null | undefined) ?? null,
     age:  (assessment.age as number | null | undefined) ?? null,
-    cabinetName, logoSrc, hasCustomLogo, bodyMapUrl,
+    cabinetName, logoSrc, hasCustomLogo, bodyMapUrl: BODY_MAP_DATA_URL,
     contactLine, addressLine, dateStr,
     total, axes,
     activeLim, activeRec,
