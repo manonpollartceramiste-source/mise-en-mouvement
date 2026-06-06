@@ -9,7 +9,6 @@ import { loadCoaches } from "@/lib/content/coaches.server";
 import { ConfirmationClient } from "./ConfirmationClient";
 import type { Offer } from "@/lib/content/offers";
 import type { Coach } from "@/lib/content/coaches";
-import { isWithinMinNotice } from "@/lib/utils/booking-rules";
 
 export const metadata: Metadata = {
   title: "Rendez-vous confirmé — Mise en Mouvement",
@@ -45,11 +44,6 @@ export default async function ConfirmationPage({
   const offreParam = str(params.offre) ?? str(params.offer);
   const nameParam = str(params.name);
   const dateParam = str(params.date) ?? str(params.startTime);
-
-  // Vérification serveur : créneau dans moins de 24h → retour page réservation
-  if (dateParam && isWithinMinNotice(dateParam)) {
-    redirect("/reservation?error=trop_tot");
-  }
 
   const [offers, coaches] = await Promise.all([loadOffers(), loadCoaches()]);
 
