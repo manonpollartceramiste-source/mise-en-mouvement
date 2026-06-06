@@ -171,16 +171,12 @@ function Row({ label, value, emphasis = false }: { label: string; value: string;
 
 // ── SlotSection ────────────────────────────────────────────────────────────
 
-function resolveSumupUrl(offer: Offer | undefined, coach: Coach | undefined): {
-  url: string | null;
-  source: string;
-} {
+function resolveSumupUrl(offer: Offer | undefined, coach: Coach | undefined): string | null {
   if (offer && coach) {
     const link = offer.coachLinks[coach.id];
-    if (link?.sumup) return { url: link.sumup, source: `offers.coachLinks["${coach.id}"].sumup` };
+    if (link?.sumup) return link.sumup;
   }
-  if (coach?.sumupUrl) return { url: coach.sumupUrl, source: "coach.sumupUrl" };
-  return { url: null, source: "none" };
+  return coach?.sumupUrl ?? null;
 }
 
 function SlotSection({
@@ -222,32 +218,14 @@ function SlotSection({
     );
   }
 
-  const sumupResolved = resolveSumupUrl(offer, coach);
-
   return (
-    <>
-      {/* DEBUG — à supprimer après vérification */}
-      <details className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-mono text-amber-900">
-        <summary className="cursor-pointer font-medium">🔍 DEBUG paiement (temporaire)</summary>
-        <div className="mt-2 space-y-1">
-          <div><span className="text-amber-600">coach.id :</span> {coach.id}</div>
-          <div><span className="text-amber-600">coach.osProfileId :</span> {coach.osProfileId}</div>
-          <div><span className="text-amber-600">offer.id :</span> {offer.id}</div>
-          <div><span className="text-amber-600">offer.coachLinks["{coach.id}"].sumup :</span> {offer.coachLinks[coach.id]?.sumup ?? "null"}</div>
-          <div><span className="text-amber-600">coach.sumupUrl :</span> {coach.sumupUrl ?? "null"}</div>
-          <div><span className="text-amber-600">sumupUrl résolu :</span> {sumupResolved.url ?? "null"}</div>
-          <div><span className="text-amber-600">source :</span> {sumupResolved.source}</div>
-          <div><span className="text-amber-600">online payment available :</span> {sumupResolved.url ? "✅ true" : "❌ false"}</div>
-        </div>
-      </details>
-      <NativeSlotPicker
-        coachId={coach.osProfileId}
-        coachSlug={coach.id}
-        coachName={coach.name}
-        offer={offer}
-        sumupUrl={sumupResolved.url}
-        onBack={() => {}}
-      />
-    </>
+    <NativeSlotPicker
+      coachId={coach.osProfileId}
+      coachSlug={coach.id}
+      coachName={coach.name}
+      offer={offer}
+      sumupUrl={resolveSumupUrl(offer, coach)}
+      onBack={() => {}}
+    />
   );
 }
