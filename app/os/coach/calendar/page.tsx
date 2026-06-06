@@ -53,14 +53,14 @@ export default async function CoachCalendarPage({
   const weekEnd = new Date(y, m - 1, d + 7);
 
   const isAdmin = profile.roles.includes("admin");
+  const isCoach = profile.roles.includes("coach");
   const supabase = await getSupabaseServer();
 
-  // Resolve the UUID used when creating public bookings.
-  // loadActiveCoaches() reads from the Supabase content table first, which may
-  // store an osProfileId that differs from profile.id (auth UUID). We match by
-  // email to find the right booking coach ID; fall back to profile.id.
+  // For native bookings: use the osProfileId from the content table (which is
+  // what was stored as coach_id when the public booking was created). Match by
+  // email since the content table may have a different osProfileId than profile.id.
   let nativeBookingCoachId = profile.id;
-  if (!isAdmin) {
+  if (isCoach) {
     const allCoaches = await loadCoaches().catch(() => []);
     const coachEntry = allCoaches.find(
       (c) => c.email?.toLowerCase() === profile.email?.toLowerCase(),
@@ -81,12 +81,14 @@ export default async function CoachCalendarPage({
       return isAdmin ? q : q.eq("coach_id", profile.id);
     })(),
     isAdmin ? getAllActiveClients() : getCoachClients(profile.id),
-    isAdmin
-      ? Promise.resolve([] as Booking[])
-      : getCoachBookings(nativeBookingCoachId, weekStart, weekEnd).catch((err) => {
+    // Use isCoach (not isAdmin) so that coach-admins see their own bookings.
+    // An admin-only user gets [] since they have no personal booking coach_id.
+    isCoach
+      ? getCoachBookings(nativeBookingCoachId, weekStart, weekEnd).catch((err) => {
           console.error("[CalendarPage] getCoachBookings error:", err);
           return [] as Booking[];
-        }),
+        })
+      : Promise.resolve([] as Booking[]),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

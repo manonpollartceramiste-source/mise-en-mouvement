@@ -65,7 +65,7 @@ export const coaches: Coach[] = [
     sumupUrl: null,
     active: true,
     email: "dorian34.hebert@gmail.com",
-    osProfileId: "3dbcc116-c5f2-49d7-9d6e-9b616bd0c769",
+    osProfileId: "ef782aff-ca91-41d9-8d55-6d88f53ce24a",
   },
   {
     id: "gregory",
