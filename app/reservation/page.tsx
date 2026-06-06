@@ -27,6 +27,7 @@ export default async function ReservationPage({
   const params = await searchParams;
   const offerParam = typeof params.offre === "string" ? params.offre : undefined;
   const coachParam = typeof params.coach === "string" ? params.coach : undefined;
+  const errorParam = typeof params.error === "string" ? params.error : undefined;
 
   const [offers, coaches, texts] = await Promise.all([
     loadOffers(),
@@ -66,6 +67,31 @@ export default async function ReservationPage({
             </FadeIn>
           </Container>
         </Section>
+
+        {errorParam === "trop_tot" && (
+          <Section className="pb-0 pt-4">
+            <Container>
+              <div
+                role="alert"
+                className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800"
+              >
+                <span className="mt-px shrink-0 text-red-400">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                </span>
+                <div>
+                  <p className="font-semibold">Réservation impossible</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-red-700">
+                    Les réservations doivent être effectuées au minimum 24h à l&apos;avance.
+                    Veuillez choisir un créneau ultérieur ou{" "}
+                    <a href="/contact" className="underline hover:text-red-900">contacter le cabinet</a>.
+                  </p>
+                </div>
+              </div>
+            </Container>
+          </Section>
+        )}
 
         <Section className="border-t border-taupe-300/30 pt-0">
           <Container>

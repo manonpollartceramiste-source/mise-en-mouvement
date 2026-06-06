@@ -9,6 +9,7 @@ import {
   isCoachAllowed,
   type Offer,
 } from "@/lib/content/offers";
+import { isWithinMinNotice, MIN_NOTICE_HOURS } from "@/lib/utils/booking-rules";
 
 type Props = {
   coaches: Coach[];
@@ -222,6 +223,8 @@ function CalcomEmbed({
   coachId: string;
   offerId: string;
 }) {
+  const [tooSoon, setTooSoon] = useState(false);
+
   // Refs keep latest coach/offer values accessible inside the stable listener
   const coachIdRef = useRef(coachId);
   const offerIdRef = useRef(offerId);
@@ -235,6 +238,13 @@ function CalcomEmbed({
 
     const handleBooking = (e: EmbedEvent<"bookingSuccessfulV2">) => {
       const { uid, startTime } = e.detail.data;
+
+      // Garde de sécurité : bloquer si le créneau est dans moins de 24h
+      if (isWithinMinNotice(startTime)) {
+        setTooSoon(true);
+        return;
+      }
+
       const p = new URLSearchParams();
       if (coachIdRef.current) p.set("coach", coachIdRef.current);
       if (offerIdRef.current) p.set("offre", offerIdRef.current);
@@ -271,12 +281,50 @@ function CalcomEmbed({
   const { calLink, calOrigin } = extractCalInfo(coach.calcomUrl);
 
   return (
-    <div className="mt-6 overflow-hidden rounded-2xl border border-taupe-300/40 bg-sand-50">
-      <Cal
-        calLink={calLink}
-        calOrigin={calOrigin}
-        style={{ width: "100%", minHeight: "640px" }}
-      />
+    <div className="mt-6 space-y-3">
+      {/* Notice permanente préavis minimum */}
+      <div className="flex items-start gap-3 rounded-xl border border-taupe-300/40 bg-sand-100/60 px-4 py-3 text-xs text-taupe-600">
+        <span className="mt-px shrink-0 text-taupe-400">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </span>
+        <span>
+          Les réservations doivent être effectuées au minimum{" "}
+          <strong className="font-semibold text-taupe-700">{MIN_NOTICE_HOURS}h à l&apos;avance.</strong>
+          {" "}Les créneaux disponibles dans le calendrier respectent cette règle.
+        </span>
+      </div>
+
+      {/* Erreur si créneau trop proche (garde de sécurité) */}
+      {tooSoon && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800"
+        >
+          <span className="mt-px shrink-0 text-red-400">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </span>
+          <div>
+            <p className="font-semibold">Réservation impossible</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-red-700">
+              Les réservations doivent être effectuées au minimum {MIN_NOTICE_HOURS}h à l&apos;avance.
+              Veuillez choisir un créneau ultérieur ou{" "}
+              <a href="/contact" className="underline hover:text-red-900">contacter le cabinet</a>.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-2xl border border-taupe-300/40 bg-sand-50">
+        <Cal
+          calLink={calLink}
+          calOrigin={calOrigin}
+          style={{ width: "100%", minHeight: "640px" }}
+        />
+      </div>
     </div>
   );
 }
