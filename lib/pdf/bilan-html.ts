@@ -552,34 +552,34 @@ body{
 
 /* ── FEUILLE DE ROUTE (page 3, élément principal) ── */
 .roadmap{
-  background:#1E1812;border-radius:7pt;
-  padding:7pt 12pt 7pt;
-  border-left:3pt solid #B8956A;
-  border-top:0.5pt solid rgba(184,149,106,0.2);
-  border-right:0.5pt solid rgba(184,149,106,0.2);
-  border-bottom:0.5pt solid rgba(184,149,106,0.2);
+  background:#FDFCF9;
+  border-radius:8pt;
+  padding:10pt 14pt 12pt;
+  border:0.5pt solid rgba(184,149,106,0.28);
+  border-left:2.5pt solid #B8956A;
   flex-shrink:0;
 }
-.roadmap .sec-lbl{color:rgba(184,149,106,0.85)}
-.roadmap .sec-rule{background:linear-gradient(90deg,rgba(184,149,106,0.4),transparent)}
 .roadmap-meta{
-  display:flex;gap:0;padding:4pt 0;
-  border-bottom:0.5pt solid rgba(184,149,106,0.18);
+  display:flex;gap:0;padding:6pt 0;
+  border-bottom:0.4pt solid rgba(184,149,106,0.2);
 }
-.roadmap-meta-item{flex:1;padding:0 10pt}
+.roadmap-meta-item{flex:1;padding:0 12pt}
 .roadmap-meta-item:first-child{padding-left:0}
-.roadmap-meta-item+.roadmap-meta-item{border-left:0.5pt solid rgba(184,149,106,0.18)}
-.roadmap-meta-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1.5pt}
-.roadmap-meta-val{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:#E8D5A8;line-height:1.2}
-.roadmap-proj{padding:4pt 0;border-bottom:0.5pt solid rgba(184,149,106,0.18)}
-.roadmap-proj-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3pt}
+.roadmap-meta-item+.roadmap-meta-item{border-left:0.4pt solid rgba(184,149,106,0.2)}
+.roadmap-meta-lbl{font-size:9px;font-weight:700;color:#A89070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2pt}
+.roadmap-meta-val{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:#1A1410;line-height:1.25}
+.roadmap-proj{padding:6pt 0;border-bottom:0.4pt solid rgba(184,149,106,0.2)}
+.roadmap-proj-lbl{font-size:9px;font-weight:700;color:#A89070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4pt}
 .roadmap-bullets{display:flex;flex-direction:column}
-.roadmap-bullet{display:flex;align-items:baseline;gap:5pt;padding:1.5pt 0}
+.roadmap-bullet{display:flex;align-items:baseline;gap:6pt;padding:2pt 0}
 .roadmap-bullet-dot{font-size:5.5px;color:#B8956A;flex-shrink:0;line-height:1}
-.roadmap-bullet-text{font-size:12.5px;color:#D0C4B8;line-height:1.35}
-.roadmap-action{padding-top:4pt}
-.roadmap-action-lbl{font-size:9px;font-weight:700;color:rgba(184,149,106,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1.5pt}
-.roadmap-action-val{font-size:13px;font-weight:500;color:#E8DDD0;line-height:1.4;font-style:italic}
+.roadmap-bullet-text{font-size:13px;color:#3E3028;line-height:1.45}
+.roadmap-action{padding-top:6pt}
+.roadmap-action-lbl{font-size:9px;font-weight:700;color:#A89070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2pt}
+.roadmap-action-val{
+  font-size:13px;font-weight:500;color:#5A4A38;line-height:1.45;font-style:italic;
+  padding:4pt 0 2pt 10pt;border-left:2pt solid rgba(184,149,106,0.4);
+}
 
 /* ── POURQUOI CES AXES (page 3) ── */
 .why-grid{display:flex;gap:8pt;margin-top:4pt}
@@ -601,6 +601,38 @@ body{
 .closing-contact{font-size:13px;color:#B8A898;margin-top:1pt}
 .closing-conf{font-size:11.5px;color:#C4B8A8;letter-spacing:0.5px;text-transform:uppercase;margin-top:2pt}
 
+/* ── TRAJECTOIRE (page 3) ── */
+.traj-timeline{display:flex;flex-direction:column;margin-top:6pt}
+.traj-item{display:flex;gap:10pt}
+.traj-left{display:flex;flex-direction:column;align-items:center;width:10pt;flex-shrink:0}
+.traj-dot{
+  width:9pt;height:9pt;border-radius:50%;
+  background:#F5EFE5;border:0.8pt solid #C4A87A;
+  flex-shrink:0;margin-top:1pt;
+}
+.traj-vline{flex:1;width:0.5pt;background:#DDD5C8;min-height:8pt;margin:2pt 0}
+.traj-right{padding-bottom:8pt}
+.traj-label{
+  font-size:10.5px;font-weight:700;color:#B8956A;
+  letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1.5pt;
+}
+.traj-desc{font-size:13px;color:#5A4A3A;line-height:1.45}
+
+/* ── CITATION PREMIUM (page 3) ── */
+.p3-quote-wrap{
+  display:flex;flex-direction:column;align-items:center;
+  gap:9pt;flex-shrink:0;padding:4pt 0;
+}
+.p3-hr{
+  width:40%;height:0.4pt;
+  background:linear-gradient(90deg,transparent,#DDD5C8 30%,#DDD5C8 70%,transparent);
+}
+.p3-quote{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:20px;font-weight:400;font-style:italic;
+  color:#B0A090;line-height:1.70;text-align:center;max-width:78%;
+}
+
 /* ── PAGE 4 : CARTOGRAPHIE CORPORELLE ── */
 .p4-body{
   flex:1;display:flex;flex-direction:column;
@@ -619,9 +651,12 @@ body{
   border-top:0.5pt solid rgba(184,149,106,0.22);
   border-bottom:0.5pt solid rgba(184,149,106,0.22);
 }
-.p4-legend-item{display:flex;align-items:center;gap:7pt;font-size:11.5px;color:#5A4A3A}
-.p4-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.p4-info{display:flex;gap:4mm;flex:1;min-height:0;align-items:stretch}
+.p4-legend-item{display:flex;align-items:flex-start;gap:7pt}
+.p4-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:2pt}
+.p4-legend-item-txt{display:flex;flex-direction:column;gap:1.5pt}
+.p4-legend-name{font-size:11.5px;color:#5A4A3A;font-weight:500}
+.p4-legend-count{font-size:9.5px;color:#A89070;font-style:italic}
+.p4-info{display:flex;gap:4mm;flex:0 0 auto;align-items:flex-start}
 .p4-analyse{
   flex:1;background:#FDFCF9;border-radius:6pt;
   padding:9pt 12pt;border:0.5pt solid rgba(184,149,106,0.2);
@@ -1307,6 +1342,43 @@ function renderProjectionEditorial(priorities: string[], concreteGoal: string | 
   </div>`;
 }
 
+// ─── Trajectoire (page 3) ────────────────────────────────────────────────────
+
+function renderTrajectoire(): string {
+  const steps = [
+    { label: "Aujourd'hui", desc: "Point de départ" },
+    { label: "6 semaines",  desc: "Premiers gains de mobilité et de confort" },
+    { label: "3 mois",      desc: "Amélioration durable des capacités physiques" },
+    { label: "6 mois",      desc: "Consolidation des acquis et progression continue" },
+  ];
+
+  const items = steps.map((s, i) => `<div class="traj-item">
+    <div class="traj-left">
+      <div class="traj-dot"></div>
+      ${i < steps.length - 1 ? '<div class="traj-vline"></div>' : ""}
+    </div>
+    <div class="traj-right">
+      <div class="traj-label">${esc(s.label)}</div>
+      <div class="traj-desc">${esc(s.desc)}</div>
+    </div>
+  </div>`).join("");
+
+  return `<div class="p3-section">
+    ${sec("Votre trajectoire")}
+    <div class="traj-timeline">${items}</div>
+  </div>`;
+}
+
+// ─── Citation premium (page 3) ───────────────────────────────────────────────
+
+function renderQuotePremium(): string {
+  return `<div class="p3-quote-wrap">
+    <div class="p3-hr"></div>
+    <div class="p3-quote">« Le mouvement est le premier outil de santé que nous possédons. »</div>
+    <div class="p3-hr"></div>
+  </div>`;
+}
+
 // ─── Closing ──────────────────────────────────────────────────────────────────
 
 function renderClosing(d: BilanPdfData): string {
@@ -1410,62 +1482,74 @@ function bodyMapAnalysis(d: BilanPdfData): string {
 function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): string {
   const zones = (d.zonePriorities ?? {}) as Record<string, string>;
 
-  // Zone color helper — fills only (no stroke), semi-transparent
-  const zc = (key: string): { fill: string; opacity: number } => {
+  // Zone color helper
+  const zc = (key: string): { fill: string; opacity: number; strokeOpacity: number } => {
     const v = zones[key];
-    if (v === "forte")        return { fill: "#8B5A30", opacity: 0.42 };
-    if (v === "ameliorer")    return { fill: "#B89660", opacity: 0.38 };
-    if (v === "surveillance") return { fill: "#C8B888", opacity: 0.32 };
-    return                           { fill: "none",   opacity: 0    };
+    if (v === "forte")        return { fill: "#5E2A0E", opacity: 0.90, strokeOpacity: 0.96 };
+    if (v === "ameliorer")    return { fill: "#7A4A18", opacity: 0.85, strokeOpacity: 0.92 };
+    if (v === "surveillance") return { fill: "#8E6B28", opacity: 0.75, strokeOpacity: 0.82 };
+    return                           { fill: "none",   opacity: 0,    strokeOpacity: 0    };
   };
 
-  // Ellipse overlay on the 1536×1024 image coordinate system
-  const zo = (key: string, cx: number, cy: number, rx: number, ry: number): string => {
-    const { fill, opacity } = zc(key);
+  // ── Centres calibrés visuellement via outil de calibration (1536×1024)
+  // FC=492 · BC=1026 — dérivés du point médian des paires symétriques calibrées
+  const FC = 492;   // centre figure face (calibré)
+  const BC = 1026;  // centre figure dos  (calibré)
+
+  // Halo relatif au centre du groupe SVG (cx = offset depuis FC ou BC)
+  const zr = (key: string, cx: number, cy: number, rx: number, ry: number): string => {
+    const { fill, opacity, strokeOpacity } = zc(key);
     if (fill === "none") return "";
-    return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill}" fill-opacity="${opacity}"/>`;
+    const haloOp = +(opacity * 0.42).toFixed(2);
+    return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill}" fill-opacity="${opacity}"/>
+<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill}" fill-opacity="${haloOp}" filter="url(#zone-halo)"/>
+<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="${fill}" stroke-opacity="${strokeOpacity}" stroke-width="2.5" filter="url(#zone-organic)"/>`;
   };
 
-  // ── Zone overlays — coordonnées calées sur body-map.png (1536×1024)
-  // Image : vue face (gauche, centre x≈375) · vue dos (droite, centre x≈1155)
-  // Hauteur figure : y≈50 → y≈975 (925 px)
+  // ── Coordonnées calibrées visuellement — clics directs sur l'image anatomique
+  // Pour ajuster : modifier FC/BC pour déplacer toute une vue,
+  //               ou modifier l'offset cx/cy d'une zone individuelle.
   const zonesSvg = `
-    <!-- VUE FACE — figure gauche, centre x≈375 -->
-    ${zo("cervicales",        375, 175,  50,  38)}
-    ${zo("epaules",           215, 218,  65,  50)}
-    ${zo("epaules",           535, 218,  65,  50)}
-    ${zo("pectoraux",         375, 295, 110,  85)}
-    ${zo("sangle_abdominale", 375, 415,  80,  85)}
-    ${zo("bassin",            375, 495, 115,  52)}
-    ${zo("hanches",           245, 535,  65,  65)}
-    ${zo("hanches",           505, 535,  65,  65)}
-    ${zo("quadriceps",        295, 668,  62, 118)}
-    ${zo("quadriceps",        455, 668,  62, 118)}
-    ${zo("genoux",            293, 782,  53,  42)}
-    ${zo("genoux",            457, 782,  53,  42)}
-    ${zo("chevilles",         288, 920,  42,  28)}
-    ${zo("chevilles",         462, 920,  42,  28)}
-    ${zo("pieds",             275, 963,  65,  30)}
-    ${zo("pieds",             475, 963,  65,  30)}
-    <!-- VUE DOS — figure droite, centre x≈1155 -->
-    ${zo("cervicales",        1155, 175,  50,  38)}
-    ${zo("epaules",            975, 218,  65,  50)}
-    ${zo("epaules",           1335, 218,  65,  50)}
-    ${zo("dos_haut",          1155, 268, 165,  90)}
-    ${zo("grand_dorsal",      1155, 405, 120,  98)}
-    ${zo("lombaires",         1155, 498,  90,  44)}
-    ${zo("fessiers",          1082, 555,  75,  85)}
-    ${zo("fessiers",          1228, 555,  75,  85)}
-    ${zo("ischio_jambiers",   1075, 668,  62, 118)}
-    ${zo("ischio_jambiers",   1235, 668,  62, 118)}
-    ${zo("genoux",            1072, 782,  53,  42)}
-    ${zo("genoux",            1238, 782,  53,  42)}
-    ${zo("mollets",           1068, 858,  48,  64)}
-    ${zo("mollets",           1242, 858,  48,  64)}
-    ${zo("chevilles",         1063, 920,  42,  28)}
-    ${zo("chevilles",         1247, 920,  42,  28)}
-    ${zo("pieds",             1050, 963,  65,  30)}
-    ${zo("pieds",             1260, 963,  65,  30)}`;
+    <!-- ═══ VUE FACE — translate(${FC}, 0) ═══ -->
+    <g transform="translate(${FC}, 0)">
+      ${zr("cervicales",         -1,  157,  20, 16)}
+      ${zr("epaules",           +80,  212,  36, 28)}
+      ${zr("epaules",           -82,  214,  36, 28)}
+      ${zr("pectoraux",           0,  270,  62, 52)}
+      ${zr("sangle_abdominale",   0,  340,  52, 55)}
+      ${zr("bassin",              0,  400,  65, 24)}
+      ${zr("hanches",           +61,  419,  38, 38)}
+      ${zr("hanches",           -58,  425,  38, 38)}
+      ${zr("quadriceps",        +45,  511,  34, 85)}
+      ${zr("quadriceps",        -48,  523,  34, 85)}
+      ${zr("genoux",            +50,  621,  30, 25)}
+      ${zr("genoux",            -52,  625,  30, 25)}
+      ${zr("chevilles",         +47,  826,  18, 15)}
+      ${zr("chevilles",         -43,  829,  18, 15)}
+      ${zr("pieds",             +47,  868,  40, 15)}
+      ${zr("pieds",             -43,  868,  40, 15)}
+    </g>
+    <!-- ═══ VUE DOS — translate(${BC}, 0) ═══ -->
+    <g transform="translate(${BC}, 0)">
+      ${zr("cervicales",         +1,  152,  20, 16)}
+      ${zr("epaules",           -73,  215,  32, 28)}
+      ${zr("epaules",           +69,  214,  32, 28)}
+      ${zr("dos_haut",           -2,  219, 118, 65)}
+      ${zr("grand_dorsal",       -2,  308,  92, 75)}
+      ${zr("lombaires",          -2,  382,  48, 24)}
+      ${zr("fessiers",          -43,  440,  50, 60)}
+      ${zr("fessiers",          +45,  439,  50, 60)}
+      ${zr("ischio_jambiers",   -54,  544,  34, 85)}
+      ${zr("ischio_jambiers",   +49,  545,  34, 85)}
+      ${zr("genoux",            -53,  646,  30, 25)}
+      ${zr("genoux",            +55,  645,  30, 25)}
+      ${zr("mollets",           -58,  717,  20, 50)}
+      ${zr("mollets",           +57,  712,  20, 50)}
+      ${zr("chevilles",         -45,  837,  18, 15)}
+      ${zr("chevilles",         +49,  835,  18, 15)}
+      ${zr("pieds",             -45,  876,  40, 15)}
+      ${zr("pieds",             +49,  876,  40, 15)}
+    </g>`;
 
   // Axes prioritaires — classés par priorité décroissante
   const forteKeys     = Object.entries(zones).filter(([, v]) => v === "forte").map(([k]) => k);
@@ -1503,25 +1587,47 @@ function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): strin
       <div class="p4-subtitle">Visualisation des zones nécessitant une attention particulière afin d'optimiser votre mobilité et votre qualité de mouvement.</div>
     </div>
     <div class="p4-bodymap">
-      <div class="p4-bodymap-wrap">
+      ${d.bodyMapUrl
+        ? `<div class="p4-bodymap-wrap">
         <img class="p4-bodymap-img" src="${esc(d.bodyMapUrl)}" alt="Cartographie corporelle"/>
         <svg class="p4-bodymap-svg" viewBox="0 0 1536 1024" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="zone-halo" x="-25%" y="-25%" width="150%" height="150%">
+              <feGaussianBlur stdDeviation="5"/>
+            </filter>
+            <filter id="zone-organic" x="-15%" y="-15%" width="130%" height="130%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="5" result="noise"/>
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+          </defs>
           ${zonesSvg}
         </svg>
-      </div>
+      </div>`
+        : `<div style="background:#b00;color:#fff;font-size:14px;font-weight:700;padding:18px 24px;border-radius:4px;letter-spacing:0.5px;">
+        ⚠ BODY-MAP NON CHARGÉ — vérifier body-map.png dans public/pdf-assets/
+      </div>`}
     </div>
     <div class="p4-legend">
       <div class="p4-legend-item">
-        <div class="p4-legend-dot" style="background:#C8B888;border:0.5pt solid #B0A070"></div>
-        <span>Surveillance</span>
+        <div class="p4-legend-dot" style="background:#8E6B28;border:0.5pt solid #7A5820"></div>
+        <div class="p4-legend-item-txt">
+          <span class="p4-legend-name">Surveillance</span>
+          ${survKeys.length > 0 ? `<span class="p4-legend-count">${survKeys.length} zone${survKeys.length > 1 ? "s" : ""}</span>` : ""}
+        </div>
       </div>
       <div class="p4-legend-item">
-        <div class="p4-legend-dot" style="background:#B89660;border:0.5pt solid #9A7A40"></div>
-        <span>À améliorer</span>
+        <div class="p4-legend-dot" style="background:#7A4A18;border:0.5pt solid #663C10"></div>
+        <div class="p4-legend-item-txt">
+          <span class="p4-legend-name">À améliorer</span>
+          ${ameliorerKeys.length > 0 ? `<span class="p4-legend-count">${ameliorerKeys.length} zone${ameliorerKeys.length > 1 ? "s" : ""}</span>` : ""}
+        </div>
       </div>
       <div class="p4-legend-item">
-        <div class="p4-legend-dot" style="background:#8B5A30;border:0.5pt solid #7A4820"></div>
-        <span>Priorité de travail</span>
+        <div class="p4-legend-dot" style="background:#5E2A0E;border:0.5pt solid #4A2008"></div>
+        <div class="p4-legend-item-txt">
+          <span class="p4-legend-name">Priorité de travail</span>
+          ${forteKeys.length > 0 ? `<span class="p4-legend-count">${forteKeys.length} zone${forteKeys.length > 1 ? "s" : ""}</span>` : ""}
+        </div>
       </div>
     </div>
     <div class="p4-info">
@@ -1532,6 +1638,7 @@ function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): strin
       ${axesHtml}
     </div>
   </div>
+  ${renderClosing(d)}
   ${renderFooter2(d.cabinetName, `Page ${totalPages} / ${totalPages}`)}
 </div>`;
 }
@@ -1614,8 +1721,9 @@ export function generateBilanHtml(
     ${hasWhyAxes ? renderWhyAxes(d.axes) : ""}
     ${hasComp ? renderComposition(d.bodyComposition!) : ""}
     ${hasRec  ? renderRecommandations(d.activeRec ?? [], d.axes, d.tests) : ""}
+    ${renderTrajectoire()}
+    ${renderQuotePremium()}
   </div>
-  ${renderClosing(d)}
   ${renderFooter2(d.cabinetName, `Page 3 / ${totalPages}`)}
 </div>`;
 

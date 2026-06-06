@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { getOsProfileWithRole, getAssessmentById, getProfileById } from "@/lib/supabase/os-server";
 import { loadSettings } from "@/lib/content/settings.server";
@@ -7,18 +7,37 @@ import { generateBilanHtml, type BilanPdfData } from "@/lib/pdf/bilan-html";
 import type { AssessmentTestEntry } from "@/lib/os/types";
 import QRCode from "qrcode";
 
-// body-map.png lue depuis le disque et encodée en base64 au démarrage du module.
-// Nécessaire car page.setContent() ne résout pas les URL http:// — seules les data URLs fonctionnent.
-function loadBodyMapDataUrl(): string {
+// body-map.png encodée en base64 pour injection directe dans le HTML (page.setContent ne résout pas les URL http://).
+// Couche 1 : filesystem (dev local + Vercel si outputFileTracingIncludes configuré)
+// Couche 2 : HTTP fetch depuis la même origine (fallback Vercel)
+async function getBodyMapDataUrl(baseUrl: string): Promise<string> {
+  const fsPath = join(process.cwd(), "public", "pdf-assets", "body-map.png");
   try {
-    const buf = readFileSync(join(process.cwd(), "public", "pdf-assets", "body-map.png"));
-    return `data:image/png;base64,${buf.toString("base64")}`;
-  } catch {
-    console.warn("[PDF] body-map.png introuvable — image anatomique absente");
-    return "";
+    if (existsSync(fsPath)) {
+      const buf = readFileSync(fsPath);
+      console.log(`[PDF] ✓ body-map.png — filesystem — ${buf.length} bytes`);
+      return `data:image/png;base64,${buf.toString("base64")}`;
+    }
+    console.warn(`[PDF] body-map.png absent du filesystem (${fsPath}) — essai HTTP`);
+  } catch (e) {
+    console.warn("[PDF] body-map.png filesystem error:", e);
   }
+
+  try {
+    const url = `${baseUrl}/pdf-assets/body-map.png`;
+    console.log(`[PDF] Fetch body-map.png: ${url}`);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    console.log(`[PDF] ✓ body-map.png — HTTP — ${buf.length} bytes`);
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch (e) {
+    console.error("[PDF] ❌ body-map.png HTTP fetch échoué:", e);
+  }
+
+  console.error("[PDF] ❌ body-map.png introuvable — image anatomique ABSENTE du PDF");
+  return "";
 }
-const BODY_MAP_DATA_URL = loadBodyMapDataUrl();
 
 // ─── Route config ─────────────────────────────────────────────────────────────
 
@@ -59,7 +78,7 @@ const TESTS = [
 
 // ─── Data assembly ────────────────────────────────────────────────────────────
 
-async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: string } | { error: string } | null> {
+async function buildBilanData(id: string, baseUrl: string): Promise<{ data: BilanPdfData; slug: string } | { error: string } | null> {
   console.log(`[PDF] buildBilanData — assessmentId="${id}"`);
 
   const coachProfile = await getOsProfileWithRole("coach");
@@ -91,7 +110,6 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
   const clientName = clientProfile?.display_name ?? "Client";
 
   const cabinetName = settings.companyName || "Cabinet";
-  const baseUrl     = process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 
   // Make logo URL absolute so Playwright can fetch it
   const rawLogo        = images?.logo && images.logo.length > 0 ? images.logo : null;
@@ -143,7 +161,7 @@ async function buildBilanData(id: string): Promise<{ data: BilanPdfData; slug: s
     clientName,
     sexe: (assessment.sexe as "femme" | "homme" | null | undefined) ?? null,
     age:  (assessment.age as number | null | undefined) ?? null,
-    cabinetName, logoSrc, hasCustomLogo, bodyMapUrl: BODY_MAP_DATA_URL,
+    cabinetName, logoSrc, hasCustomLogo, bodyMapUrl: await getBodyMapDataUrl(baseUrl),
     contactLine, addressLine, dateStr,
     total, axes,
     activeLim, activeRec,
@@ -285,10 +303,12 @@ export async function GET(
   const url = new URL(_req.url);
   const isPreview  = url.searchParams.get("preview") === "1";
   const pdfMode    = url.searchParams.get("mode") === "client" ? "client" : "coach";
+  const baseUrl    = process.env.NEXT_PUBLIC_URL ?? `${url.protocol}//${url.host}`;
+  console.log(`[PDF] baseUrl="${baseUrl}"`);
 
   let result: Awaited<ReturnType<typeof buildBilanData>>;
   try {
-    result = await buildBilanData(id);
+    result = await buildBilanData(id, baseUrl);
   } catch (err) {
     console.error("[PDF] ❌ buildBilanData exception:", err);
     const msg = "Erreur interne lors de la récupération du bilan.";

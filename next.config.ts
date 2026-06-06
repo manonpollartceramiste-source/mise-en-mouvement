@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
     },
   },
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium-min"],
+  outputFileTracingIncludes: {
+    // Bundle body-map.png with the PDF API route so readFileSync works on Vercel
+    "/api/pdf/bilan/[id]": ["./public/pdf-assets/body-map.png"],
+  },
 };
 
 export default nextConfig;
