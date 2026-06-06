@@ -165,7 +165,6 @@ export type MovementAssessment = {
   pain_zones: string | null;
   mobility_score: number | null;
   stability_score: number | null;
-  strength_score: number | null;
   posture_score: number | null;
   coordination_score: number | null;
   movement_tests: Record<string, AssessmentTestEntry> | null;

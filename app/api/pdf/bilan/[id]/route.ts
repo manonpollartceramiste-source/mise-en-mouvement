@@ -129,7 +129,6 @@ async function buildBilanData(id: string, baseUrl: string): Promise<{ data: Bila
   const axes = [
     { label: "Mobilité",     value: assessment.mobility_score     ?? 0, max: 20 },
     { label: "Stabilité",    value: assessment.stability_score    ?? 0, max: 20 },
-    { label: "Force",        value: assessment.strength_score     ?? 0, max: 20 },
     { label: "Posture",      value: assessment.posture_score      ?? 0, max: 20 },
     { label: "Coordination", value: assessment.coordination_score ?? 0, max: 20 },
   ];

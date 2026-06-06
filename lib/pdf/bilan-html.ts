@@ -74,7 +74,7 @@ function formatName(name: string): string {
 }
 
 function scoreColor(s: number): string {
-  return s >= 80 ? "#2E7D52" : s >= 60 ? "#B8956A" : s >= 40 ? "#C47040" : "#B84444";
+  return s >= 64 ? "#2E7D52" : s >= 48 ? "#B8956A" : s >= 32 ? "#C47040" : "#B84444";
 }
 
 function barColor(pct: number): string {
@@ -98,12 +98,12 @@ function axisInterp(value: number): { label: string; color: string } {
 }
 
 // ─── Niveaux de profil (5 paliers, toujours valorisants) ─────────────────────
-// Calculé depuis le total /100. Modifier minScore pour ajuster les paliers.
+// Calculé depuis le total /80. Modifier minScore pour ajuster les paliers.
 const PROFILE_LEVELS: Array<{ minScore: number; label: string; desc: string; color: string }> = [
-  { minScore: 90, label: "Performant",    desc: "Un profil remarquable, construit par une pratique régulière.",                              color: "#2E7D52" },
-  { minScore: 75, label: "Solide",        desc: "Vos bases sont solides. Le programme va vous permettre d'aller encore plus loin.",           color: "#3E8A68" },
-  { minScore: 60, label: "Bien engagé",   desc: "Votre corps répond bien. Quelques axes à optimiser pour gagner en confort et en efficacité.", color: "#B8956A" },
-  { minScore: 40, label: "En progression", desc: "Vous avez de belles marges de progression devant vous. C'est exactement là que le travail fait la différence.", color: "#C47040" },
+  { minScore: 72, label: "Performant",    desc: "Un profil remarquable, construit par une pratique régulière.",                              color: "#2E7D52" },
+  { minScore: 60, label: "Solide",        desc: "Vos bases sont solides. Le programme va vous permettre d'aller encore plus loin.",           color: "#3E8A68" },
+  { minScore: 48, label: "Bien engagé",   desc: "Votre corps répond bien. Quelques axes à optimiser pour gagner en confort et en efficacité.", color: "#B8956A" },
+  { minScore: 32, label: "En progression", desc: "Vous avez de belles marges de progression devant vous. C'est exactement là que le travail fait la différence.", color: "#C47040" },
   { minScore: 0,  label: "À développer",  desc: "Un beau chemin s'ouvre devant vous. Chaque séance vous rapprochera d'un meilleur confort au quotidien.", color: "#B8956A" },
 ];
 
@@ -115,7 +115,6 @@ function profileLevel(total: number): typeof PROFILE_LEVELS[0] {
 const WHY_AXES_TEXT: Record<string, string> = {
   "mobilité":     "Gagner en mobilité facilite les gestes du quotidien et réduit les tensions articulaires persistantes.",
   "stabilité":    "Un meilleur contrôle postural protège vos articulations et élimine les compensations musculaires.",
-  "force":        "La force fonctionnelle rend les efforts du quotidien plus faciles et prévient les blessures.",
   "posture":      "Rééquilibrer la posture soulage les douleurs du dos, des épaules et de la nuque.",
   "coordination": "Des mouvements plus fluides et sécurisés réduisent le risque de blessure dans toutes vos activités.",
 };
@@ -124,7 +123,6 @@ const WHY_AXES_TEXT: Record<string, string> = {
 const AXIS_PROJECTIONS: Record<string, string> = {
   "mobilité":     "Amélioration de votre amplitude articulaire et réduction des raideurs quotidiennes",
   "stabilité":    "Meilleur contrôle postural et réduction des compensations musculaires",
-  "force":        "Développement d'une force fonctionnelle adaptée à votre quotidien",
   "posture":      "Rééquilibrage musculaire et soulagement des tensions chroniques",
   "coordination": "Mouvements plus fluides et sécurisés dans toutes vos activités",
 };
@@ -138,10 +136,10 @@ function sec(label: string): string {
 function gaugeLarge(score: number): string {
   const cx = 58, cy = 58, R = 48;
   const circ = 2 * Math.PI * R;
-  const fill = (circ * Math.min(score, 100) / 100).toFixed(2);
+  const fill = (circ * Math.min(score, 80) / 80).toFixed(2);
   const gap  = (circ - parseFloat(fill)).toFixed(2);
   const col  = scoreColor(score);
-  const val  = (score / 10).toFixed(1).replace(".", ",");
+  const val  = (score / 8).toFixed(1).replace(".", ",");
   return `<svg width="116" height="116" viewBox="0 0 116 116" xmlns="http://www.w3.org/2000/svg">
     <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="rgba(184,149,106,0.10)" stroke-width="5"/>
     <g transform="rotate(-90,${cx},${cy})">
@@ -686,7 +684,7 @@ body{
 // ─── SVG : radar pentagone ────────────────────────────────────────────────────
 
 const ABBREVS: Record<string, string> = {
-  "mobilité": "MOB.", "stabilité": "STAB.", "force": "FORCE",
+  "mobilité": "MOB.", "stabilité": "STAB.",
   "posture": "POST.", "coordination": "COORD",
 };
 
@@ -1170,20 +1168,20 @@ function renderObservations(d: BilanPdfData): string {
 // ─── Objectif prochain bilan ──────────────────────────────────────────────────
 
 function renderNextBilan(total: number): string {
-  const current   = (total / 10).toFixed(1).replace(".", ",");
-  const targetRaw = Math.min(total + 15, 100);
-  const target    = (targetRaw / 10).toFixed(1).replace(".", ",");
+  const current   = (total / 8).toFixed(1).replace(".", ",");
+  const targetRaw = Math.min(total + 12, 80);
+  const target    = (targetRaw / 8).toFixed(1).replace(".", ",");
   return `<div class="nb">
     ${sec("Objectif du prochain bilan")}
     <div class="nb-row">
       <div class="nb-col">
         <div class="nb-lbl">Score actuel</div>
-        <div class="nb-score" style="color:${scoreColor(total)}">${current}<span class="nb-unit"> /10</span></div>
+        <div class="nb-score" style="color:${scoreColor(total)}">${current}<span class="nb-unit"> /8</span></div>
       </div>
       <div class="nb-arrow">→</div>
       <div class="nb-col">
         <div class="nb-lbl">Objectif</div>
-        <div class="nb-score" style="color:${scoreColor(targetRaw)}">${target}<span class="nb-unit"> /10</span></div>
+        <div class="nb-score" style="color:${scoreColor(targetRaw)}">${target}<span class="nb-unit"> /8</span></div>
       </div>
       <div class="nb-sep"></div>
       <div class="nb-col">
@@ -1198,7 +1196,6 @@ function renderNextBilan(total: number): string {
 
 function renderZones(zonePriorities: NonNullable<BilanPdfData["zonePriorities"]>): string {
   const LABELS: Record<string, string> = {
-    cervicales:        "Ceinture cervicale",
     dos_haut:          "Ceinture scapulaire",
     epaules:           "Épaules",
     pectoraux:         "Pectoraux",
@@ -1399,7 +1396,6 @@ function renderClosing(d: BilanPdfData): string {
 // ─── Page 4 : Cartographie corporelle ────────────────────────────────────────
 
 const ZONE_DISPLAY_LABELS: Record<string, string> = {
-  cervicales:        "Ceinture cervicale",
   dos_haut:          "Ceinture scapulaire",
   epaules:           "Épaules",
   pectoraux:         "Pectoraux",
@@ -1418,7 +1414,6 @@ const ZONE_DISPLAY_LABELS: Record<string, string> = {
 };
 
 const ZONE_MOVEMENT_LABELS: Record<string, string> = {
-  cervicales:        "Mobilité cervicale",
   dos_haut:          "Stabilité scapulaire",
   epaules:           "Amplitude des épaules",
   pectoraux:         "Souplesse pectorale",
@@ -1512,7 +1507,6 @@ function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): strin
   const zonesSvg = `
     <!-- ═══ VUE FACE — translate(${FC}, 0) ═══ -->
     <g transform="translate(${FC}, 0)">
-      ${zr("cervicales",         -1,  157,  20, 16)}
       ${zr("epaules",           +80,  212,  36, 28)}
       ${zr("epaules",           -82,  214,  36, 28)}
       ${zr("pectoraux",           0,  270,  62, 52)}
@@ -1531,7 +1525,6 @@ function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): strin
     </g>
     <!-- ═══ VUE DOS — translate(${BC}, 0) ═══ -->
     <g transform="translate(${BC}, 0)">
-      ${zr("cervicales",         +1,  152,  20, 16)}
       ${zr("epaules",           -73,  215,  32, 28)}
       ${zr("epaules",           +69,  214,  32, 28)}
       ${zr("dos_haut",           -2,  219, 118, 65)}

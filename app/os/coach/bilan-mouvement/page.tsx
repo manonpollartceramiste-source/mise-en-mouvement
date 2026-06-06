@@ -119,13 +119,11 @@ export default async function BilanMouvementPage({
             const total =
               (a.mobility_score ?? 0) +
               (a.stability_score ?? 0) +
-              (a.strength_score ?? 0) +
               (a.posture_score ?? 0) +
               (a.coordination_score ?? 0);
             const hasScores =
               a.mobility_score !== null ||
               a.stability_score !== null ||
-              a.strength_score !== null ||
               a.posture_score !== null ||
               a.coordination_score !== null;
             const date = new Date(a.assessed_at).toLocaleDateString("fr-FR", {
@@ -153,18 +151,17 @@ export default async function BilanMouvementPage({
                         {total}
                       </p>
                       <p className="text-[9px] uppercase tracking-wider text-sand-300">
-                        /100
+                        /80
                       </p>
                     </div>
                   )}
                 </div>
 
                 {hasScores && (
-                  <div className="mb-3 grid grid-cols-5 gap-1">
+                  <div className="mb-3 grid grid-cols-4 gap-1">
                     {[
                       { label: "Mob", value: a.mobility_score },
                       { label: "Stab", value: a.stability_score },
-                      { label: "Force", value: a.strength_score },
                       { label: "Post", value: a.posture_score },
                       { label: "Coord", value: a.coordination_score },
                     ].map(({ label, value }) => (

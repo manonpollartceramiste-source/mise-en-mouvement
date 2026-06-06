@@ -45,7 +45,6 @@ const SEGMENTAL_FIELDS: Array<{ key: keyof MovementAssessment; label: string }> 
 ];
 
 const ZONE_LABELS: Record<string, string> = {
-  cervicales:        "Ceinture cervicale",
   dos_haut:          "Ceinture scapulaire",
   epaules:           "Épaules",
   pectoraux:         "Pectoraux",
@@ -172,14 +171,12 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
   const total =
     (assessment.mobility_score ?? 0) +
     (assessment.stability_score ?? 0) +
-    (assessment.strength_score ?? 0) +
     (assessment.posture_score ?? 0) +
     (assessment.coordination_score ?? 0);
 
   const hasScores =
     assessment.mobility_score !== null ||
     assessment.stability_score !== null ||
-    assessment.strength_score !== null ||
     assessment.posture_score !== null ||
     assessment.coordination_score !== null;
 
@@ -192,11 +189,11 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
     .map(([k]) => LIMITATIONS[k] ?? k);
 
   const totalColor =
-    total >= 80
+    total >= 64
       ? "text-emerald-600"
-      : total >= 60
+      : total >= 48
         ? "text-amber-600"
-        : total >= 40
+        : total >= 32
           ? "text-orange-500"
           : "text-red-500";
 
@@ -263,11 +260,11 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
                 Score global
               </p>
               <p className={`mt-2 text-6xl font-bold ${totalColor}`}>{total}</p>
-              <p className="text-lg text-sand-400">/100</p>
+              <p className="text-lg text-sand-400">/80</p>
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-ink-700">
                 <div
-                  className={`h-full rounded-full ${total >= 80 ? "bg-emerald-400" : total >= 60 ? "bg-amber-400" : "bg-red-400"}`}
-                  style={{ width: `${total}%` }}
+                  className={`h-full rounded-full ${total >= 64 ? "bg-emerald-400" : total >= 48 ? "bg-amber-400" : "bg-red-400"}`}
+                  style={{ width: `${(total / 80) * 100}%` }}
                 />
               </div>
             </div>
@@ -279,7 +276,6 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
               <div className="space-y-3">
                 <ScoreBar label="Mobilité" value={assessment.mobility_score} max={20} />
                 <ScoreBar label="Stabilité" value={assessment.stability_score} max={20} />
-                <ScoreBar label="Force" value={assessment.strength_score} max={20} />
                 <ScoreBar label="Posture" value={assessment.posture_score} max={20} />
                 <ScoreBar label="Coordination" value={assessment.coordination_score} max={20} />
               </div>

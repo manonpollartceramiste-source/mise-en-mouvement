@@ -44,7 +44,6 @@ type FormState = {
   pain_zones: string;
   mobility_score: number | null;
   stability_score: number | null;
-  strength_score: number | null;
   posture_score: number | null;
   coordination_score: number | null;
   movement_tests: Tests;
@@ -124,7 +123,6 @@ type ZonePriority = "forte" | "surveillance" | "ras";
 type ZonePriorityMap = Record<string, ZonePriority>;
 
 const BODY_ZONES = [
-  { key: "cervicales",        label: "Ceinture cervicale" },
   { key: "dos_haut",          label: "Ceinture scapulaire" },
   { key: "epaules",           label: "Épaules" },
   { key: "pectoraux",         label: "Pectoraux" },
@@ -206,12 +204,6 @@ const AXES = [
     desc:    "Gainage, contrôle moteur, équilibre statique et dynamique",
   },
   {
-    key:     "strength_score"     as const,
-    noteKey: "force",
-    label:   "Force",
-    desc:    "Force musculaire fonctionnelle, capacité de résistance à l'effort",
-  },
-  {
     key:     "posture_score"      as const,
     noteKey: "posture",
     label:   "Posture",
@@ -241,23 +233,23 @@ const SECTIONS = [
 // ─── Score helpers ────────────────────────────────────────────
 
 function scoreColor(s: number): string {
-  if (s >= 80) return "text-emerald-600";
-  if (s >= 60) return "text-amber-600";
-  if (s >= 40) return "text-orange-500";
+  if (s >= 64) return "text-emerald-600";
+  if (s >= 48) return "text-amber-600";
+  if (s >= 32) return "text-orange-500";
   return "text-red-500";
 }
 
 function scoreStroke(s: number): string {
-  if (s >= 80) return "#10b981";
-  if (s >= 60) return "#f59e0b";
-  if (s >= 40) return "#f97316";
+  if (s >= 64) return "#10b981";
+  if (s >= 48) return "#f59e0b";
+  if (s >= 32) return "#f97316";
   return "#ef4444";
 }
 
 function scoreLabel(s: number): string {
-  if (s >= 80) return "Excellent";
-  if (s >= 60) return "Bon";
-  if (s >= 40) return "Moyen";
+  if (s >= 64) return "Excellent";
+  if (s >= 48) return "Bon";
+  if (s >= 32) return "Moyen";
   return "À travailler";
 }
 
@@ -266,7 +258,7 @@ function scoreLabel(s: number): string {
 function ScoreGauge({ score, size = 96 }: { score: number; size?: number }) {
   const radius = (size - 12) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - score / 100);
+  const offset = circumference * (1 - score / 80);
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
@@ -289,7 +281,7 @@ function ScoreGauge({ score, size = 96 }: { score: number; size?: number }) {
       </svg>
       <div className="absolute flex flex-col items-center leading-none">
         <span className={`text-xl font-bold tabular-nums ${scoreColor(score)}`}>{score}</span>
-        <span className="text-[10px] text-taupe-400 mt-0.5">/100</span>
+        <span className="text-[10px] text-taupe-400 mt-0.5">/80</span>
       </div>
     </div>
   );
@@ -616,7 +608,6 @@ function assessmentToFormState(a: MovementAssessment): FormState {
     pain_zones:            a.pain_zones ?? "",
     mobility_score:        a.mobility_score,
     stability_score:       a.stability_score,
-    strength_score:        a.strength_score,
     posture_score:         a.posture_score,
     coordination_score:    a.coordination_score,
     movement_tests:        tests as Tests,
@@ -700,7 +691,6 @@ export function BilanForm({
           pain_zones: "",
           mobility_score: null,
           stability_score: null,
-          strength_score: null,
           posture_score: null,
           coordination_score: null,
           movement_tests: initTests(),
@@ -742,7 +732,6 @@ export function BilanForm({
   const totalScore =
     (form.mobility_score ?? 0) +
     (form.stability_score ?? 0) +
-    (form.strength_score ?? 0) +
     (form.posture_score ?? 0) +
     (form.coordination_score ?? 0);
 
@@ -856,7 +845,7 @@ export function BilanForm({
           <div className="ml-auto flex shrink-0 items-center gap-3">
             <div className="flex flex-col items-end">
               <span className={`text-lg font-bold leading-none tabular-nums ${scoreColor(totalScore)}`}>
-                {totalScore}/100
+                {totalScore}/80
               </span>
               <span className="text-[10px] text-taupe-400">{scoreLabel(totalScore)}</span>
             </div>
@@ -1409,13 +1398,13 @@ export function BilanForm({
           <div className="mt-5 flex items-center justify-between rounded-3xl bg-ink-900 px-7 py-5">
             <div>
               <p className="text-sm font-medium text-sand-300">Score total automatique</p>
-              <p className="text-xs text-sand-500">Somme des 5 axes</p>
+              <p className="text-xs text-sand-500">Somme des 4 axes</p>
             </div>
             <div className="flex items-baseline gap-1">
               <span className={`text-5xl font-bold tabular-nums ${scoreColor(totalScore)}`}>
                 {totalScore}
               </span>
-              <span className="text-lg font-normal text-sand-400">/100</span>
+              <span className="text-lg font-normal text-sand-400">/80</span>
             </div>
           </div>
         </div>
@@ -1557,7 +1546,7 @@ export function BilanForm({
             <p className="text-sm text-taupe-500">Score calculé automatiquement</p>
             <p className={`mt-0.5 text-3xl font-bold tabular-nums ${scoreColor(totalScore)}`}>
               {totalScore}
-              <span className="ml-1 text-lg font-normal text-taupe-400">/100</span>
+              <span className="ml-1 text-lg font-normal text-taupe-400">/80</span>
             </p>
             <p className={`text-sm font-semibold ${scoreColor(totalScore)}`}>{scoreLabel(totalScore)}</p>
           </div>
@@ -1589,7 +1578,7 @@ export function BilanForm({
             {isPending ? "Enregistrement…" : "Enregistrer"}
           </span>
           <span className={`rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold tabular-nums ${scoreColor(totalScore)}`}>
-            {totalScore}/100
+            {totalScore}/80
           </span>
         </motion.button>
       </div>
