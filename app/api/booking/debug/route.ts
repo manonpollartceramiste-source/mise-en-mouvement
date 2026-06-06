@@ -23,8 +23,9 @@ export async function GET(_req: NextRequest) {
     .eq("id", user.id)
     .maybeSingle();
 
-  // 2. Raw coaches data from content table
+  // 2. Raw coaches + offers from content table
   const coachesContent = await readContentKey("coaches");
+  const offersContent = await readContentKey("offers");
 
   // 3. ALL bookings for week of 2026-06-08 (no coach filter)
   const { data: allBookingsWeek, error: weekError } = await admin
@@ -67,6 +68,7 @@ export async function GET(_req: NextRequest) {
     },
     profile: profile ?? { error: profileError?.message },
     coaches_from_content_table: coachesContent,
+    offers_from_content_table: offersContent,
     query_used_in_calendar: {
       note: "Le calendrier query avec profile.id = auth.user_id ci-dessus",
       profile_id: user.id,
