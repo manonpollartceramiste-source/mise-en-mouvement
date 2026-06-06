@@ -64,6 +64,7 @@ export const coaches: Coach[] = [
     calcomUrl: "https://app.cal.com/dorian-hbt-tcwe9j",
     sumupUrl: null,
     active: true,
+    osProfileId: "3dbcc116-c5f2-49d7-9d6e-9b616bd0c769",
   },
   {
     id: "gregory",
@@ -82,6 +83,7 @@ export const coaches: Coach[] = [
     calcomUrl: "https://cal.com/gregory-nadal-elgfxj",
     sumupUrl: null,
     active: true,
+    osProfileId: "aaf5d7fe-c59d-4ba2-99e9-4c3452e4f657",
   },
 ];
 

@@ -10,6 +10,7 @@ import {
   type Offer,
 } from "@/lib/content/offers";
 import { isWithinMinNotice, MIN_NOTICE_HOURS } from "@/lib/utils/booking-rules";
+import { NativeSlotPicker } from "./NativeSlotPicker";
 
 type Props = {
   coaches: Coach[];
@@ -148,11 +149,12 @@ export function ReservationFlow({
           <p className="mt-2 text-sm text-taupe-600">
             Sélectionnez la date et l’heure qui vous conviennent.
           </p>
-          <CalcomEmbed
-                coach={selectedCoach}
-                coachId={coachId}
-                offerId={effectiveOfferId}
-              />
+          <SlotSection
+            coach={selectedCoach}
+            coachId={coachId}
+            offer={selectedOffer}
+            offerId={effectiveOfferId}
+          />
         </section>
       </div>
 
@@ -208,6 +210,63 @@ function Row({
   );
 }
 
+// ── Slot section: routes to native or Cal.com ─────────────────────────────
+
+function resolveSumupUrl(offer: Offer | undefined, coach: Coach | undefined): string | null {
+  if (offer && coach) {
+    const link = offer.coachLinks[coach.id];
+    if (link?.sumup) return link.sumup;
+  }
+  return coach?.sumupUrl ?? null;
+}
+
+function SlotSection({
+  coach,
+  coachId,
+  offer,
+  offerId,
+}: {
+  coach: Coach | undefined;
+  coachId: string;
+  offer: Offer | undefined;
+  offerId: string;
+}) {
+  if (!coach) {
+    return (
+      <div className="mt-6 rounded-2xl border border-dashed border-taupe-400/60 bg-sand-100/40 p-8 text-center">
+        <p className="font-serif text-lg text-ink-900">
+          Sélectionnez d&apos;abord votre coach
+        </p>
+        <p className="mt-2 text-sm text-taupe-600">
+          Le calendrier de réservation s&apos;affiche une fois le coach choisi.
+        </p>
+      </div>
+    );
+  }
+
+  // Native booking: if coach has an osProfileId configured
+  if (coach.osProfileId && offer) {
+    return (
+      <NativeSlotPicker
+        coachId={coach.osProfileId}
+        coachName={coach.name}
+        offer={offer}
+        sumupUrl={resolveSumupUrl(offer, coach)}
+        onBack={() => {}} // no-op; user can re-select coach/offer above
+      />
+    );
+  }
+
+  // Fallback: Cal.com embed
+  return (
+    <CalcomEmbed
+      coach={coach}
+      coachId={coachId}
+      offerId={offerId}
+    />
+  );
+}
+
 function extractCalInfo(url: string): { calLink: string; calOrigin: string } {
   const match = url.match(/^(https?:\/\/(?:app\.)?cal\.com)\/(.*)/);
   if (match) return { calLink: match[2], calOrigin: match[1] };
@@ -219,7 +278,7 @@ function CalcomEmbed({
   coachId,
   offerId,
 }: {
-  coach: Coach | undefined;
+  coach: Coach;
   coachId: string;
   offerId: string;
 }) {
@@ -264,19 +323,6 @@ function CalcomEmbed({
       calApi?.("off", { action: "bookingSuccessfulV2", callback: handleBooking });
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!coach) {
-    return (
-      <div className="mt-6 rounded-2xl border border-dashed border-taupe-400/60 bg-sand-100/40 p-8 text-center">
-        <p className="font-serif text-lg text-ink-900">
-          Sélectionnez d&apos;abord votre coach
-        </p>
-        <p className="mt-2 text-sm text-taupe-600">
-          Le calendrier de réservation s&apos;affiche une fois le coach choisi.
-        </p>
-      </div>
-    );
-  }
 
   const { calLink, calOrigin } = extractCalInfo(coach.calcomUrl);
 
