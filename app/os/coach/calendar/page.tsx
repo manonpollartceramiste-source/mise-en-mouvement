@@ -11,6 +11,8 @@ import { loadCoaches } from "@/lib/content/coaches.server";
 import { getCalcomBookingsForCoach } from "@/lib/supabase/calcom-server";
 import type { CalcomBooking } from "@/lib/supabase/calcom-server";
 import type { SessionStatus } from "@/lib/os/types";
+import { getCoachBookings } from "@/lib/supabase/booking.server";
+import type { Booking } from "@/lib/booking/types";
 import { OsShell } from "@/app/os/_components/OsShell";
 import { CalendarClient } from "./CalendarClient";
 
@@ -63,7 +65,7 @@ export default async function CoachCalendarPage({
   const linkedCoach = publicCoaches.find((c) => c.osProfileId === profile.id);
   const calcomUrl = linkedCoach?.calcomUrl ?? profile.calcom_url ?? null;
 
-  const [sessionsRes, clients, calcomRaw] = await Promise.all([
+  const [sessionsRes, clients, calcomRaw, nativeBookings] = await Promise.all([
     (() => {
       const q = supabase
         .from("sessions")
@@ -79,6 +81,9 @@ export default async function CoachCalendarPage({
       : getCalcomBookingsForCoach(profile.id, weekStart, weekEnd).catch(
           () => [] as CalcomBooking[],
         ),
+    isAdmin
+      ? Promise.resolve([] as Booking[])
+      : getCoachBookings(profile.id, weekStart, weekEnd).catch(() => [] as Booking[]),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,6 +129,9 @@ export default async function CoachCalendarPage({
           {calcomSessions.length > 0 && (
             <> · {calcomSessions.length} Cal.com</>
           )}
+          {nativeBookings.length > 0 && (
+            <> · {nativeBookings.length} réservation{nativeBookings.length !== 1 ? "s" : ""} native{nativeBookings.length !== 1 ? "s" : ""}</>
+          )}
         </p>
       </div>
 
@@ -133,6 +141,7 @@ export default async function CoachCalendarPage({
         sessions={sessions}
         clients={clients}
         weekStartISO={weekStartISO}
+        nativeBookings={nativeBookings}
       />
     </OsShell>
   );

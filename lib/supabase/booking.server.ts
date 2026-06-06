@@ -270,3 +270,113 @@ export async function updateBooking(
 
   return result as Booking;
 }
+
+// ─── Availability rule mutations ──────────────────────────────────────────────
+
+export async function createAvailabilityRule(
+  coachId: string,
+  data: {
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+    slot_duration_min?: number;
+  },
+): Promise<AvailabilityRule> {
+  const supabase = getSupabaseAdmin();
+  const { data: result, error } = await supabase
+    .from("coach_availability_rules")
+    .insert({
+      coach_id: coachId,
+      day_of_week: data.day_of_week,
+      start_time: data.start_time,
+      end_time: data.end_time,
+      slot_duration_min: data.slot_duration_min ?? 60,
+      is_active: true,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[booking.server] createAvailabilityRule error:", error.message);
+    throw new Error(error.message);
+  }
+
+  return result as AvailabilityRule;
+}
+
+export async function deleteAvailabilityRule(id: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("coach_availability_rules")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("[booking.server] deleteAvailabilityRule error:", error.message);
+    throw new Error(error.message);
+  }
+}
+
+// ─── Unavailability mutations ─────────────────────────────────────────────────
+
+export async function getAllFutureUnavailabilities(
+  coachId: string,
+): Promise<Unavailability[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("coach_unavailabilities")
+    .select("*")
+    .eq("coach_id", coachId)
+    .gte("ends_at", new Date().toISOString())
+    .order("starts_at");
+
+  if (error) {
+    console.error("[booking.server] getAllFutureUnavailabilities error:", error.message);
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as Unavailability[];
+}
+
+export async function createUnavailability(
+  coachId: string,
+  data: {
+    starts_at: string;
+    ends_at: string;
+    label?: string | null;
+    is_all_day?: boolean;
+  },
+): Promise<Unavailability> {
+  const supabase = getSupabaseAdmin();
+  const { data: result, error } = await supabase
+    .from("coach_unavailabilities")
+    .insert({
+      coach_id: coachId,
+      starts_at: data.starts_at,
+      ends_at: data.ends_at,
+      label: data.label ?? null,
+      is_all_day: data.is_all_day ?? false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[booking.server] createUnavailability error:", error.message);
+    throw new Error(error.message);
+  }
+
+  return result as Unavailability;
+}
+
+export async function deleteUnavailability(id: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("coach_unavailabilities")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("[booking.server] deleteUnavailability error:", error.message);
+    throw new Error(error.message);
+  }
+}

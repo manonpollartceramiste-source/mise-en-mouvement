@@ -17,6 +17,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   coach: [
     { label: "Tableau de bord", href: "/os/coach" },
     { label: "Calendrier", href: "/os/coach/calendar" },
+    { label: "Disponibilités", href: "/os/coach/disponibilites" },
     { label: "Mes clients", href: "/os/coach/clients" },
     { label: "Bilan mouvement", href: "/os/coach/bilan-mouvement" },
     { label: "Paramètres", href: "/os/coach/settings" },

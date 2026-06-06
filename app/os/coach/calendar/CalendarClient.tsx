@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { Profile } from "@/lib/os/types";
 import type { SessionStatus } from "@/lib/os/types";
 import type { SessionWithClient } from "@/lib/supabase/os-server";
+import type { Booking } from "@/lib/booking/types";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
 import {
   createCalendarSessionAction,
   updateCalendarSessionAction,
@@ -47,6 +49,42 @@ const STATUS_CFG: Record<
   no_show: {
     card: "bg-taupe-200 border-taupe-300 text-taupe-600",
     badge: "bg-taupe-100 text-taupe-600 border-taupe-200",
+    dot: "bg-taupe-400",
+    label: "No show",
+  },
+};
+
+const BOOKING_STATUS_CFG: Record<
+  string,
+  { card: string; dot: string; label: string }
+> = {
+  confirmed: {
+    card: "bg-blue-600 border-blue-500 text-white",
+    dot: "bg-blue-300",
+    label: "Confirmée",
+  },
+  pending: {
+    card: "bg-amber-500 border-amber-400 text-white",
+    dot: "bg-amber-200",
+    label: "En attente",
+  },
+  completed: {
+    card: "bg-emerald-700 border-emerald-600 text-white",
+    dot: "bg-emerald-300",
+    label: "Terminée",
+  },
+  cancelled_by_client: {
+    card: "bg-red-50 border-red-200 text-red-700",
+    dot: "bg-red-400",
+    label: "Annulée (client)",
+  },
+  cancelled_by_coach: {
+    card: "bg-red-50 border-red-200 text-red-700",
+    dot: "bg-red-400",
+    label: "Annulée (coach)",
+  },
+  no_show: {
+    card: "bg-taupe-200 border-taupe-300 text-taupe-600",
     dot: "bg-taupe-400",
     label: "No show",
   },
@@ -98,6 +136,15 @@ function sessionTopPx(s: SessionWithClient): number {
 
 function sessionHeightPx(s: SessionWithClient): number {
   return Math.max(HOUR_PX / 4, (s.duration_min / 60) * HOUR_PX);
+}
+
+function bookingTopPx(b: Booking): number {
+  const d = new Date(b.starts_at);
+  return Math.max(0, (d.getHours() - START_HOUR) * HOUR_PX + (d.getMinutes() / 60) * HOUR_PX);
+}
+
+function bookingHeightPx(b: Booking): number {
+  return Math.max(HOUR_PX / 4, (b.duration_min / 60) * HOUR_PX);
 }
 
 function toDatetimeLocal(d: Date): string {
@@ -155,6 +202,7 @@ function checkConflict(
 
 type DropSlot = { day: Date; hour: number; minute: number };
 type CreateSlot = { date: Date; hour: number; minute: number };
+type BookingDetail = Booking & { _type: "booking" };
 
 // ── Motion config ──────────────────────────────────────────────────────────
 
@@ -178,10 +226,12 @@ export function CalendarClient({
   sessions,
   clients,
   weekStartISO,
+  nativeBookings = [],
 }: {
   sessions: SessionWithClient[];
   clients: Profile[];
   weekStartISO: string;
+  nativeBookings?: Booking[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -197,6 +247,36 @@ export function CalendarClient({
   const [dropTarget, setDropTarget] = useState<DropSlot | null>(null);
   const [createSlot, setCreateSlot] = useState<CreateSlot | null>(null);
   const [detailSession, setDetailSession] = useState<SessionWithClient | null>(null);
+  const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
+
+  // Live bookings state (updated via Realtime)
+  const [liveBookings, setLiveBookings] = useState<Booking[]>(nativeBookings);
+
+  useEffect(() => {
+    let mounted = true;
+    const supabase = getSupabaseBrowser();
+    const channel = supabase
+      .channel("calendar-bookings")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        () => {
+          // On any change, refresh the page data
+          if (mounted) router.refresh();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [router]);
+
+  // Sync when server re-renders (router.refresh)
+  useEffect(() => {
+    setLiveBookings(nativeBookings);
+  }, [nativeBookings]);
 
   const displayDays = view === "week" ? days : [selectedDay];
   const cols = displayDays.length;
@@ -211,6 +291,17 @@ export function CalendarClient({
     (day: Date) =>
       sessions.filter((s) => isSameDay(new Date(s.scheduled_at), day)),
     [sessions],
+  );
+
+  const bookingsForDay = useCallback(
+    (day: Date) =>
+      liveBookings.filter(
+        (b) =>
+          isSameDay(new Date(b.starts_at), day) &&
+          b.status !== "cancelled_by_client" &&
+          b.status !== "cancelled_by_coach",
+      ),
+    [liveBookings],
   );
 
   // ── Navigation ─────────────────────────────────────────────────────────
@@ -502,6 +593,37 @@ export function CalendarClient({
                         </div>
                       );
                     })}
+
+                    {/* Native booking cards */}
+                    {bookingsForDay(day).map((b) => {
+                      const cfg = BOOKING_STATUS_CFG[b.status] ?? BOOKING_STATUS_CFG.confirmed;
+                      const top = bookingTopPx(b);
+                      const height = bookingHeightPx(b);
+
+                      return (
+                        <div
+                          key={`booking-${b.id}`}
+                          onClick={() => setDetailBooking(b)}
+                          className={`absolute left-0.5 right-0.5 z-10 overflow-hidden rounded-lg border px-1.5 py-1 transition-all select-none cursor-pointer hover:z-20 hover:shadow-lg hover:-translate-y-px hover:scale-[1.01] ${cfg.card}`}
+                          style={{ top, height, marginLeft: "1px" }}
+                          title={`${b.client_name} · ${b.duration_min} min · ${cfg.label}`}
+                        >
+                          <p className="truncate text-[11px] font-semibold leading-tight">
+                            {b.client_name}
+                          </p>
+                          {height >= 36 && (
+                            <p className="truncate text-[10px] opacity-70">
+                              {fmtTime(b.starts_at)} · {b.duration_min} min
+                            </p>
+                          )}
+                          {height >= 52 && (
+                            <p className="truncate text-[10px] opacity-60">
+                              Réservation native
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -521,6 +643,10 @@ export function CalendarClient({
             {v.label}
           </span>
         ))}
+        <span className="flex items-center gap-1.5 text-[11px] text-taupe-500">
+          <span className="h-2 w-2 rounded-full bg-blue-400" />
+          Réservation native
+        </span>
         <span className="ml-auto hidden text-[11px] text-taupe-400 sm:block">
           Cliquer pour créer · Glisser pour déplacer · Cliquer sur une séance pour modifier
         </span>
@@ -553,6 +679,17 @@ export function CalendarClient({
             }}
             onDeleted={() => {
               setDetailSession(null);
+              router.refresh();
+            }}
+          />
+        )}
+        {detailBooking && (
+          <BookingDetailModal
+            key="booking-detail"
+            booking={detailBooking}
+            onClose={() => setDetailBooking(null)}
+            onUpdated={() => {
+              setDetailBooking(null);
               router.refresh();
             }}
           />
@@ -1011,3 +1148,199 @@ const btnPrimary =
 
 const btnSecondary =
   "rounded-xl border border-taupe-300/50 px-4 py-2.5 text-sm text-taupe-600 transition-colors hover:bg-sand-50";
+
+// ── Booking detail modal ───────────────────────────────────────────────────
+
+function BookingDetailModal({
+  booking,
+  onClose,
+  onUpdated,
+}: {
+  booking: Booking;
+  onClose: () => void;
+  onUpdated: () => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [coachNotes, setCoachNotes] = useState(booking.coach_notes ?? "");
+  const [status, setStatus] = useState(booking.status);
+  const [error, setError] = useState<string | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+
+  const cfg = BOOKING_STATUS_CFG[status] ?? BOOKING_STATUS_CFG.confirmed;
+
+  const hasChanges =
+    coachNotes !== (booking.coach_notes ?? "") || status !== booking.status;
+
+  function handleSave() {
+    setError(null);
+    startTransition(async () => {
+      const res = await fetch(`/api/booking/${booking.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, coach_notes: coachNotes }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Erreur.");
+        return;
+      }
+      onUpdated();
+    });
+  }
+
+  function handleCancel() {
+    startTransition(async () => {
+      const res = await fetch(`/api/booking/${booking.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        setError("Erreur lors de l'annulation.");
+        return;
+      }
+      onUpdated();
+    });
+  }
+
+  return (
+    <ModalOverlay onClose={onClose}>
+      <div className="overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="border-b border-taupe-200/60 px-6 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-taupe-400">
+                Réservation native
+              </p>
+              <h3 className="mt-0.5 font-serif text-xl text-ink-900">
+                {booking.client_name}
+              </h3>
+              <p className="mt-1 text-sm text-taupe-500">
+                {fmtFull(booking.starts_at)} · {booking.duration_min} min
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${cfg.card}`}
+              >
+                {cfg.label}
+              </span>
+              <button
+                onClick={onClose}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-taupe-400 transition-colors hover:bg-sand-100 hover:text-ink-900"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 px-6 py-5">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-taupe-400">Email</p>
+              <p className="mt-0.5 text-ink-900">{booking.client_email}</p>
+            </div>
+            {booking.client_phone && (
+              <div>
+                <p className="text-xs uppercase tracking-wider text-taupe-400">Téléphone</p>
+                <p className="mt-0.5 text-ink-900">{booking.client_phone}</p>
+              </div>
+            )}
+          </div>
+
+          {booking.client_notes && (
+            <div>
+              <p className="text-xs uppercase tracking-wider text-taupe-400">Notes client</p>
+              <p className="mt-1 rounded-lg bg-sand-50 px-3 py-2 text-sm text-ink-900">
+                {booking.client_notes}
+              </p>
+            </div>
+          )}
+
+          <div>
+            <label className="mb-1.5 block text-xs uppercase tracking-wider text-taupe-500">
+              Statut
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {(["confirmed", "completed", "no_show"] as const).map((s) => {
+                const c = BOOKING_STATUS_CFG[s];
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStatus(s)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                      status === s
+                        ? `${c.card} scale-105 shadow-sm`
+                        : "border-taupe-300/40 text-taupe-500 hover:border-taupe-400/60 hover:text-ink-900"
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs uppercase tracking-wider text-taupe-500">
+              Notes coach (privées)
+            </label>
+            <textarea
+              value={coachNotes}
+              onChange={(e) => setCoachNotes(e.target.value)}
+              rows={3}
+              placeholder="Notes internes, préparation séance…"
+              className={`${inputCls} resize-none`}
+            />
+          </div>
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              {!cancelConfirm ? (
+                <button
+                  type="button"
+                  onClick={() => setCancelConfirm(true)}
+                  className="rounded-lg px-3 py-1.5 text-sm text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                >
+                  Annuler la réservation
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCancelConfirm(false)}
+                    className="text-xs text-taupe-500 hover:text-ink-900"
+                  >
+                    Retour
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={isPending}
+                    className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {isPending ? "Annulation…" : "Confirmer l'annulation"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={onClose} className={btnSecondary}>
+                Fermer
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isPending || !hasChanges}
+                className={btnPrimary}
+              >
+                {isPending ? "Enregistrement…" : "Enregistrer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ModalOverlay>
+  );
+}
