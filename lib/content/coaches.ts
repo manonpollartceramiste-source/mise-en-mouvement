@@ -64,6 +64,7 @@ export const coaches: Coach[] = [
     calcomUrl: "https://app.cal.com/dorian-hbt-tcwe9j",
     sumupUrl: null,
     active: true,
+    email: "dorian34.hebert@gmail.com",
     osProfileId: "3dbcc116-c5f2-49d7-9d6e-9b616bd0c769",
   },
   {
