@@ -72,13 +72,14 @@ const DAY_SHORT = ["L", "M", "M", "J", "V", "S", "D"];
 
 type Props = {
   coachId: string; // Supabase UUID (osProfileId)
+  coachSlug: string; // eg "dorian" — used in confirmation URL
   coachName: string;
   offer: Offer;
   sumupUrl: string | null;
   onBack: () => void;
 };
 
-export function NativeSlotPicker({ coachId, coachName, offer, sumupUrl, onBack }: Props) {
+export function NativeSlotPicker({ coachId, coachSlug, coachName, offer, sumupUrl, onBack }: Props) {
   const router = useRouter();
 
   const now = new Date();
@@ -231,10 +232,11 @@ export function NativeSlotPicker({ coachId, coachName, offer, sumupUrl, onBack }
 
       // Success — redirect to confirmation
       const p = new URLSearchParams();
-      p.set("coach", data.booking.coach_id); // UUID, but page doesn't need name matching
+      p.set("coach", coachSlug); // slug eg "dorian", matched by confirmation page
       p.set("offre", offer.id);
       p.set("startTime", selectedSlot.starts_at);
       p.set("name", clientName.trim());
+      p.set("payment", paymentMethod); // "online" | "cabinet"
       router.push(`/reservation/confirmation?${p.toString()}`);
     });
   }

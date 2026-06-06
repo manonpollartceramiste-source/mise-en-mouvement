@@ -10,6 +10,7 @@ type Props = {
   offerName: string | null;
   date: string | null;
   sumupUrl: string | null;
+  paymentMethod: "online" | "cabinet" | null;
 };
 
 export function ConfirmationClient({
@@ -18,8 +19,10 @@ export function ConfirmationClient({
   offerName,
   date,
   sumupUrl,
+  paymentMethod,
 }: Props) {
-  const [paidAtCabinet, setPaidAtCabinet] = useState(false);
+  // Cabinet payers skip the payment choice UI; they're already "done"
+  const [paidAtCabinet, setPaidAtCabinet] = useState(paymentMethod === "cabinet");
 
   const hasOnlinePayment = !!sumupUrl;
 
@@ -94,8 +97,9 @@ export function ConfirmationClient({
         <>
           <FadeIn delay={0.2}>
             <p className="mt-8 text-base leading-relaxed text-taupe-700">
-              Merci pour votre réservation. Vous pouvez régler maintenant en
-              ligne ou directement au cabinet.
+              {paymentMethod === "online"
+                ? "Votre réservation est confirmée. Cliquez ci-dessous pour finaliser le paiement."
+                : "Merci pour votre réservation. Vous pouvez régler maintenant en ligne ou directement au cabinet."}
             </p>
           </FadeIn>
 
@@ -109,19 +113,19 @@ export function ConfirmationClient({
                   Procéder au paiement
                   <span aria-hidden>→</span>
                 </a>
-              ) : (
+              ) : paymentMethod === "online" ? (
                 <p className="rounded-2xl border border-taupe-300/40 bg-sand-100/60 px-6 py-4 text-sm text-taupe-700">
-                  Le paiement en ligne n&apos;est pas disponible pour cette
-                  réservation. Vous pourrez régler au cabinet.
+                  Le paiement en ligne n&apos;est pas configuré pour cette offre.
+                  Réglez directement au cabinet.
                 </p>
-              )}
+              ) : null}
 
               <button
                 type="button"
                 onClick={() => setPaidAtCabinet(true)}
                 className="inline-flex w-full max-w-xs items-center justify-center gap-2 rounded-full border border-taupe-300/40 bg-transparent px-6 py-3 text-sm font-medium text-taupe-700 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-taupe-400/70 hover:bg-sand-100"
               >
-                Payer au cabinet
+                {paymentMethod === "online" ? "Payer au cabinet à la place" : "Payer au cabinet"}
               </button>
             </div>
           </FadeIn>

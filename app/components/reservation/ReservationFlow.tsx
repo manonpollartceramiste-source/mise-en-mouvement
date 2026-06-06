@@ -221,6 +221,7 @@ function SlotSection({
   return (
     <NativeSlotPicker
       coachId={coach.osProfileId}
+      coachSlug={coach.id}
       coachName={coach.name}
       offer={offer}
       sumupUrl={resolveSumupUrl(offer, coach)}

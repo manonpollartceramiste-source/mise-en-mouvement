@@ -44,6 +44,9 @@ export default async function ConfirmationPage({
   const offreParam = str(params.offre) ?? str(params.offer);
   const nameParam = str(params.name);
   const dateParam = str(params.date) ?? str(params.startTime);
+  const rawPayment = str(params.payment);
+  const paymentMethod: "online" | "cabinet" | null =
+    rawPayment === "online" || rawPayment === "cabinet" ? rawPayment : null;
 
   const [offers, coaches] = await Promise.all([loadOffers(), loadCoaches()]);
 
@@ -68,6 +71,7 @@ export default async function ConfirmationPage({
               offerName={matchedOffer?.name ?? null}
               date={dateParam}
               sumupUrl={sumupUrl}
+              paymentMethod={paymentMethod}
             />
           </Container>
         </Section>
