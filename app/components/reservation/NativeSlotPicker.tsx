@@ -90,6 +90,8 @@ export function NativeSlotPicker({ coachId, coachSlug, coachName, offer, sumupUr
   const [slotCache, setSlotCache] = useState<Record<MonthKey, TimeSlot[]>>({});
   const [loadingMonths, setLoadingMonths] = useState<Set<MonthKey>>(new Set());
   const [errorMonths, setErrorMonths] = useState<Set<MonthKey>>(new Set());
+  // null = not yet fetched, true/false = known after first fetch
+  const [coachHasRules, setCoachHasRules] = useState<boolean | null>(null);
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null); // "YYYY-MM-DD"
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
@@ -124,8 +126,9 @@ export function NativeSlotPicker({ coachId, coachSlug, coachName, offer, sumupUr
           `/api/booking/slots?coach_id=${encodeURIComponent(coachId)}&from=${from}&to=${to}`,
         );
         if (!res.ok) throw new Error("fetch failed");
-        const data: { slots: TimeSlot[] } = await res.json();
+        const data: { slots: TimeSlot[]; has_rules: boolean } = await res.json();
         const available = data.slots.filter((s) => s.available);
+        setCoachHasRules(data.has_rules);
         setSlotCache((prev) => ({ ...prev, [key]: available }));
       } catch {
         setErrorMonths((prev) => new Set(prev).add(key));
@@ -150,6 +153,7 @@ export function NativeSlotPicker({ coachId, coachSlug, coachName, offer, sumupUr
     setSlotCache({});
     setLoadingMonths(new Set());
     setErrorMonths(new Set());
+    setCoachHasRules(null);
     setSelectedDay(null);
     setSelectedSlot(null);
     setStep("calendar");
@@ -449,24 +453,43 @@ export function NativeSlotPicker({ coachId, coachSlug, coachName, offer, sumupUr
         {/* Empty state */}
         {!isLoading && !hasError && currentMonthSlots.length === 0 && (
           <div className="border-t border-taupe-100 px-5 py-8 text-center">
-            <p className="font-serif text-base text-ink-900">Aucun créneau disponible ce mois-ci</p>
-            <p className="mt-1 text-sm text-taupe-500">
-              Les disponibilités sont mises à jour régulièrement.
-            </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-3">
-              <button
-                onClick={nextMonth}
-                className="rounded-xl border border-taupe-300/50 px-4 py-2 text-sm text-taupe-600 hover:bg-sand-50 hover:text-ink-900 transition-colors"
-              >
-                Mois suivant →
-              </button>
-              <a
-                href="/contact"
-                className="rounded-xl bg-taupe-700 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-taupe-800 transition-colors"
-              >
-                Contacter le cabinet
-              </a>
-            </div>
+            {coachHasRules === false ? (
+              <>
+                <p className="font-serif text-base text-ink-900">Aucun créneau disponible pour ce coach actuellement</p>
+                <p className="mt-1 text-sm text-taupe-500">
+                  Ce coach n&apos;a pas encore configuré ses disponibilités.
+                </p>
+                <div className="mt-4">
+                  <a
+                    href="/contact"
+                    className="rounded-xl bg-taupe-700 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-taupe-800 transition-colors"
+                  >
+                    Contacter le cabinet
+                  </a>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="font-serif text-base text-ink-900">Aucun créneau disponible ce mois-ci</p>
+                <p className="mt-1 text-sm text-taupe-500">
+                  Les disponibilités sont mises à jour régulièrement.
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-3">
+                  <button
+                    onClick={nextMonth}
+                    className="rounded-xl border border-taupe-300/50 px-4 py-2 text-sm text-taupe-600 hover:bg-sand-50 hover:text-ink-900 transition-colors"
+                  >
+                    Mois suivant →
+                  </button>
+                  <a
+                    href="/contact"
+                    className="rounded-xl bg-taupe-700 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-taupe-800 transition-colors"
+                  >
+                    Contacter le cabinet
+                  </a>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

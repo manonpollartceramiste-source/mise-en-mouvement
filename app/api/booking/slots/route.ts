@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
       durationMin,
     });
 
-    return NextResponse.json({ slots });
+    return NextResponse.json({ slots, has_rules: rules.length > 0 });
   } catch (err) {
     console.error("[api/booking/slots] Error:", err);
     return NextResponse.json(
