@@ -18,8 +18,8 @@ function toLocalDateStr(iso: string): string {
   return new Date(iso).toLocaleDateString("sv");
 }
 
-function toMonthKey(year: number, month: number): MonthKey {
-  return `${year}-${String(month + 1).padStart(2, "0")}`;
+function toMonthKey(coachId: string, offerId: string, year: number, month: number): MonthKey {
+  return `${coachId}-${offerId}-${year}-${String(month + 1).padStart(2, "0")}`;
 }
 
 function getMonthRange(year: number, month: number): { from: string; to: string } {
@@ -110,7 +110,9 @@ export function NativeSlotPicker({ coachId, coachSlug, coachName, offer, sumupUr
 
   const fetchMonth = useCallback(
     async (year: number, month: number) => {
-      const key = toMonthKey(year, month);
+      const key = toMonthKey(coachId, offer.id, year, month);
+      console.log("Cache key slots:", key);
+      console.log("Fetch slots pour coach:", coachId);
       if (slotCache[key] !== undefined || loadingMonths.has(key)) return;
 
       setLoadingMonths((prev) => new Set(prev).add(key));
@@ -132,7 +134,7 @@ export function NativeSlotPicker({ coachId, coachSlug, coachName, offer, sumupUr
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [coachId],
+    [coachId, offer.id],
   );
 
   useEffect(() => {
@@ -142,9 +144,22 @@ export function NativeSlotPicker({ coachId, coachSlug, coachName, offer, sumupUr
     fetchMonth(nextDate.getFullYear(), nextDate.getMonth());
   }, [viewYear, viewMonth, fetchMonth]);
 
+  // Reset all state when coach or offer changes
+  useEffect(() => {
+    console.log("Coach sélectionné:", coachId, coachSlug, offer.id);
+    setSlotCache({});
+    setLoadingMonths(new Set());
+    setErrorMonths(new Set());
+    setSelectedDay(null);
+    setSelectedSlot(null);
+    setStep("calendar");
+    setFormError(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coachId, offer.id]);
+
   // ── Derived slot data ────────────────────────────────────────────────────
 
-  const currentKey = toMonthKey(viewYear, viewMonth);
+  const currentKey = toMonthKey(coachId, offer.id, viewYear, viewMonth);
   const currentMonthSlots = slotCache[currentKey] ?? [];
   const isLoading = loadingMonths.has(currentKey);
   const hasError = errorMonths.has(currentKey);
