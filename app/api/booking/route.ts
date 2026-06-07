@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createBooking } from "@/lib/supabase/booking.server";
+import { sendBookingEmails } from "@/lib/email/send-booking-emails";
 
 const CreateBookingSchema = z.object({
   coach_id: z.string().uuid(),
@@ -48,6 +49,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const booking = await createBooking(input);
+
+    try {
+      await sendBookingEmails(booking);
+    } catch (emailErr) {
+      console.error("[api/booking] email send failed:", emailErr);
+    }
+
     return NextResponse.json({ booking }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur interne.";
