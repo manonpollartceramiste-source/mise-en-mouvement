@@ -116,16 +116,6 @@ export default async function ClientDashboard() {
         ) : (
           <>
             <p className="mt-3 text-sand-400">Aucune séance planifiée.</p>
-            {coach?.calcom_url && (
-              <a
-                href={coach.calcom_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-block text-xs text-sand-400 transition-colors hover:text-sand-200"
-              >
-                Réserver une séance →
-              </a>
-            )}
           </>
         )}
       </div>
@@ -232,18 +222,8 @@ export default async function ClientDashboard() {
       )}
 
       {/* Actions coach */}
-      {coach && (coach.calcom_url || coach.sumup_url) && (
+      {coach && coach.sumup_url && (
         <div className="mb-6 flex flex-wrap gap-3">
-          {coach.calcom_url && (
-            <a
-              href={coach.calcom_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-taupe-300/40 bg-white px-4 py-3 text-sm font-medium text-taupe-700 transition-all hover:-translate-y-0.5 hover:shadow-sm"
-            >
-              Réserver une séance →
-            </a>
-          )}
           {coach.sumup_url && (
             <a
               href={coach.sumup_url}

@@ -213,12 +213,6 @@ function OfferForm({
                     type="url"
                     defaultValue={link?.sumup ?? ""}
                   />
-                  <Field
-                    label="Lien Cal.com (fallback)"
-                    name={`coach_${c.id}_calcom`}
-                    type="url"
-                    defaultValue={link?.calcom ?? ""}
-                  />
                 </div>
               </div>
             );

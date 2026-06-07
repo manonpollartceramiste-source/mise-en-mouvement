@@ -87,11 +87,9 @@ async function buildOfferFromForm(
       allowedCoaches.push(c.id);
     }
     const sumupRaw = String(formData.get(`coach_${c.id}_sumup`) ?? "").trim();
-    const calcomRaw = String(formData.get(`coach_${c.id}_calcom`) ?? "").trim();
-    if (sumupRaw !== "" || calcomRaw !== "") {
+    if (sumupRaw !== "") {
       coachLinks[c.id] = {
         sumup: emptyToNull(sumupRaw),
-        calcom: emptyToNull(calcomRaw),
       };
     }
   }

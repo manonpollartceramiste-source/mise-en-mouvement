@@ -46,17 +46,18 @@ function fmtTime(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Paris",
   }).format(new Date(iso));
 }
 
 function fmtDayFull(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
   return new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(new Date(y, m - 1, d));
+    timeZone: "Europe/Paris",
+  }).format(new Date(dateStr + "T12:00:00Z"));
 }
 
 function fmtMonthYear(year: number, month: number): string {

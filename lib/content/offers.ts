@@ -5,8 +5,6 @@ export type OfferCategory = "ponctuelle" | "carte" | "programme";
 export type CoachLink = {
   /** SumUp payment URL for this coach + this offer, or null. */
   sumup: string | null;
-  /** Cal.com fallback URL specific to this offer for this coach, or null. */
-  calcom: string | null;
 };
 
 export type Offer = {
@@ -30,13 +28,12 @@ export type Offer = {
    * Valeurs possibles : ids de coachs (eg "dorian", "gregory").
    */
   allowedCoaches: string[];
-  /** Map coachId → liens SumUp + Cal.com pour ce duo (offre, coach). */
+  /** Map coachId → lien SumUp pour ce duo (offre, coach). */
   coachLinks: Record<string, CoachLink>;
 };
 
 export const coachLinkSchema = z.object({
   sumup: z.string().nullable().default(null),
-  calcom: z.string().nullable().default(null),
 });
 
 export const offerSchema = z.object({
@@ -197,34 +194,3 @@ export function isCoachAllowed(offer: Offer, coachId: string): boolean {
   return offer.allowedCoaches.length === 0 || offer.allowedCoaches.includes(coachId);
 }
 
-export type CoachLinksRef = {
-  id: string;
-  calcomUrl: string;
-};
-
-/**
- * Renvoie l'URL et le type de redirection pour le couple (offre, coach).
- * Le lien SumUp dépend du prix de l'offre, donc UNIQUEMENT le lien SumUp
- * propre au couple (offre, coach) est utilisé pour le paiement.
- *
- * Priorité :
- *   1. offer.coachLinks[coach].sumup   → SumUp (paiement)
- *   2. offer.coachLinks[coach].calcom  → override Cal.com par offre
- *   3. coach.calcomUrl                 → Cal.com par défaut du coach
- */
-export function resolveBookingLink(
-  offer: Offer,
-  coach: CoachLinksRef,
-): { url: string | null; isPayment: boolean } {
-  const link = offer.coachLinks[coach.id];
-  if (link?.sumup && link.sumup.length > 0) {
-    return { url: link.sumup, isPayment: true };
-  }
-  if (link?.calcom && link.calcom.length > 0) {
-    return { url: link.calcom, isPayment: false };
-  }
-  if (coach.calcomUrl && coach.calcomUrl.length > 0) {
-    return { url: coach.calcomUrl, isPayment: false };
-  }
-  return { url: null, isPayment: false };
-}

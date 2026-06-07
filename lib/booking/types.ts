@@ -46,7 +46,6 @@ export type Booking = {
   coach_notes: string | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
-  calcom_uid: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -9,7 +9,6 @@ export type Coach = {
   diploma: string;
   bio: string;
   highlights: string[];
-  calcomUrl: string;
   /** Lien SumUp principal du coach (paiement direct). Null = pas de paiement. */
   sumupUrl: string | null;
   /** Coach actif (visible côté public). Default true. */
@@ -35,7 +34,6 @@ export const coachSchema = z.object({
   diploma: z.string().min(1),
   bio: z.string().min(1),
   highlights: z.array(z.string()),
-  calcomUrl: z.url(),
   sumupUrl: z.string().nullable().default(null),
   active: z.boolean().default(true),
   siret: z.string().optional(),
@@ -61,7 +59,6 @@ export const coaches: Coach[] = [
       "Suivi individuel et collectif",
       "Préparation handball",
     ],
-    calcomUrl: "https://app.cal.com/dorian-hbt-tcwe9j",
     sumupUrl: null,
     active: true,
     email: "dorian34.hebert@gmail.com",
@@ -81,7 +78,6 @@ export const coaches: Coach[] = [
       "Functional training & pilates",
       "Approche nutrition",
     ],
-    calcomUrl: "https://cal.com/gregory-nadal-elgfxj",
     sumupUrl: null,
     active: true,
     osProfileId: "aaf5d7fe-c59d-4ba2-99e9-4c3452e4f657",

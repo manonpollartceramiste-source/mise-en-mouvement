@@ -99,12 +99,6 @@ export default async function AdminOsCoachsPage({
           />
           <div className="md:col-span-1" />
           <Field
-            label="Lien Cal.com (optionnel)"
-            name="calcom_url"
-            type="url"
-            placeholder="https://cal.com/..."
-          />
-          <Field
             label="Lien SumUp (optionnel)"
             name="sumup_url"
             type="url"
@@ -158,13 +152,6 @@ function CoachEditor({ coach }: { coach: Profile }) {
           label="Téléphone"
           name="phone"
           defaultValue={coach.phone ?? ""}
-        />
-        <Field
-          label="Lien Cal.com"
-          name="calcom_url"
-          type="url"
-          defaultValue={coach.calcom_url ?? ""}
-          placeholder="https://cal.com/..."
         />
         <Field
           label="Lien SumUp"

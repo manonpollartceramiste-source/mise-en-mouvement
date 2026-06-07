@@ -32,7 +32,6 @@ export type CreateUserData = {
   phone?: string;
   bio?: string;
   coach_id?: string | null;
-  calcom_url?: string;
   sumup_url?: string;
 };
 
@@ -66,7 +65,6 @@ export async function inviteOsUser(
   if (data.phone) profileData.phone = data.phone;
   if (data.bio) profileData.bio = data.bio;
   if (data.coach_id) profileData.coach_id = data.coach_id;
-  if (data.calcom_url) profileData.calcom_url = data.calcom_url;
   if (data.sumup_url) profileData.sumup_url = data.sumup_url;
 
   const { error: profileError } = await admin
@@ -82,7 +80,6 @@ export type UpdateProfileData = {
   phone?: string | null;
   bio?: string | null;
   coach_id?: string | null;
-  calcom_url?: string | null;
   sumup_url?: string | null;
   active?: boolean;
   role?: UserRole;
@@ -202,7 +199,6 @@ export async function inviteOsCoach(
   };
   if (data.phone) profileData.phone = data.phone;
   if (data.bio) profileData.bio = data.bio;
-  if (data.calcom_url) profileData.calcom_url = data.calcom_url;
   if (data.sumup_url) profileData.sumup_url = data.sumup_url;
 
   const { error: profileError } = await admin
@@ -350,7 +346,7 @@ export async function createClientForCoach(
 
   console.log("[CLIENT_CREATE_START] trigger-created profile:", JSON.stringify(triggerProfile), "readErr:", readErr?.message);
 
-  // 3. Mettre à jour avec les colonnes que nous connaissons (pas roles/calcom_url)
+  // 3. Mettre à jour avec les colonnes que nous connaissons (pas roles)
   const { data: updatedRows, error: updateError } = await admin
     .from("profiles")
     .update({

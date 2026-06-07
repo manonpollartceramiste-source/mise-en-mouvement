@@ -14,7 +14,6 @@ export type Profile = {
   phone: string | null;
   avatar_url: string | null;
   bio: string | null;
-  calcom_url: string | null;
   sumup_url: string | null;
   active: boolean;
   created_at: string;

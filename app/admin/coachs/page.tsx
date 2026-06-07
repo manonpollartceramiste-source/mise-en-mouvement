@@ -126,13 +126,6 @@ export default async function AdminCoachsPage({
             />
           </div>
           <Field
-            label="URL Cal.com"
-            name="calcomUrl"
-            type="url"
-            placeholder="https://cal.com/..."
-            required
-          />
-          <Field
             label="Lien SumUp (optionnel)"
             name="sumupUrl"
             type="url"
@@ -263,13 +256,6 @@ function CoachCard({
               rows={3}
             />
           </div>
-          <Field
-            label="URL Cal.com"
-            name="calcomUrl"
-            type="url"
-            defaultValue={coach.calcomUrl}
-            required
-          />
           <Field
             label="Lien SumUp (optionnel)"
             name="sumupUrl"

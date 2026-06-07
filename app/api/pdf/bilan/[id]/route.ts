@@ -147,7 +147,7 @@ async function buildBilanData(id: string, baseUrl: string): Promise<{ data: Bila
     })
     .filter(Boolean) as BilanPdfData["tests"];
 
-  const appointmentUrl = coachProfile.calcom_url || null;
+  const appointmentUrl: string | null = null;
   const qrCodeDataUrl = appointmentUrl
     ? await QRCode.toDataURL(appointmentUrl, {
         margin: 1,

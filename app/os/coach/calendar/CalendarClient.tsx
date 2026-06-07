@@ -167,6 +167,7 @@ function fmtTime(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Paris",
   }).format(new Date(iso));
 }
 
@@ -178,6 +179,7 @@ function fmtFull(iso: string): string {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Paris",
   }).format(new Date(iso));
 }
 

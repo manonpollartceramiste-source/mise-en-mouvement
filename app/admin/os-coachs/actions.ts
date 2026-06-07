@@ -21,7 +21,6 @@ export async function createCoachAction(formData: FormData) {
   const display_name = String(formData.get("display_name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim() || undefined;
   const bio = String(formData.get("bio") ?? "").trim() || undefined;
-  const calcom_url = String(formData.get("calcom_url") ?? "").trim() || undefined;
   const sumup_url = String(formData.get("sumup_url") ?? "").trim() || undefined;
 
   if (!email || !display_name) fail("Email et nom sont obligatoires.");
@@ -32,7 +31,6 @@ export async function createCoachAction(formData: FormData) {
     role: "coach",
     phone,
     bio,
-    calcom_url,
     sumup_url,
   });
 
@@ -52,7 +50,6 @@ export async function updateCoachAction(formData: FormData) {
     display_name: String(formData.get("display_name") ?? "").trim() || undefined,
     phone: String(formData.get("phone") ?? "").trim() || null,
     bio: String(formData.get("bio") ?? "").trim() || null,
-    calcom_url: String(formData.get("calcom_url") ?? "").trim() || null,
     sumup_url: String(formData.get("sumup_url") ?? "").trim() || null,
     active: formData.get("active") === "on",
   });

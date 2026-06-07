@@ -74,7 +74,6 @@ export async function coachAction(formData: FormData) {
       diploma: String(formData.get("diploma") ?? "").trim(),
       bio: String(formData.get("bio") ?? "").trim(),
       highlights: parseHighlights(String(formData.get("highlights") ?? "")),
-      calcomUrl: String(formData.get("calcomUrl") ?? "").trim(),
       sumupUrl: sumupRaw === "" ? null : sumupRaw,
       active: formData.get("active") === "on",
       siret: String(formData.get("siret") ?? "").trim() || undefined,
@@ -103,7 +102,6 @@ export async function coachAction(formData: FormData) {
         email: emailRaw,
         display_name: candidate.name,
         role: "coach",
-        calcom_url: candidate.calcomUrl || undefined,
         sumup_url: candidate.sumupUrl || undefined,
       });
       if (invite.ok && invite.userId) {
@@ -142,7 +140,6 @@ export async function createOsAccountAction(formData: FormData) {
     email,
     display_name: coach.name,
     role: "coach",
-    calcom_url: coach.calcomUrl || undefined,
     sumup_url: coach.sumupUrl || undefined,
   });
 
