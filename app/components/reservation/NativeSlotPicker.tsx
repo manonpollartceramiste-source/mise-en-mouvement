@@ -114,8 +114,6 @@ export function NativeSlotPicker({ coachId, coachSlug, coachName, offer, sumupUr
   const fetchMonth = useCallback(
     async (year: number, month: number) => {
       const key = toMonthKey(coachId, offer.id, year, month);
-      console.log("Cache key slots:", key);
-      console.log("Fetch slots pour coach:", coachId);
       if (slotCache[key] !== undefined || loadingMonths.has(key)) return;
 
       setLoadingMonths((prev) => new Set(prev).add(key));
@@ -150,7 +148,6 @@ export function NativeSlotPicker({ coachId, coachSlug, coachName, offer, sumupUr
 
   // Reset all state when coach or offer changes
   useEffect(() => {
-    console.log("Coach sélectionné:", coachId, coachSlug, offer.id);
     setSlotCache({});
     setLoadingMonths(new Set());
     setErrorMonths(new Set());
