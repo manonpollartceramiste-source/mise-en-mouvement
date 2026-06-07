@@ -220,6 +220,7 @@ function SlotSection({
 
   return (
     <NativeSlotPicker
+      key={`${coach.id}-${offer.id}`}
       coachId={coach.osProfileId}
       coachSlug={coach.id}
       coachName={coach.name}
