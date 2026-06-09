@@ -23,6 +23,8 @@ export type Coach = {
   email?: string;
   /** UUID du profil Cabinet OS lié (profiles.id). */
   osProfileId?: string;
+  /** Email personnel pour recevoir les notifications de réservation. Peut différer de l'email de connexion OS. */
+  notification_email?: string;
 };
 
 export const coachSchema = z.object({
@@ -41,6 +43,7 @@ export const coachSchema = z.object({
   proEmail: z.string().optional(),
   email: z.string().optional(),
   osProfileId: z.string().optional(),
+  notification_email: z.string().optional(),
 }) satisfies z.ZodType<Coach>;
 
 export const coachArraySchema = z.array(coachSchema);

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   getCurrentUser,
   isSupabaseConfigured,
+  getSupabaseAdmin,
 } from "@/lib/supabase/server";
 import { loadCoaches } from "@/lib/content/coaches.server";
 import type { Coach } from "@/lib/content/coaches";
@@ -24,6 +25,8 @@ import {
   resendInviteAction,
   toggleOsAccessAction,
   setCoachPasswordAction,
+  sendTestEmailAction,
+  adminDisconnectGcalAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -54,10 +57,27 @@ export default async function AdminCoachsPage({
     .filter((id): id is string => Boolean(id));
 
   let osStatuses: Record<string, OsCoachStatus> = {};
+  let gcalStatuses: Record<string, boolean> = {};
+
   try {
     osStatuses = await getOsCoachesStatus(profileIds);
   } catch {
     // Service role non configuré — affichage sans statut OS
+  }
+
+  try {
+    const admin = getSupabaseAdmin();
+    const { data } = await admin
+      .from("coach_google_tokens")
+      .select("coach_id")
+      .in("coach_id", profileIds);
+    if (data) {
+      for (const row of data as { coach_id: string }[]) {
+        gcalStatuses[row.coach_id] = true;
+      }
+    }
+  } catch {
+    // non-bloquant
   }
 
   return (
@@ -75,6 +95,9 @@ export default async function AdminCoachsPage({
             canDelete={coaches.length > 1}
             osStatus={
               coach.osProfileId ? osStatuses[coach.osProfileId] : undefined
+            }
+            gcalConnected={
+              coach.osProfileId ? (gcalStatuses[coach.osProfileId] ?? false) : false
             }
           />
         ))}
@@ -144,6 +167,12 @@ export default async function AdminCoachsPage({
             type="email"
             placeholder="coach@exemple.com"
           />
+          <Field
+            label="Email de notification (réservations)"
+            name="notification_email"
+            type="email"
+            placeholder="personnel@exemple.com"
+          />
           <div className="md:col-span-2">
             <Checkbox
               label="Coach actif (visible côté public)"
@@ -166,10 +195,12 @@ function CoachCard({
   coach,
   canDelete,
   osStatus,
+  gcalConnected,
 }: {
   coach: Coach;
   canDelete: boolean;
   osStatus: OsCoachStatus | undefined;
+  gcalConnected: boolean;
 }) {
   return (
     <article className="overflow-hidden rounded-2xl border border-taupe-300/40 bg-white">
@@ -201,13 +232,9 @@ function CoachCard({
         <form action={coachAction} className="grid gap-4 md:grid-cols-2">
           <input type="hidden" name="op" value="upsert" />
           <input type="hidden" name="id" value={coach.id} />
-          {/* Preserve OS fields so they survive a public-profile save */}
+          {/* Preserve OS/hidden fields so they survive a public-profile save */}
           <input type="hidden" name="email" value={coach.email ?? ""} />
-          <input
-            type="hidden"
-            name="osProfileId"
-            value={coach.osProfileId ?? ""}
-          />
+          <input type="hidden" name="osProfileId" value={coach.osProfileId ?? ""} />
           <Field
             label="Nom complet"
             name="name"
@@ -278,6 +305,13 @@ function CoachCard({
             type="email"
             defaultValue={coach.proEmail ?? ""}
           />
+          <Field
+            label="Email de notification (réservations)"
+            name="notification_email"
+            type="email"
+            defaultValue={coach.notification_email ?? ""}
+            placeholder={coach.email ?? "Email personnel du coach"}
+          />
           <div className="md:col-span-2">
             <Checkbox
               label="Coach actif (visible côté public)"
@@ -291,9 +325,98 @@ function CoachCard({
         </form>
       </div>
 
+      {/* Google Agenda */}
+      <GcalSection coach={coach} gcalConnected={gcalConnected} />
+
       {/* OS access */}
       <OsSection coach={coach} osStatus={osStatus} />
     </article>
+  );
+}
+
+// ─── Google Agenda section ────────────────────────────────────────────────────
+
+function GcalSection({
+  coach,
+  gcalConnected,
+}: {
+  coach: Coach;
+  gcalConnected: boolean;
+}) {
+  const notificationEmail =
+    coach.notification_email?.trim() || coach.email?.trim() || null;
+
+  return (
+    <div className="border-t border-taupe-200/60 bg-sand-50/40 px-6 py-5 space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-xs font-medium uppercase tracking-widest text-taupe-400">
+          Google Agenda
+        </p>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+            gcalConnected
+              ? "bg-emerald-50 text-emerald-800"
+              : "bg-amber-50 text-amber-700"
+          }`}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              gcalConnected ? "bg-emerald-500" : "bg-amber-400"
+            }`}
+          />
+          {gcalConnected ? "Connecté ✅" : "Non connecté ⚠️"}
+        </span>
+      </div>
+
+      {notificationEmail && (
+        <p className="text-sm text-taupe-600">
+          Notifications vers :{" "}
+          <strong className="text-ink-900">{notificationEmail}</strong>
+        </p>
+      )}
+
+      {!notificationEmail && (
+        <p className="text-xs text-amber-700 bg-amber-50 rounded-xl px-4 py-2 border border-amber-200/60">
+          Aucun email de notification configuré — renseignez le champ ci-dessus.
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-3">
+        {/* Bouton test email */}
+        {notificationEmail && (
+          <form action={sendTestEmailAction}>
+            <input type="hidden" name="coachId" value={coach.id} />
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-full border border-taupe-300/50 px-4 py-2 text-xs font-medium text-ink-900 transition-all hover:border-taupe-400 hover:bg-sand-100"
+            >
+              Envoyer un email test
+            </button>
+          </form>
+        )}
+
+        {/* Bouton déconnecter (admin) */}
+        {gcalConnected && coach.osProfileId && (
+          <form action={adminDisconnectGcalAction}>
+            <input type="hidden" name="osProfileId" value={coach.osProfileId} />
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 text-xs font-medium text-red-700 transition-all hover:bg-red-50"
+            >
+              Déconnecter Google Agenda
+            </button>
+          </form>
+        )}
+
+        {/* Info : connexion par le coach */}
+        {!gcalConnected && (
+          <p className="text-xs text-taupe-500 self-center">
+            Le coach peut connecter son agenda depuis{" "}
+            <span className="font-medium">OS → Paramètres</span>.
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
 

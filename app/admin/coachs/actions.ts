@@ -15,6 +15,8 @@ import {
   getOsProfileByEmail,
   setOsUserPassword,
 } from "@/lib/supabase/admin-actions";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { sendCoachTestEmail } from "@/lib/email/send-booking-emails";
 
 const REVALIDATE_PATHS = [
   "/",
@@ -65,6 +67,8 @@ export async function coachAction(formData: FormData) {
     const emailRaw = String(formData.get("email") ?? "").trim();
     const osProfileIdRaw = String(formData.get("osProfileId") ?? "").trim();
 
+    const notificationEmailRaw = String(formData.get("notification_email") ?? "").trim();
+
     const candidate: Coach = {
       id,
       name: String(formData.get("name") ?? "").trim(),
@@ -81,6 +85,7 @@ export async function coachAction(formData: FormData) {
       proEmail: String(formData.get("proEmail") ?? "").trim() || undefined,
       email: emailRaw || undefined,
       osProfileId: osProfileIdRaw || undefined,
+      notification_email: notificationEmailRaw || undefined,
     };
 
     const parsed = coachSchema.safeParse(candidate);
@@ -224,4 +229,41 @@ export async function toggleOsAccessAction(formData: FormData) {
   const result = await updateOsProfile(osProfileId, { active });
   if (!result.ok) fail(result.error ?? "Erreur lors de la mise à jour.");
   done(active ? "Accès OS réactivé." : "Accès OS désactivé.");
+}
+
+/** Envoie un email de test à l'email de notification du coach. */
+export async function sendTestEmailAction(formData: FormData) {
+  const coachId = String(formData.get("coachId") ?? "").trim();
+  if (!coachId) fail("Identifiant coach manquant.");
+
+  const all = await loadCoaches();
+  const coach = all.find((c) => c.id === coachId);
+  if (!coach) fail("Coach introuvable.");
+
+  const recipient = coach.notification_email?.trim() || coach.email?.trim();
+  if (!recipient) fail("Aucun email de notification configuré pour ce coach.");
+
+  try {
+    await sendCoachTestEmail(coach);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Erreur inconnue";
+    fail(`Envoi échoué : ${msg}`);
+  }
+
+  done(`Email de test envoyé à ${recipient}.`);
+}
+
+/** Déconnecte le Google Agenda d'un coach (admin uniquement). */
+export async function adminDisconnectGcalAction(formData: FormData) {
+  const osProfileId = String(formData.get("osProfileId") ?? "").trim();
+  if (!osProfileId) fail("Profil OS manquant.");
+
+  const admin = getSupabaseAdmin();
+  const { error } = await admin
+    .from("coach_google_tokens")
+    .delete()
+    .eq("coach_id", osProfileId);
+
+  if (error) fail(`Erreur lors de la déconnexion : ${error.message}`);
+  done("Google Agenda déconnecté.");
 }

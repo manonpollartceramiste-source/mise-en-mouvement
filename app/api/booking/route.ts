@@ -1,7 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createBooking } from "@/lib/supabase/booking.server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendBookingEmails } from "@/lib/email/send-booking-emails";
+import { createCalendarEvent } from "@/lib/google/calendar";
+import { loadCoaches } from "@/lib/content/coaches.server";
+import { loadOffers } from "@/lib/content/offers.server";
 
 const CreateBookingSchema = z.object({
   coach_id: z.string().uuid(),
@@ -29,41 +33,59 @@ export async function POST(req: NextRequest) {
   const parsed = CreateBookingSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      {
-        error: "Données de réservation invalides.",
-        details: parsed.error.flatten(),
-      },
+      { error: "Données de réservation invalides.", details: parsed.error.flatten() },
       { status: 400 },
     );
   }
 
   const input = parsed.data;
 
-  // Basic sanity: ends_at must be after starts_at
   if (new Date(input.ends_at) <= new Date(input.starts_at)) {
-    return NextResponse.json(
-      { error: "ends_at doit être postérieur à starts_at." },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "ends_at doit être postérieur à starts_at." }, { status: 400 });
   }
 
   try {
     const booking = await createBooking(input);
 
-    try {
-      await sendBookingEmails(booking);
-    } catch (emailErr) {
-      console.error("[api/booking] email send failed:", emailErr);
-    }
+    // Emails + Google Calendar en arrière-plan (non-bloquant)
+    void (async () => {
+      try {
+        await sendBookingEmails(booking);
+      } catch (err) {
+        console.error("[api/booking] email send failed:", err);
+      }
+
+      try {
+        const [coaches, offers] = await Promise.all([loadCoaches(), loadOffers()]);
+        const coach = coaches.find((c) => c.osProfileId === booking.coach_id);
+        const offer = offers.find((o) => o.id === booking.offer_id);
+
+        if (coach?.osProfileId) {
+          const eventId = await createCalendarEvent(
+            coach.osProfileId,
+            booking,
+            coach.name,
+            offer?.name ?? booking.offer_id,
+          );
+
+          if (eventId) {
+            const admin = getSupabaseAdmin();
+            await admin
+              .from("bookings")
+              .update({ google_event_id: eventId })
+              .eq("id", booking.id);
+          }
+        }
+      } catch (err) {
+        console.error("[api/booking] google calendar create failed:", err);
+      }
+    })();
 
     return NextResponse.json({ booking }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur interne.";
 
-    if (
-      message.includes("Créneau déjà réservé") ||
-      message.includes("chevauchement")
-    ) {
+    if (message.includes("Créneau déjà réservé") || message.includes("chevauchement")) {
       return NextResponse.json({ error: message }, { status: 409 });
     }
 

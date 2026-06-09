@@ -138,6 +138,119 @@ export function clientConfirmationEmail(data: BookingEmailData): {
   };
 }
 
+export function coachCancellationEmail(
+  data: BookingEmailData,
+  cancelledBy: "client" | "coach" | "admin" = "client",
+): { subject: string; html: string } {
+  const { date, time } = formatDateTime(data.startsAt);
+  const endTime = formatDateTime(data.endsAt).time;
+  const who =
+    cancelledBy === "client"
+      ? "par le client"
+      : cancelledBy === "coach"
+        ? "par vous"
+        : "par l'administration";
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:400;color:${INK};">Réservation annulée</h1>
+    <p style="margin:0 0 32px;font-size:15px;color:${MUTED};line-height:1.6;">La séance ci-dessous a été annulée <strong>${who}</strong>.</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BORDER};border-radius:12px;overflow:hidden;margin-bottom:32px;">
+      <tr style="background-color:${BEIGE};">
+        <td colspan="2" style="padding:14px 20px;font-size:11px;font-family:Arial,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:${TAUPE};font-weight:600;">Séance annulée</td>
+      </tr>
+      <tr style="border-top:1px solid ${BORDER};">
+        <td style="padding:12px 20px;font-size:14px;color:${MUTED};width:140px;">Prestation</td>
+        <td style="padding:12px 20px;font-size:14px;color:${INK};font-weight:600;">${data.offerName}${data.offerDuration ? ` · ${data.offerDuration}` : ""}</td>
+      </tr>
+      <tr style="border-top:1px solid ${BORDER};background-color:${BEIGE};">
+        <td style="padding:12px 20px;font-size:14px;color:${MUTED};">Client</td>
+        <td style="padding:12px 20px;font-size:14px;color:${INK};font-weight:600;">${data.clientName}</td>
+      </tr>
+      <tr style="border-top:1px solid ${BORDER};">
+        <td style="padding:12px 20px;font-size:14px;color:${MUTED};">Date</td>
+        <td style="padding:12px 20px;font-size:14px;color:${INK};font-weight:600;">${date}</td>
+      </tr>
+      <tr style="border-top:1px solid ${BORDER};background-color:${BEIGE};">
+        <td style="padding:12px 20px;font-size:14px;color:${MUTED};">Horaire</td>
+        <td style="padding:12px 20px;font-size:14px;color:${INK};font-weight:600;">${time} – ${endTime}</td>
+      </tr>
+    </table>
+
+    <p style="margin:0;font-size:13px;color:${MUTED};line-height:1.7;">Cet email est envoyé automatiquement depuis le système de réservation.</p>
+  `;
+
+  return {
+    subject: `Annulation — ${data.clientName} · ${data.offerName}`,
+    html: emailWrapper(content),
+  };
+}
+
+export function coachModificationEmail(
+  data: BookingEmailData,
+  changeLabel: string,
+): { subject: string; html: string } {
+  const { date, time } = formatDateTime(data.startsAt);
+  const endTime = formatDateTime(data.endsAt).time;
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:400;color:${INK};">Réservation modifiée</h1>
+    <p style="margin:0 0 32px;font-size:15px;color:${MUTED};line-height:1.6;">Une réservation a été modifiée : <strong>${changeLabel}</strong>.</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BORDER};border-radius:12px;overflow:hidden;margin-bottom:32px;">
+      <tr style="background-color:${BEIGE};">
+        <td colspan="2" style="padding:14px 20px;font-size:11px;font-family:Arial,sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:${TAUPE};font-weight:600;">Séance</td>
+      </tr>
+      <tr style="border-top:1px solid ${BORDER};">
+        <td style="padding:12px 20px;font-size:14px;color:${MUTED};width:140px;">Prestation</td>
+        <td style="padding:12px 20px;font-size:14px;color:${INK};font-weight:600;">${data.offerName}${data.offerDuration ? ` · ${data.offerDuration}` : ""}</td>
+      </tr>
+      <tr style="border-top:1px solid ${BORDER};background-color:${BEIGE};">
+        <td style="padding:12px 20px;font-size:14px;color:${MUTED};">Client</td>
+        <td style="padding:12px 20px;font-size:14px;color:${INK};font-weight:600;">${data.clientName}</td>
+      </tr>
+      <tr style="border-top:1px solid ${BORDER};">
+        <td style="padding:12px 20px;font-size:14px;color:${MUTED};">Date</td>
+        <td style="padding:12px 20px;font-size:14px;color:${INK};font-weight:600;">${date}</td>
+      </tr>
+      <tr style="border-top:1px solid ${BORDER};background-color:${BEIGE};">
+        <td style="padding:12px 20px;font-size:14px;color:${MUTED};">Horaire</td>
+        <td style="padding:12px 20px;font-size:14px;color:${INK};font-weight:600;">${time} – ${endTime}</td>
+      </tr>
+    </table>
+
+    <p style="margin:0;font-size:13px;color:${MUTED};line-height:1.7;">Cet email est envoyé automatiquement depuis le système de réservation.</p>
+  `;
+
+  return {
+    subject: `Modification — ${data.clientName} · ${data.offerName}`,
+    html: emailWrapper(content),
+  };
+}
+
+export function coachTestEmail(coachName: string, notificationEmail: string): {
+  subject: string;
+  html: string;
+} {
+  const content = `
+    <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:400;color:${INK};">Email de test</h1>
+    <p style="margin:0 0 32px;font-size:15px;color:${MUTED};line-height:1.6;">Bonjour <strong>${coachName}</strong>,</p>
+    <p style="margin:0 0 24px;font-size:15px;color:${MUTED};line-height:1.6;">
+      Ceci est un email de test pour confirmer que vos notifications de réservation sont bien configurées.
+    </p>
+    <p style="margin:0 0 32px;font-size:14px;color:${MUTED};padding:16px 20px;background-color:${BEIGE};border-radius:10px;border:1px solid ${BORDER};">
+      Les futures notifications de réservation seront envoyées à :<br/>
+      <strong style="color:${ACCENT};">${notificationEmail}</strong>
+    </p>
+    <p style="margin:0;font-size:13px;color:${MUTED};line-height:1.7;">Cet email a été déclenché depuis l'interface d'administration.</p>
+  `;
+
+  return {
+    subject: "Test — Notifications de réservation",
+    html: emailWrapper(content),
+  };
+}
+
 export function coachNotificationEmail(data: BookingEmailData): {
   subject: string;
   html: string;
