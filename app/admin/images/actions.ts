@@ -21,7 +21,7 @@ const REVALIDATE_PATHS = [
   "/admin/images",
 ];
 
-const BUCKET = "site-assets";
+const BUCKET = "site-media";
 const MAX_BYTES = 5 * 1024 * 1024; // 5 Mo
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
 
@@ -49,7 +49,11 @@ type Slot =
   | { gallery: string };
 
 async function uploadAndPersist(slot: Slot, file: File): Promise<void> {
-  if (!isSupabaseConfigured()) fail("Supabase non configuré.");
+  if (!isSupabaseConfigured()) fail("Supabase non configuré (URL ou clé manquante).");
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("[upload] SUPABASE_SERVICE_ROLE_KEY manquante — upload impossible");
+    fail("Configuration serveur incomplète : SUPABASE_SERVICE_ROLE_KEY manquante.");
+  }
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
 
@@ -81,6 +85,8 @@ async function uploadAndPersist(slot: Slot, file: File): Promise<void> {
     const adminClient = getSupabaseAdmin();
     const buf = new Uint8Array(await file.arrayBuffer());
 
+    console.log(`[upload] bucket="${BUCKET}" path="${path}" type="${file.type}" size=${file.size}`);
+
     const { error: upErr } = await adminClient.storage
       .from(BUCKET)
       .upload(path, buf, {
@@ -89,14 +95,22 @@ async function uploadAndPersist(slot: Slot, file: File): Promise<void> {
       });
 
     if (upErr) {
-      uploadError = upErr.message;
+      console.error("[upload] Supabase storage error:", {
+        message: upErr.message,
+        name: upErr.name,
+        bucket: BUCKET,
+        path,
+      });
+      uploadError = `[${upErr.name ?? "StorageError"}] ${upErr.message}`;
     } else {
       const { data } = adminClient.storage.from(BUCKET).getPublicUrl(path);
       publicUrl = data.publicUrl;
+      console.log(`[upload] success — publicUrl: ${publicUrl}`);
     }
   } catch (err) {
-    uploadError =
-      err instanceof Error ? err.message : "Erreur réseau inconnue.";
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[upload] unexpected exception:", err);
+    uploadError = `Exception: ${msg}`;
   }
 
   if (uploadError) fail(`Upload échoué : ${uploadError}`);
