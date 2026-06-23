@@ -62,7 +62,7 @@ export async function updateCalendarSessionAction(
 ): Promise<{ error?: string }> {
   const profile = await guardCoach();
   const supabase = await getSupabaseServer();
-  const isAdmin = profile.roles.includes("admin");
+  const isAdmin = (profile.roles ?? []).includes("admin");
 
   const q = supabase
     .from("sessions")
@@ -86,7 +86,7 @@ export async function moveSessionAction(
 ): Promise<{ error?: string }> {
   const profile = await guardCoach();
   const supabase = await getSupabaseServer();
-  const isAdmin = profile.roles.includes("admin");
+  const isAdmin = (profile.roles ?? []).includes("admin");
 
   const q = supabase
     .from("sessions")
@@ -103,7 +103,7 @@ export async function deleteSessionAction(
 ): Promise<{ error?: string }> {
   const profile = await guardCoach();
   const supabase = await getSupabaseServer();
-  const isAdmin = profile.roles.includes("admin");
+  const isAdmin = (profile.roles ?? []).includes("admin");
 
   const q = supabase.from("sessions").delete().eq("id", sessionId);
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getSupabaseServer } from "./server";
+import { getSupabaseServer, getSupabaseAdmin } from "./server";
 import type { Profile, UserRole } from "@/lib/os/types";
 
 // ─────────────────────────────────────────────────────────────
@@ -117,7 +117,47 @@ export async function osSignOut() {
 
 import type { Session } from "@/lib/os/types";
 
-export type SessionWithClient = Session & { client_display_name: string };
+export type SessionWithClient = Session & {
+  client_display_name: string;
+  coach_display_name?: string | null;
+};
+
+/**
+ * Toutes les séances de TOUS les coachs sur une plage — bypasse RLS via admin client.
+ * Utilisé pour le calendrier partagé.
+ */
+export async function getAllSessionsInRange(
+  from: Date,
+  to: Date,
+): Promise<SessionWithClient[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("sessions")
+    .select(
+      "*, " +
+      "client_profile:profiles!sessions_client_id_fkey(display_name), " +
+      "coach_profile:profiles!sessions_coach_id_fkey(display_name)"
+    )
+    .gte("scheduled_at", from.toISOString())
+    .lt("scheduled_at", to.toISOString())
+    .order("scheduled_at");
+
+  if (error) {
+    console.error("[os-server] getAllSessionsInRange error:", error.message);
+    throw new Error(error.message);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((row: any) => ({
+    ...row,
+    client_profile: undefined,
+    coach_profile: undefined,
+    client_display_name:
+      (row.client_profile as { display_name: string } | null)?.display_name ?? "Client",
+    coach_display_name:
+      (row.coach_profile as { display_name: string } | null)?.display_name ?? null,
+  })) as SessionWithClient[];
+}
 
 /** Séances planifiées d'un coach dans les 7 prochains jours. */
 export async function getCoachUpcomingSessions(

@@ -4,9 +4,9 @@ import {
   getOsProfileWithRole,
   getCoachClients,
   getAllActiveClients,
+  getAllSessionsInRange,
 } from "@/lib/supabase/os-server";
 import type { SessionWithClient } from "@/lib/supabase/os-server";
-import { getSupabaseServer } from "@/lib/supabase/server";
 import { getAllBookingsInRange } from "@/lib/supabase/booking.server";
 import type { Booking } from "@/lib/booking/types";
 import { OsShell } from "@/app/os/_components/OsShell";
@@ -52,33 +52,19 @@ export default async function CoachCalendarPage({
   const weekEnd = new Date(y, m - 1, d + 7);
 
   const isAdmin = (profile.roles ?? []).includes("admin");
-  const supabase = await getSupabaseServer();
 
-  const [sessionsRes, clients, nativeBookings] = await Promise.all([
-    (() => {
-      const q = supabase
-        .from("sessions")
-        .select("*, profiles!sessions_client_id_fkey(display_name)")
-        .gte("scheduled_at", weekStart.toISOString())
-        .lt("scheduled_at", weekEnd.toISOString())
-        .order("scheduled_at");
-      return isAdmin ? q : q.eq("coach_id", profile.id);
-    })(),
+  // getAllSessionsInRange bypasse RLS via admin client → tous les coachs voient tout
+  const [sessions, clients, nativeBookings] = await Promise.all([
+    getAllSessionsInRange(weekStart, weekEnd).catch((err) => {
+      console.error("[CalendarPage] getAllSessionsInRange error:", err);
+      return [] as SessionWithClient[];
+    }),
     isAdmin ? getAllActiveClients() : getCoachClients(profile.id),
-    // Load all coaches' bookings for the shared calendar view
     getAllBookingsInRange(weekStart, weekEnd).catch((err) => {
       console.error("[CalendarPage] getAllBookingsInRange error:", err);
       return [] as Booking[];
     }),
   ]);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sessions: SessionWithClient[] = (sessionsRes.data ?? []).map((row: any) => ({
-    ...row,
-    profiles: undefined,
-    client_display_name:
-      (row.profiles as { display_name: string } | null)?.display_name ?? "Client",
-  }));
 
   return (
     <OsShell profile={profile} title="Calendrier">
@@ -98,6 +84,7 @@ export default async function CoachCalendarPage({
       <CalendarClient
         sessions={sessions}
         clients={clients}
+        currentCoachId={profile.id}
         weekStartISO={weekStartISO}
         nativeBookings={nativeBookings}
       />
