@@ -11,8 +11,6 @@ type Props = {
     client_email?: string;
     client_phone?: string;
     client_address?: string;
-    title?: string;
-    description?: string;
     line_items?: LineItem[];
     discount_pct?: number;
     discount_amount?: number;
@@ -132,17 +130,6 @@ export function BillingForm({ mode, defaultValues = {}, action, editId, submitLa
         </div>
       </section>
 
-      {/* Titre + description (devis uniquement) */}
-      {mode === "quote" && (
-        <section className="rounded-2xl border border-taupe-300/40 bg-white p-6">
-          <h3 className="mb-5 font-serif text-xl text-ink-900">Objet du devis</h3>
-          <div className="space-y-4">
-            <Field label="Titre du devis *" name="title" defaultValue={defaultValues.title} required />
-            <Textarea label="Description courte" name="description" defaultValue={defaultValues.description} rows={3} />
-          </div>
-        </section>
-      )}
-
       {/* Lignes de prestation */}
       <section className="rounded-2xl border border-taupe-300/40 bg-white p-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
@@ -223,12 +210,12 @@ export function BillingForm({ mode, defaultValues = {}, action, editId, submitLa
                   onChange={(e) => updateItem(idx, "name", e.target.value)}
                   className="col-span-2 rounded-xl border border-taupe-300/50 bg-white px-4 py-2.5 text-sm text-ink-900 placeholder-taupe-400 focus:border-taupe-500 focus:outline-none"
                 />
-                <input
-                  type="text"
+                <textarea
+                  rows={3}
                   placeholder="Description (optionnel)"
                   value={item.description}
                   onChange={(e) => updateItem(idx, "description", e.target.value)}
-                  className="col-span-2 rounded-xl border border-taupe-300/50 bg-white px-4 py-2.5 text-sm text-ink-900 placeholder-taupe-400 focus:border-taupe-500 focus:outline-none"
+                  className="col-span-2 rounded-xl border border-taupe-300/50 bg-white px-4 py-2.5 text-sm text-ink-900 placeholder-taupe-400 focus:border-taupe-500 focus:outline-none resize-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

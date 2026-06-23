@@ -33,15 +33,18 @@ async function markSessionDoneAction(formData: FormData) {
 const fmtTime = new Intl.DateTimeFormat("fr-FR", {
   hour: "2-digit",
   minute: "2-digit",
+  timeZone: "Europe/Paris",
 });
 const fmtDay = new Intl.DateTimeFormat("fr-FR", {
   weekday: "long",
   day: "numeric",
   month: "long",
+  timeZone: "Europe/Paris",
 });
 const fmtShort = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "short",
+  timeZone: "Europe/Paris",
 });
 
 function timeState(
@@ -235,7 +238,7 @@ export default async function CoachDashboard() {
 
   const monthCount = monthCountRes.count ?? 0;
   const firstName = profile.display_name.split(" ")[0];
-  const isAdmin = profile.roles.includes("admin");
+  const isAdmin = (profile.roles ?? []).includes("admin");
 
   const alertCount =
     (conflicts.length > 0 ? 1 : 0) +
@@ -536,6 +539,7 @@ export default async function CoachDashboard() {
                           month: "short",
                           hour: "2-digit",
                           minute: "2-digit",
+                          timeZone: "Europe/Paris",
                         }).format(new Date(s.scheduled_at))}
                       </p>
                     </Link>
@@ -628,6 +632,7 @@ function AlertsPanel({
                 month: "short",
                 hour: "2-digit",
                 minute: "2-digit",
+                timeZone: "Europe/Paris",
               }).format(new Date(c.at))}
               href="/os/coach/calendar"
             />

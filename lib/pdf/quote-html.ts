@@ -196,21 +196,6 @@ body{
 }
 .info-sub{font-size:10.5px;color:#8A7A68;margin-top:1pt}
 
-/* ── OBJET ── */
-.object-block{
-  background:#fff;
-  border:0.5pt solid #DED4C6;
-  border-radius:8pt;
-  padding:5mm 6mm;
-  margin-bottom:7mm;
-}
-.object-title{
-  font-family:'Playfair Display',Georgia,serif;
-  font-size:16px;font-weight:600;color:#1F1812;
-  margin-bottom:3pt;
-}
-.object-desc{font-size:11.5px;color:#6B5A48;line-height:1.65}
-
 /* ── TABLE PRESTATIONS ── */
 .items-section{margin-bottom:6mm}
 .items-table{
@@ -373,13 +358,6 @@ body{
         </div>
       </div>
     </div>
-
-    <!-- Objet -->
-    ${(quote.title || quote.description) ? `
-    <div class="object-block">
-      ${quote.title ? `<div class="object-title">${esc(quote.title)}</div>` : ""}
-      ${quote.description ? `<div class="object-desc">${esc(quote.description)}</div>` : ""}
-    </div>` : ""}
 
     <!-- Prestations -->
     <div class="items-section">

@@ -7,9 +7,8 @@ import {
 } from "@/lib/supabase/os-server";
 import type { SessionWithClient } from "@/lib/supabase/os-server";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import { getCoachBookings } from "@/lib/supabase/booking.server";
+import { getAllBookingsInRange } from "@/lib/supabase/booking.server";
 import type { Booking } from "@/lib/booking/types";
-import { loadCoaches } from "@/lib/content/coaches.server";
 import { OsShell } from "@/app/os/_components/OsShell";
 import { CalendarClient } from "./CalendarClient";
 
@@ -52,23 +51,8 @@ export default async function CoachCalendarPage({
   const weekStart = new Date(y, m - 1, d);
   const weekEnd = new Date(y, m - 1, d + 7);
 
-  const isAdmin = profile.roles.includes("admin");
-  const isCoach = profile.roles.includes("coach");
+  const isAdmin = (profile.roles ?? []).includes("admin");
   const supabase = await getSupabaseServer();
-
-  // For native bookings: use the osProfileId from the content table (which is
-  // what was stored as coach_id when the public booking was created). Match by
-  // email since the content table may have a different osProfileId than profile.id.
-  let nativeBookingCoachId = profile.id;
-  if (isCoach) {
-    const allCoaches = await loadCoaches().catch(() => []);
-    const coachEntry = allCoaches.find(
-      (c) => c.email?.toLowerCase() === profile.email?.toLowerCase(),
-    );
-    if (coachEntry?.osProfileId) {
-      nativeBookingCoachId = coachEntry.osProfileId;
-    }
-  }
 
   const [sessionsRes, clients, nativeBookings] = await Promise.all([
     (() => {
@@ -81,14 +65,11 @@ export default async function CoachCalendarPage({
       return isAdmin ? q : q.eq("coach_id", profile.id);
     })(),
     isAdmin ? getAllActiveClients() : getCoachClients(profile.id),
-    // Use isCoach (not isAdmin) so that coach-admins see their own bookings.
-    // An admin-only user gets [] since they have no personal booking coach_id.
-    isCoach
-      ? getCoachBookings(nativeBookingCoachId, weekStart, weekEnd).catch((err) => {
-          console.error("[CalendarPage] getCoachBookings error:", err);
-          return [] as Booking[];
-        })
-      : Promise.resolve([] as Booking[]),
+    // Load all coaches' bookings for the shared calendar view
+    getAllBookingsInRange(weekStart, weekEnd).catch((err) => {
+      console.error("[CalendarPage] getAllBookingsInRange error:", err);
+      return [] as Booking[];
+    }),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

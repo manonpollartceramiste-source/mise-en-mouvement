@@ -84,7 +84,7 @@ export default async function DevisDetailPage({ params }: { params: Params }) {
             </span>
           </div>
           <h2 className="mt-2 font-serif text-3xl text-ink-900">
-            {quote.title || quote.client_name || "Devis sans titre"}
+            {quote.client_name || "Devis"}
           </h2>
           <p className="mt-1 text-sm text-taupe-500">
             Émis le {issuedDate} · Expire le {expiresDate}

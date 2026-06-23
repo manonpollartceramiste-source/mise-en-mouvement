@@ -62,8 +62,6 @@ export default async function ModifierDevisPage({ params }: { params: Params }) 
             client_email: quote.client_email ?? "",
             client_phone: quote.client_phone ?? "",
             client_address: quote.client_address ?? "",
-            title: quote.title ?? "",
-            description: quote.description ?? "",
             line_items: Array.isArray(quote.line_items) ? quote.line_items : [],
             discount_pct: quote.discount_pct ?? 0,
             discount_amount: quote.discount_amount ?? 0,

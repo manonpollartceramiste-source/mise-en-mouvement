@@ -125,6 +125,29 @@ export async function getBookingsInRange(
   return (data ?? []) as Booking[];
 }
 
+export async function getAllBookingsInRange(from: Date, to: Date): Promise<Booking[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("*, profiles!bookings_coach_id_fkey(display_name)")
+    .not("status", "in", '("cancelled_by_client","cancelled_by_coach")')
+    .lt("starts_at", to.toISOString())
+    .gt("ends_at", from.toISOString())
+    .order("starts_at");
+
+  if (error) {
+    console.error("[booking.server] getAllBookingsInRange error:", error.message);
+    throw new Error(error.message);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((row: any) => ({
+    ...row,
+    profiles: undefined,
+    coach_name: (row.profiles as { display_name: string } | null)?.display_name ?? null,
+  })) as Booking[];
+}
+
 export async function getBookingById(id: string): Promise<Booking | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -193,8 +216,8 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
     );
   }
 
-  // Check for overlapping existing bookings
-  const overlapping = await getBookingsInRange(input.coach_id, startsAt, endsAt);
+  // Check for overlapping existing bookings across all coaches
+  const overlapping = await getAllBookingsInRange(startsAt, endsAt);
   if (overlapping.length > 0) {
     throw new Error("Créneau déjà réservé");
   }

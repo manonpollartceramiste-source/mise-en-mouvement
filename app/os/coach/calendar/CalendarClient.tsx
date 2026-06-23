@@ -56,39 +56,34 @@ const STATUS_CFG: Record<
 
 const BOOKING_STATUS_CFG: Record<
   string,
-  { card: string; dot: string; label: string }
+  { dot: string; label: string }
 > = {
-  confirmed: {
-    card: "bg-blue-600 border-blue-500 text-white",
-    dot: "bg-blue-300",
-    label: "Confirmée",
-  },
-  pending: {
-    card: "bg-amber-500 border-amber-400 text-white",
-    dot: "bg-amber-200",
-    label: "En attente",
-  },
-  completed: {
-    card: "bg-emerald-700 border-emerald-600 text-white",
-    dot: "bg-emerald-300",
-    label: "Terminée",
-  },
-  cancelled_by_client: {
-    card: "bg-red-50 border-red-200 text-red-700",
-    dot: "bg-red-400",
-    label: "Annulée (client)",
-  },
-  cancelled_by_coach: {
-    card: "bg-red-50 border-red-200 text-red-700",
-    dot: "bg-red-400",
-    label: "Annulée (coach)",
-  },
-  no_show: {
-    card: "bg-taupe-200 border-taupe-300 text-taupe-600",
-    dot: "bg-taupe-400",
-    label: "No show",
-  },
+  confirmed: { dot: "bg-blue-300", label: "Confirmée" },
+  pending: { dot: "bg-amber-200", label: "En attente" },
+  completed: { dot: "bg-emerald-300", label: "Terminée" },
+  cancelled_by_client: { dot: "bg-red-400", label: "Annulée (client)" },
+  cancelled_by_coach: { dot: "bg-red-400", label: "Annulée (coach)" },
+  no_show: { dot: "bg-taupe-400", label: "No show" },
 };
+
+// Per-coach deterministic color palette for booking cards
+const COACH_CARD_COLORS = [
+  "bg-blue-600 border-blue-500 text-white",
+  "bg-violet-600 border-violet-500 text-white",
+  "bg-teal-600 border-teal-500 text-white",
+  "bg-rose-600 border-rose-500 text-white",
+  "bg-orange-500 border-orange-400 text-white",
+  "bg-indigo-600 border-indigo-500 text-white",
+];
+
+function getCoachCardColor(coachId: string): string {
+  let hash = 0;
+  for (let i = 0; i < coachId.length; i++) {
+    hash = ((hash << 5) - hash) + coachId.charCodeAt(i);
+    hash |= 0;
+  }
+  return COACH_CARD_COLORS[Math.abs(hash) % COACH_CARD_COLORS.length];
+}
 
 const STATUSES = Object.keys(STATUS_CFG) as SessionStatus[];
 const DAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -197,6 +192,21 @@ function checkConflict(
     const sStart = new Date(s.scheduled_at).getTime();
     const sEnd = sStart + s.duration_min * 60_000;
     return nStart < sEnd && nEnd > sStart;
+  });
+}
+
+function checkBookingConflict(
+  bookings: Booking[],
+  scheduledAt: Date,
+  durationMin: number,
+): boolean {
+  const nStart = scheduledAt.getTime();
+  const nEnd = nStart + durationMin * 60_000;
+  return bookings.some((b) => {
+    if (b.status === "cancelled_by_client" || b.status === "cancelled_by_coach") return false;
+    const bStart = new Date(b.starts_at).getTime();
+    const bEnd = new Date(b.ends_at).getTime();
+    return nStart < bEnd && nEnd > bStart;
   });
 }
 
@@ -599,6 +609,7 @@ export function CalendarClient({
                     {/* Native booking cards */}
                     {bookingsForDay(day).map((b) => {
                       const cfg = BOOKING_STATUS_CFG[b.status] ?? BOOKING_STATUS_CFG.confirmed;
+                      const cardColor = getCoachCardColor(b.coach_id);
                       const top = bookingTopPx(b);
                       const height = bookingHeightPx(b);
 
@@ -606,9 +617,9 @@ export function CalendarClient({
                         <div
                           key={`booking-${b.id}`}
                           onClick={() => setDetailBooking(b)}
-                          className={`absolute left-0.5 right-0.5 z-10 overflow-hidden rounded-lg border px-1.5 py-1 transition-all select-none cursor-pointer hover:z-20 hover:shadow-lg hover:-translate-y-px hover:scale-[1.01] ${cfg.card}`}
+                          className={`absolute left-0.5 right-0.5 z-10 overflow-hidden rounded-lg border px-1.5 py-1 transition-all select-none cursor-pointer hover:z-20 hover:shadow-lg hover:-translate-y-px hover:scale-[1.01] ${cardColor}`}
                           style={{ top, height, marginLeft: "1px" }}
-                          title={`${b.client_name} · ${b.duration_min} min · ${cfg.label}`}
+                          title={`${b.client_name} · ${b.duration_min} min · ${cfg.label}${b.coach_name ? ` · ${b.coach_name}` : ""}`}
                         >
                           <p className="truncate text-[11px] font-semibold leading-tight">
                             {b.client_name}
@@ -618,9 +629,9 @@ export function CalendarClient({
                               {fmtTime(b.starts_at)} · {b.duration_min} min
                             </p>
                           )}
-                          {height >= 52 && (
+                          {height >= 52 && b.coach_name && (
                             <p className="truncate text-[10px] opacity-60">
-                              Réservation native
+                              {b.coach_name}
                             </p>
                           )}
                         </div>
@@ -646,8 +657,8 @@ export function CalendarClient({
           </span>
         ))}
         <span className="flex items-center gap-1.5 text-[11px] text-taupe-500">
-          <span className="h-2 w-2 rounded-full bg-blue-400" />
-          Réservation native
+          <span className="h-2 w-2 rounded-full bg-blue-600" />
+          Réservations (couleur par coach)
         </span>
         <span className="ml-auto hidden text-[11px] text-taupe-400 sm:block">
           Cliquer pour créer · Glisser pour déplacer · Cliquer sur une séance pour modifier
@@ -662,6 +673,7 @@ export function CalendarClient({
             slot={createSlot}
             clients={clients}
             sessions={sessions}
+            bookings={liveBookings}
             onClose={() => setCreateSlot(null)}
             onSuccess={() => {
               setCreateSlot(null);
@@ -733,12 +745,14 @@ function CreateModal({
   slot,
   clients,
   sessions,
+  bookings,
   onClose,
   onSuccess,
 }: {
   slot: CreateSlot;
   clients: Profile[];
   sessions: SessionWithClient[];
+  bookings: Booking[];
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -758,7 +772,9 @@ function CreateModal({
     return isNaN(d.getTime()) ? initDate : d;
   })();
 
-  const conflict = checkConflict(sessions, selectedDate, duration);
+  const conflict =
+    checkConflict(sessions, selectedDate, duration) ||
+    checkBookingConflict(bookings, selectedDate, duration);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -1210,7 +1226,7 @@ function BookingDetailModal({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-wider text-taupe-400">
-                Réservation native
+                Réservation{booking.coach_name ? ` · ${booking.coach_name}` : ""}
               </p>
               <h3 className="mt-0.5 font-serif text-xl text-ink-900">
                 {booking.client_name}
@@ -1221,7 +1237,7 @@ function BookingDetailModal({
             </div>
             <div className="flex items-center gap-2">
               <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${cfg.card}`}
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getCoachCardColor(booking.coach_id)}`}
               >
                 {cfg.label}
               </span>
@@ -1272,7 +1288,7 @@ function BookingDetailModal({
                     onClick={() => setStatus(s)}
                     className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
                       status === s
-                        ? `${c.card} scale-105 shadow-sm`
+                        ? "border-ink-900 bg-ink-900 text-sand-50 scale-105 shadow-sm"
                         : "border-taupe-300/40 text-taupe-500 hover:border-taupe-400/60 hover:text-ink-900"
                     }`}
                   >
