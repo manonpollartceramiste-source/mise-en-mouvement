@@ -21,9 +21,6 @@ export default async function PersonnalisationPage({
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
 
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim());
-  if (!adminEmails.includes(user.email ?? "")) redirect("/admin/login");
-
   const { saved, tab } = await searchParams;
   const activeTab = tab ?? "branding";
 

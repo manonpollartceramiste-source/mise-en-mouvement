@@ -13,8 +13,6 @@ import type { MediaCategory } from "@/lib/billing/types";
 async function requireAdmin() {
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim());
-  if (!adminEmails.includes(user.email ?? "")) redirect("/admin/login");
   return user;
 }
 

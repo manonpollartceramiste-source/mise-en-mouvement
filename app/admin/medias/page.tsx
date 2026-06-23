@@ -28,9 +28,6 @@ export default async function MediasPage({ searchParams }: { searchParams: Searc
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
 
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim());
-  if (!adminEmails.includes(user.email ?? "")) redirect("/admin/login");
-
   const { uploaded, deleted, saved, error } = await searchParams;
   const medias = await getMediaItems(false);
 
