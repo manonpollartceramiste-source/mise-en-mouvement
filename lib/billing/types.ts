@@ -74,6 +74,23 @@ export type Invoice = {
 
 export type InvoiceInsert = Omit<Invoice, "id" | "created_at" | "updated_at">;
 
+// ─── Prestation (bibliothèque) ────────────────────────────────
+
+export type Prestation = {
+  id: string;
+  coach_id: string;
+  name: string;
+  description: string | null;
+  unit_price: number;
+  tva_pct: number;
+  category: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PrestationInsert = Omit<Prestation, "id" | "created_at" | "updated_at">;
+
 // ─── Site settings ────────────────────────────────────────────
 
 export type SiteSettings = {

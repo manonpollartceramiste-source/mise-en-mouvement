@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect, notFound } from "next/navigation";
 import { getOsProfileWithRole } from "@/lib/supabase/os-server";
-import { getQuoteById } from "@/lib/billing/server";
+import { getQuoteById, getPrestations } from "@/lib/billing/server";
 import { OsShell } from "@/app/os/_components/OsShell";
 import { BillingForm } from "@/app/os/coach/_components/BillingForm";
 import { updateQuoteAction } from "../../actions";
@@ -38,6 +38,8 @@ export default async function ModifierDevisPage({ params }: { params: Params }) 
   const isAdmin = (profile.roles ?? []).includes("admin");
   if (!isAdmin && quote.coach_id !== profile.id) notFound();
 
+  const prestations = await getPrestations(profile.id);
+
   return (
     <OsShell profile={profile} title={`Modifier ${quote.number ?? ""}`}>
       <div className="mb-8">
@@ -69,6 +71,7 @@ export default async function ModifierDevisPage({ params }: { params: Params }) 
             conditions: quote.conditions ?? "",
             validity_days: quote.validity_days ?? 30,
           }}
+          prestations={prestations}
         />
       </div>
     </OsShell>

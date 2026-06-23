@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { makeLineItem, computeTotals, fmtEur } from "@/lib/billing/types";
-import type { LineItem } from "@/lib/billing/types";
+import type { LineItem, Prestation } from "@/lib/billing/types";
 
 type Props = {
   mode: "quote" | "invoice";
@@ -27,9 +27,10 @@ type Props = {
   action: (formData: FormData) => void | Promise<void>;
   editId?: string;
   submitLabel?: string;
+  prestations?: Prestation[];
 };
 
-export function BillingForm({ mode, defaultValues = {}, action, editId, submitLabel }: Props) {
+export function BillingForm({ mode, defaultValues = {}, action, editId, submitLabel, prestations = [] }: Props) {
   const [items, setItems] = useState<LineItem[]>(
     defaultValues.line_items ?? [makeLineItem()],
   );
@@ -37,8 +38,17 @@ export function BillingForm({ mode, defaultValues = {}, action, editId, submitLa
   const [discountAmount, setDiscountAmount] = useState(defaultValues.discount_amount ?? 0);
   const [validityDays, setValidityDays] = useState(defaultValues.validity_days ?? 30);
   const [pending, setPending] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [saveToBib, setSaveToBib] = useState<Set<string>>(new Set());
 
   const { subtotal_ht, total_tva, total_ttc } = computeTotals(items, discountPct, discountAmount);
+
+  const activePrestations = prestations.filter((p) => p.is_active);
+  const filteredPrestations = activePrestations.filter((p) =>
+    p.name.toLowerCase().includes(librarySearch.toLowerCase()) ||
+    (p.category ?? "").toLowerCase().includes(librarySearch.toLowerCase()),
+  );
 
   const updateItem = useCallback(
     (idx: number, field: keyof LineItem, raw: string | number) => {
@@ -63,12 +73,44 @@ export function BillingForm({ mode, defaultValues = {}, action, editId, submitLa
   const removeItem = (idx: number) =>
     setItems((p) => p.filter((_, i) => i !== idx));
 
+  const addFromLibrary = (prestation: Prestation) => {
+    const newItem = makeLineItem();
+    newItem.name = prestation.name;
+    newItem.description = prestation.description ?? "";
+    newItem.unit_price = Number(prestation.unit_price);
+    newItem.tva_pct = Number(prestation.tva_pct);
+    newItem.quantity = 1;
+    newItem.total_ht = newItem.unit_price;
+    newItem.total_ttc = newItem.total_ht * (1 + newItem.tva_pct / 100);
+    setItems((p) => [...p, newItem]);
+    setShowLibrary(false);
+    setLibrarySearch("");
+  };
+
+  const toggleSaveToBib = (itemId: string) => {
+    setSaveToBib((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  };
+
   async function handleSubmit(formData: FormData) {
     setPending(true);
     formData.set("line_items", JSON.stringify(items));
     formData.set("discount_pct", String(discountPct));
     formData.set("discount_amount", String(discountAmount));
     formData.set("validity_days", String(validityDays));
+    const toSave = items.filter((item) => saveToBib.has(item.id));
+    if (toSave.length > 0) {
+      formData.set("save_to_library", JSON.stringify(toSave.map((item) => ({
+        name: item.name,
+        description: item.description,
+        unit_price: item.unit_price,
+        tva_pct: item.tva_pct,
+      }))));
+    }
     await action(formData);
   }
 
@@ -103,15 +145,71 @@ export function BillingForm({ mode, defaultValues = {}, action, editId, submitLa
 
       {/* Lignes de prestation */}
       <section className="rounded-2xl border border-taupe-300/40 bg-white p-6">
-        <div className="mb-5 flex items-center justify-between">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-serif text-xl text-ink-900">Prestations</h3>
-          <button
-            type="button"
-            onClick={addItem}
-            className="rounded-xl border border-taupe-300/50 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-sand-100"
-          >
-            + Ajouter une ligne
-          </button>
+          <div className="flex items-center gap-2">
+            {activePrestations.length > 0 && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowLibrary((v) => !v)}
+                  className="rounded-xl border border-taupe-400/60 bg-sand-50 px-4 py-2 text-sm font-medium text-taupe-700 transition-colors hover:bg-sand-100"
+                >
+                  📚 Bibliothèque
+                </button>
+                {showLibrary && (
+                  <div className="absolute right-0 top-full z-20 mt-1.5 w-72 rounded-2xl border border-taupe-300/40 bg-white shadow-lg">
+                    <div className="border-b border-taupe-300/30 p-3">
+                      <input
+                        type="text"
+                        value={librarySearch}
+                        onChange={(e) => setLibrarySearch(e.target.value)}
+                        placeholder="Rechercher…"
+                        className="w-full rounded-xl border border-taupe-300/50 bg-sand-50 px-3 py-2 text-sm text-ink-900 placeholder-taupe-400 focus:border-taupe-500 focus:outline-none"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="max-h-60 overflow-y-auto p-2">
+                      {filteredPrestations.length === 0 ? (
+                        <p className="py-4 text-center text-xs text-taupe-400">Aucun résultat</p>
+                      ) : (
+                        filteredPrestations.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => addFromLibrary(p)}
+                            className="w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-sand-50"
+                          >
+                            <p className="text-sm font-medium text-ink-900">{p.name}</p>
+                            <p className="text-xs text-taupe-500">
+                              {fmtEur(p.unit_price)} HT
+                              {Number(p.tva_pct) > 0 && ` · TVA ${p.tva_pct}%`}
+                              {p.category && ` · ${p.category}`}
+                            </p>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                    <div className="border-t border-taupe-300/30 p-2">
+                      <a
+                        href="/os/coach/prestations"
+                        className="block rounded-xl px-3 py-2 text-center text-xs text-taupe-500 transition-colors hover:bg-sand-50"
+                      >
+                        Gérer la bibliothèque →
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={addItem}
+              className="rounded-xl border border-taupe-300/50 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-sand-100"
+            >
+              + Ajouter une ligne
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -163,15 +261,26 @@ export function BillingForm({ mode, defaultValues = {}, action, editId, submitLa
                   </span>
                 </div>
               </div>
-              {items.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeItem(idx)}
-                  className="mt-3 text-xs text-taupe-500 hover:text-red-600"
-                >
-                  Supprimer cette ligne
-                </button>
-              )}
+              <div className="mt-3 flex items-center justify-between">
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-taupe-500">
+                  <input
+                    type="checkbox"
+                    checked={saveToBib.has(item.id)}
+                    onChange={() => toggleSaveToBib(item.id)}
+                    className="rounded border-taupe-300"
+                  />
+                  Sauvegarder dans la bibliothèque
+                </label>
+                {items.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeItem(idx)}
+                    className="text-xs text-taupe-500 hover:text-red-600"
+                  >
+                    Supprimer
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

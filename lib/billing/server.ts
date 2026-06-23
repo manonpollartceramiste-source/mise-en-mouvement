@@ -5,6 +5,8 @@ import type {
   QuoteInsert,
   Invoice,
   InvoiceInsert,
+  Prestation,
+  PrestationInsert,
   SiteSettings,
   DiscoverySessionSettings,
   MediaItem,
@@ -147,6 +149,64 @@ export async function getNextInvoiceNumber(coachId: string): Promise<string> {
     .like("number", `F${year}%`);
   const seq = ((count ?? 0) + 1).toString().padStart(3, "0");
   return `F${year}-${seq}`;
+}
+
+// ─── Prestation library ───────────────────────────────────────
+
+export async function getPrestations(coachId: string): Promise<Prestation[]> {
+  const supabase = await getSupabaseServer();
+  const { data } = await supabase
+    .from("prestations")
+    .select("*")
+    .eq("coach_id", coachId)
+    .order("category", { nullsFirst: false })
+    .order("name");
+  return (data ?? []) as Prestation[];
+}
+
+export async function createPrestation(insert: PrestationInsert): Promise<Prestation | null> {
+  const supabase = await getSupabaseServer();
+  const { data } = await supabase
+    .from("prestations")
+    .insert(insert)
+    .select()
+    .single();
+  return data as Prestation | null;
+}
+
+export async function updatePrestation(id: string, patch: Partial<PrestationInsert>): Promise<Prestation | null> {
+  const supabase = await getSupabaseServer();
+  const { data } = await supabase
+    .from("prestations")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single();
+  return data as Prestation | null;
+}
+
+export async function deletePrestation(id: string): Promise<void> {
+  const supabase = await getSupabaseServer();
+  await supabase.from("prestations").delete().eq("id", id);
+}
+
+export async function saveLineItemsToLibrary(
+  coachId: string,
+  items: Array<{ name: string; description?: string; unit_price: number; tva_pct: number }>,
+): Promise<void> {
+  if (!items.length) return;
+  const supabase = await getSupabaseServer();
+  await supabase.from("prestations").insert(
+    items.map((item) => ({
+      coach_id: coachId,
+      name: item.name,
+      description: item.description || null,
+      unit_price: item.unit_price,
+      tva_pct: item.tva_pct,
+      category: null,
+      is_active: true,
+    })),
+  );
 }
 
 // ─── Site settings ────────────────────────────────────────────

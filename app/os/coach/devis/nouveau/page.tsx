@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getOsProfileWithRole } from "@/lib/supabase/os-server";
+import { getPrestations } from "@/lib/billing/server";
 import { OsShell } from "@/app/os/_components/OsShell";
 import { BillingForm } from "@/app/os/coach/_components/BillingForm";
 import { createQuoteAction } from "../actions";
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
 export default async function NouveauDevisPage() {
   const profile = await getOsProfileWithRole("coach");
   if (!profile) redirect("/os/login");
+
+  const prestations = await getPrestations(profile.id);
 
   return (
     <OsShell profile={profile} title="Nouveau devis">
@@ -34,6 +37,7 @@ export default async function NouveauDevisPage() {
           mode="quote"
           action={createQuoteAction}
           submitLabel="Créer le devis"
+          prestations={prestations}
         />
       </div>
     </OsShell>

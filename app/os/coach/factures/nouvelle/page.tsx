@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getOsProfileWithRole } from "@/lib/supabase/os-server";
-import { getQuoteById } from "@/lib/billing/server";
+import { getQuoteById, getPrestations } from "@/lib/billing/server";
 import { OsShell } from "@/app/os/_components/OsShell";
 import { BillingForm } from "@/app/os/coach/_components/BillingForm";
 import { createInvoiceAction } from "../actions";
@@ -43,6 +43,8 @@ export default async function NouvelleFacturePage({
     }
   }
 
+  const prestations = await getPrestations(profile.id);
+
   return (
     <OsShell profile={profile} title="Nouvelle facture">
       <div className="mb-8">
@@ -65,6 +67,7 @@ export default async function NouvelleFacturePage({
           action={createInvoiceAction}
           submitLabel="Créer la facture"
           defaultValues={defaultValues as Parameters<typeof BillingForm>[0]["defaultValues"]}
+          prestations={prestations}
         />
       </div>
     </OsShell>

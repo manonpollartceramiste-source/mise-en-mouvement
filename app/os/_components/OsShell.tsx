@@ -22,6 +22,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { label: "Bilan mouvement", href: "/os/coach/bilan-mouvement" },
     { label: "Devis", href: "/os/coach/devis" },
     { label: "Factures", href: "/os/coach/factures" },
+    { label: "Prestations", href: "/os/coach/prestations" },
     { label: "Paramètres", href: "/os/coach/settings" },
   ],
   admin: [

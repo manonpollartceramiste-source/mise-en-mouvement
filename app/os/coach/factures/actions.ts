@@ -7,6 +7,7 @@ import {
   updateInvoice,
   deleteInvoice,
   getNextInvoiceNumber,
+  saveLineItemsToLibrary,
 } from "@/lib/billing/server";
 import { computeTotals } from "@/lib/billing/types";
 import type { LineItem } from "@/lib/billing/types";
@@ -55,6 +56,14 @@ export async function createInvoiceAction(formData: FormData) {
   });
 
   if (!invoice) redirect("/os/coach/factures?error=creation");
+
+  const saveRaw = formData.get("save_to_library") as string | null;
+  if (saveRaw) {
+    try {
+      await saveLineItemsToLibrary(profile.id, JSON.parse(saveRaw));
+    } catch {}
+  }
+
   redirect(`/os/coach/factures/${invoice.id}`);
 }
 
@@ -86,6 +95,13 @@ export async function updateInvoiceAction(formData: FormData) {
     total_tva,
     total_ttc,
   });
+
+  const saveRaw = formData.get("save_to_library") as string | null;
+  if (saveRaw) {
+    try {
+      await saveLineItemsToLibrary(profile.id, JSON.parse(saveRaw));
+    } catch {}
+  }
 
   redirect(`/os/coach/factures/${id}`);
 }

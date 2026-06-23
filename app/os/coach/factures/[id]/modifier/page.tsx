@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect, notFound } from "next/navigation";
 import { getOsProfileWithRole } from "@/lib/supabase/os-server";
-import { getInvoiceById } from "@/lib/billing/server";
+import { getInvoiceById, getPrestations } from "@/lib/billing/server";
 import { OsShell } from "@/app/os/_components/OsShell";
 import { BillingForm } from "@/app/os/coach/_components/BillingForm";
 import { updateInvoiceAction } from "../../actions";
@@ -38,6 +38,8 @@ export default async function ModifierFacturePage({ params }: { params: Params }
   const isAdmin = (profile.roles ?? []).includes("admin");
   if (!isAdmin && invoice.coach_id !== profile.id) notFound();
 
+  const prestations = await getPrestations(profile.id);
+
   return (
     <OsShell profile={profile} title={`Modifier ${invoice.number ?? ""}`}>
       <div className="mb-8">
@@ -68,6 +70,7 @@ export default async function ModifierFacturePage({ params }: { params: Params }
             notes: invoice.notes ?? "",
             due_at: invoice.due_at ?? "",
           }}
+          prestations={prestations}
         />
       </div>
     </OsShell>

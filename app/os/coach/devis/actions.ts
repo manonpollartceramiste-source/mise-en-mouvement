@@ -8,6 +8,7 @@ import {
   deleteQuote,
   getNextQuoteNumber,
   getQuoteById,
+  saveLineItemsToLibrary,
 } from "@/lib/billing/server";
 import { computeTotals } from "@/lib/billing/types";
 import type { LineItem } from "@/lib/billing/types";
@@ -57,6 +58,14 @@ export async function createQuoteAction(formData: FormData) {
   });
 
   if (!quote) redirect("/os/coach/devis?error=creation");
+
+  const saveRaw = formData.get("save_to_library") as string | null;
+  if (saveRaw) {
+    try {
+      await saveLineItemsToLibrary(profile.id, JSON.parse(saveRaw));
+    } catch {}
+  }
+
   redirect(`/os/coach/devis/${quote.id}`);
 }
 
@@ -91,6 +100,13 @@ export async function updateQuoteAction(formData: FormData) {
     total_tva,
     total_ttc,
   });
+
+  const saveRaw = formData.get("save_to_library") as string | null;
+  if (saveRaw) {
+    try {
+      await saveLineItemsToLibrary(profile.id, JSON.parse(saveRaw));
+    } catch {}
+  }
 
   redirect(`/os/coach/devis/${id}`);
 }
