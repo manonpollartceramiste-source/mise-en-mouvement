@@ -11,12 +11,21 @@ function esc(s: string | null | undefined): string {
     .replace(/"/g, "&quot;");
 }
 
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function safeFmtEur(n: unknown): string {
+  return fmtEur(n as number);
 }
 
 export function generateQuoteHtml(
@@ -24,42 +33,39 @@ export function generateQuoteHtml(
   settings: SiteSettings,
   logoSrc: string,
 ): string {
-  const lineItemsHtml = (quote.line_items ?? [])
+  const lineItems = Array.isArray(quote.line_items) ? quote.line_items : [];
+
+  const lineItemsHtml = lineItems
     .map(
-      (item) => `
-    <tr>
+      (item, i) => `
+    <tr class="${i % 2 === 0 ? "row-even" : "row-odd"}">
       <td class="item-cell">
-        <div class="item-name">${esc(item.name)}</div>
+        <div class="item-name">${esc(item.name) || "—"}</div>
         ${item.description ? `<div class="item-desc">${esc(item.description)}</div>` : ""}
       </td>
-      <td class="num-cell">${item.quantity}</td>
-      <td class="num-cell">${fmtEur(item.unit_price)}</td>
-      <td class="num-cell">${item.tva_pct > 0 ? item.tva_pct + "%" : "—"}</td>
-      <td class="num-cell bold">${fmtEur(item.total_ht)}</td>
+      <td class="num-cell">${item.quantity ?? 0}</td>
+      <td class="num-cell">${safeFmtEur(item.unit_price)}</td>
+      <td class="num-cell">${(Number(item.tva_pct) > 0) ? item.tva_pct + "%" : "—"}</td>
+      <td class="num-cell bold">${safeFmtEur(item.total_ht)}</td>
     </tr>`,
     )
     .join("");
 
-  const hasDiscount = quote.discount_pct > 0 || quote.discount_amount > 0;
-  const discountLine = hasDiscount
-    ? `<div class="total-row">
-        <span class="total-label light">Remise</span>
-        <span class="total-value light">
-          ${quote.discount_pct > 0 ? `−${quote.discount_pct}%` : `−${fmtEur(quote.discount_amount)}`}
-        </span>
-       </div>`
-    : "";
+  const hasDiscount = Number(quote.discount_pct) > 0 || Number(quote.discount_amount) > 0;
+  const hasTva = Number(quote.total_tva) > 0;
+  const discountLabel = Number(quote.discount_pct) > 0
+    ? `−${quote.discount_pct}%`
+    : `−${safeFmtEur(quote.discount_amount)}`;
 
-  const hasTva = quote.total_tva > 0;
+  const addrParts = [settings.address, [settings.postal_code, settings.city].filter(Boolean).join(" ")].filter(Boolean);
+  const addrLine = addrParts.join(", ");
+  const contactLine = [settings.phone, settings.email].filter(Boolean).join(" · ");
 
   const logoHtml = logoSrc
-    ? `<img src="${logoSrc}" alt="Logo" class="logo" />`
-    : `<div class="logo-text">${esc(settings.company_name)}</div>`;
+    ? `<img src="${esc(logoSrc)}" alt="${esc(settings.company_name)}" class="hd-logo" />`
+    : "";
 
-  const addrLine = [settings.address, [settings.postal_code, settings.city].filter(Boolean).join(" ")]
-    .filter(Boolean)
-    .join(" · ");
-  const contactLine = [settings.phone, settings.email].filter(Boolean).join(" · ");
+  const validityDays = Number(quote.validity_days) || 30;
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -67,371 +73,391 @@ export function generateQuoteHtml(
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+@page{size:A4 portrait;margin:0}
+body{
+  font-family:'Inter',-apple-system,sans-serif;
+  font-size:13px;line-height:1.6;
+  background:#F7F3EE;
+  color:#2B2018;
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
 
-  :root {
-    --sand-50: #f7f2e8;
-    --sand-100: #ede3d0;
-    --sand-200: #d9cdb6;
-    --taupe-300: #beb09c;
-    --taupe-400: #a89a89;
-    --taupe-500: #8c7e6e;
-    --taupe-600: #6e6353;
-    --taupe-700: #4f463b;
-    --taupe-800: #3d352c;
-    --ink-900: #1a1815;
-  }
+/* ── PAGE ── */
+.page{
+  width:210mm;min-height:297mm;
+  display:flex;flex-direction:column;
+  background:#F7F3EE;
+}
 
-  body {
-    font-family: 'Inter', system-ui, sans-serif;
-    font-size: 13px;
-    color: var(--ink-900);
-    background: #fff;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }
+/* ── HEADER BAND ── */
+.hd{
+  background:#1F1812;
+  padding:8pt 12mm 7pt;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.hd-brand{display:flex;align-items:center;gap:10pt}
+.hd-logo{
+  height:32px;width:auto;max-width:100px;
+  object-fit:contain;object-position:left center;
+  filter:brightness(0) invert(1) opacity(0.9);
+  flex-shrink:0;
+}
+.hd-sep{width:0.5pt;height:24px;background:rgba(185,154,107,0.4);flex-shrink:0}
+.hd-name{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:14.5px;font-weight:700;
+  color:#F0E8DA;letter-spacing:-0.2px;
+}
+.hd-contact{font-size:10px;color:#7A6A58;margin-top:1pt}
+.hd-right{text-align:right}
+.hd-doc-type{
+  font-size:10px;font-weight:700;
+  color:#B99A6B;letter-spacing:3px;text-transform:uppercase;
+}
+.hd-doc-num{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:15px;font-weight:700;color:#E8DDD0;
+  display:block;margin-top:1pt;
+}
+.hd-doc-date{font-size:10px;color:#7A6A58;margin-top:2pt}
 
-  /* ── Page layout ── */
-  .page {
-    width: 210mm;
-    min-height: 297mm;
-    padding: 18mm 16mm 14mm;
-    display: flex;
-    flex-direction: column;
-  }
+/* ── ACCENT BAR ── */
+.accent-bar{
+  height:2pt;background:#B99A6B;flex-shrink:0;
+}
 
-  /* ── Header ── */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding-bottom: 8mm;
-    border-bottom: 1.5px solid var(--sand-200);
-    margin-bottom: 10mm;
-  }
+/* ── BODY ── */
+.body{
+  flex:1;padding:8mm 12mm 6mm;
+  display:flex;flex-direction:column;gap:0;
+}
 
-  .logo { height: 44px; width: auto; object-fit: contain; }
-  .logo-text {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    color: var(--ink-900);
-    letter-spacing: -0.02em;
-  }
+/* ── SECTION LABEL ── */
+.sec{
+  display:flex;align-items:center;gap:7pt;
+  margin-bottom:5pt;
+}
+.sec-lbl{
+  font-size:10px;font-weight:700;
+  color:#B99A6B;letter-spacing:2.5px;text-transform:uppercase;
+  white-space:nowrap;
+}
+.sec-rule{
+  flex:1;height:0.4pt;
+  background:linear-gradient(90deg,#DED4C6,transparent);
+}
 
-  .doc-label {
-    text-align: right;
-  }
-  .doc-label .doc-type {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px;
-    color: var(--ink-900);
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-  }
-  .doc-label .doc-number {
-    font-size: 11px;
-    color: var(--taupe-500);
-    font-weight: 500;
-    margin-top: 4px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
+/* ── META (3 colonnes) ── */
+.meta{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:0;margin-bottom:7mm;
+}
+.meta-col{padding-right:8mm}
+.meta-col:last-child{padding-right:0;text-align:right}
+.meta-col-lbl{
+  font-size:9px;font-weight:700;
+  color:#B99A6B;letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:4pt;
+}
+.meta-company{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:14px;font-weight:600;color:#2B2018;
+  margin-bottom:3pt;
+}
+.meta-line{font-size:11px;color:#6B5A48;line-height:1.7}
 
-  /* ── Meta row (émetteur / destinataire / infos) ── */
-  .meta-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8mm;
-    margin-bottom: 10mm;
-  }
+.client-name{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:18px;font-weight:700;color:#1F1812;
+  margin-bottom:4pt;
+}
 
-  .meta-block .meta-title {
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--taupe-400);
-    margin-bottom: 5px;
-  }
-  .meta-block .meta-company {
-    font-family: 'Playfair Display', serif;
-    font-size: 15px;
-    color: var(--ink-900);
-    margin-bottom: 3px;
-  }
-  .meta-block .meta-line {
-    font-size: 11.5px;
-    color: var(--taupe-600);
-    line-height: 1.65;
-  }
+.info-pair{margin-bottom:5pt}
+.info-lbl{
+  font-size:9px;font-weight:700;
+  color:#B99A6B;letter-spacing:2px;text-transform:uppercase;
+  display:block;margin-bottom:1pt;
+}
+.info-val{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:13px;font-weight:600;color:#2B2018;
+}
+.info-sub{font-size:10.5px;color:#8A7A68;margin-top:1pt}
 
-  .info-pair { margin-bottom: 3px; }
-  .info-label {
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--taupe-400);
-    display: block;
-    margin-bottom: 1px;
-  }
-  .info-value {
-    font-size: 11.5px;
-    color: var(--ink-900);
-    font-weight: 500;
-  }
+/* ── OBJET ── */
+.object-block{
+  background:#fff;
+  border:0.5pt solid #DED4C6;
+  border-radius:8pt;
+  padding:5mm 6mm;
+  margin-bottom:7mm;
+}
+.object-title{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:16px;font-weight:600;color:#1F1812;
+  margin-bottom:3pt;
+}
+.object-desc{font-size:11.5px;color:#6B5A48;line-height:1.65}
 
-  /* ── Title block ── */
-  .title-block {
-    background: var(--sand-50);
-    border-radius: 10px;
-    padding: 5mm 6mm;
-    margin-bottom: 8mm;
-  }
-  .title-block .quote-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 18px;
-    color: var(--ink-900);
-  }
-  .title-block .quote-desc {
-    font-size: 11.5px;
-    color: var(--taupe-600);
-    margin-top: 4px;
-  }
+/* ── TABLE PRESTATIONS ── */
+.items-section{margin-bottom:6mm}
+.items-table{
+  width:100%;border-collapse:collapse;
+  margin-top:5pt;
+}
+.items-table thead tr{
+  border-bottom:1pt solid #DED4C6;
+}
+.items-table thead th{
+  font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.5px;
+  color:#B99A6B;padding:0 0 5pt;text-align:left;
+}
+.items-table thead th.num-head{text-align:right}
+.items-table tbody tr{border-bottom:0.4pt solid #EDE8E0}
+.items-table tbody tr:last-child{border-bottom:none}
+.items-table tbody td{padding:4pt 0;vertical-align:top}
+.row-even{background:transparent}
+.row-odd{background:rgba(255,255,255,0.45)}
+.item-cell{width:44%}
+.item-name{font-size:12.5px;font-weight:600;color:#2B2018}
+.item-desc{font-size:10.5px;color:#8A7A68;margin-top:2pt;line-height:1.5}
+.num-cell{text-align:right;font-size:12px;color:#6B5A48}
+.bold{font-weight:700;color:#2B2018}
 
-  /* ── Table ── */
-  .items-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 6mm;
-  }
+/* ── TOTAUX ── */
+.totaux-wrap{
+  display:flex;justify-content:flex-end;
+  margin-bottom:7mm;
+}
+.totaux-box{
+  background:#1F1812;
+  border-radius:10pt;
+  padding:5mm 6mm;
+  min-width:58mm;
+}
+.total-row{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:16pt;margin-bottom:3pt;
+}
+.total-row.main-row{
+  border-top:0.5pt solid rgba(185,154,107,0.3);
+  padding-top:6pt;margin-top:4pt;margin-bottom:0;
+}
+.total-lbl{font-size:11px;color:rgba(240,232,218,0.6)}
+.total-val{font-size:11px;color:#F0E8DA;font-weight:500;white-space:nowrap}
+.total-lbl.dim{color:rgba(240,232,218,0.4)}
+.total-val.dim{color:rgba(240,232,218,0.4)}
+.total-lbl.big{font-size:13px;color:#F0E8DA;font-weight:700}
+.total-val.big{font-size:18px;color:#F0E8DA;font-weight:700}
+.total-val.gold{color:#B99A6B}
 
-  .items-table thead tr {
-    border-bottom: 1.5px solid var(--sand-200);
-  }
+/* ── BLOCS BAS ── */
+.bottom-blocks{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:5mm;margin-bottom:6mm;
+}
+.bottom-block{
+  background:#fff;
+  border:0.5pt solid #DED4C6;
+  border-radius:8pt;
+  padding:4mm 5mm;
+}
+.bb-lbl{
+  font-size:9px;font-weight:700;
+  color:#B99A6B;letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:4pt;
+}
+.bb-text{font-size:11px;color:#6B5A48;line-height:1.7}
 
-  .items-table thead th {
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--taupe-500);
-    padding: 0 0 5px;
-    text-align: left;
-  }
-  .items-table thead th.num-head { text-align: right; }
+/* ── SIGNATURE ── */
+.signature-block{
+  background:#fff;
+  border:0.5pt solid #DED4C6;
+  border-radius:8pt;
+  padding:5mm 6mm;
+  margin-bottom:6mm;
+}
+.sig-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:4mm;
+}
+.sig-title{
+  font-size:9px;font-weight:700;
+  color:#B99A6B;letter-spacing:2px;text-transform:uppercase;
+}
+.sig-mention{
+  font-size:10.5px;color:#6B5A48;font-style:italic;
+}
+.sig-fields{display:grid;grid-template-columns:1fr 1fr;gap:5mm}
+.sig-field{border-bottom:0.6pt solid #DED4C6;padding-bottom:2mm}
+.sig-field-lbl{font-size:9px;color:#B99A6B;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6mm;display:block}
 
-  .items-table tbody tr {
-    border-bottom: 1px solid var(--sand-100);
-  }
-  .items-table tbody td {
-    padding: 4.5mm 0;
-    vertical-align: top;
-  }
-
-  .item-cell { width: 45%; }
-  .item-name { font-weight: 500; color: var(--ink-900); }
-  .item-desc { font-size: 11px; color: var(--taupe-500); margin-top: 2px; }
-  .num-cell { text-align: right; color: var(--taupe-600); }
-  .bold { font-weight: 600; color: var(--ink-900); }
-
-  /* ── Totals ── */
-  .totals-wrapper {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 8mm;
-  }
-  .totals-box {
-    background: var(--ink-900);
-    border-radius: 12px;
-    padding: 5mm 6mm;
-    min-width: 55mm;
-  }
-  .total-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 3px;
-  }
-  .total-row.main-row {
-    border-top: 1px solid rgba(255,255,255,0.15);
-    padding-top: 5px;
-    margin-top: 4px;
-    margin-bottom: 0;
-  }
-  .total-label {
-    font-size: 11.5px;
-    color: rgba(255,255,255,0.65);
-  }
-  .total-value {
-    font-size: 11.5px;
-    color: #fff;
-    font-weight: 500;
-    white-space: nowrap;
-  }
-  .total-label.light { color: rgba(255,255,255,0.5); }
-  .total-value.light { color: rgba(255,255,255,0.5); }
-  .total-label.big { font-size: 13px; color: #fff; font-weight: 600; }
-  .total-value.big { font-size: 16px; color: #fff; font-weight: 700; }
-
-  /* ── Footer blocks ── */
-  .footer-blocks {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6mm;
-    margin-bottom: 8mm;
-  }
-  .footer-block {
-    background: var(--sand-50);
-    border-radius: 10px;
-    padding: 4mm 5mm;
-  }
-  .footer-block .fb-title {
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--taupe-400);
-    margin-bottom: 5px;
-  }
-  .footer-block .fb-text {
-    font-size: 11.5px;
-    color: var(--taupe-600);
-    line-height: 1.65;
-  }
-
-  /* ── Doc footer ── */
-  .doc-footer {
-    margin-top: auto;
-    padding-top: 5mm;
-    border-top: 1px solid var(--sand-200);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 4mm;
-  }
-  .doc-footer .footer-brand {
-    font-family: 'Playfair Display', serif;
-    font-size: 13px;
-    color: var(--taupe-700);
-  }
-  .doc-footer .footer-contact {
-    font-size: 10.5px;
-    color: var(--taupe-500);
-    text-align: right;
-  }
-  ${settings.siret ? `.doc-footer .footer-siret {
-    font-size: 10px;
-    color: var(--taupe-400);
-  }` : ""}
+/* ── FOOTER ── */
+.doc-footer{
+  margin-top:auto;padding:4pt 12mm;
+  background:#1F1812;
+  border-top:0.5pt solid #B99A6B;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-shrink:0;
+}
+.footer-brand{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:12px;color:#D0C4B0;
+}
+.footer-info{font-size:9.5px;color:#7A6A58;text-align:right;line-height:1.6}
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- Header -->
-  <header class="header">
-    ${logoHtml}
-    <div class="doc-label">
-      <div class="doc-type">Devis</div>
-      <div class="doc-number">${esc(quote.number)}</div>
+  <!-- Header band -->
+  <header class="hd">
+    <div class="hd-brand">
+      ${logoHtml ? `${logoHtml}<div class="hd-sep"></div>` : ""}
+      <div>
+        <div class="hd-name">${esc(settings.company_name)}</div>
+        ${contactLine ? `<div class="hd-contact">${esc(contactLine)}</div>` : ""}
+      </div>
+    </div>
+    <div class="hd-right">
+      <div class="hd-doc-type">Devis</div>
+      <span class="hd-doc-num">${esc(quote.number)}</span>
+      <div class="hd-doc-date">Émis le ${fmtDate(quote.issued_at)}</div>
     </div>
   </header>
+  <div class="accent-bar"></div>
 
-  <!-- Meta -->
-  <div class="meta-row">
-    <div class="meta-block">
-      <div class="meta-title">Émetteur</div>
-      <div class="meta-company">${esc(settings.company_name)}</div>
-      ${addrLine ? `<div class="meta-line">${esc(addrLine)}</div>` : ""}
-      ${contactLine ? `<div class="meta-line">${esc(contactLine)}</div>` : ""}
-      ${settings.siret ? `<div class="meta-line">SIRET ${esc(settings.siret)}</div>` : ""}
-    </div>
-    <div class="meta-block">
-      <div class="meta-title">Client</div>
-      ${quote.client_name ? `<div class="meta-company">${esc(quote.client_name)}</div>` : ""}
-      ${quote.client_address ? `<div class="meta-line">${esc(quote.client_address)}</div>` : ""}
-      ${quote.client_email ? `<div class="meta-line">${esc(quote.client_email)}</div>` : ""}
-      ${quote.client_phone ? `<div class="meta-line">${esc(quote.client_phone)}</div>` : ""}
-    </div>
-    <div class="meta-block">
-      <div class="info-pair">
-        <span class="info-label">Date d'émission</span>
-        <span class="info-value">${fmtDate(quote.issued_at)}</span>
+  <!-- Body -->
+  <div class="body">
+
+    <!-- Meta : émetteur | client | infos -->
+    <div class="meta">
+      <div class="meta-col">
+        <div class="meta-col-lbl">Émetteur</div>
+        <div class="meta-company">${esc(settings.company_name)}</div>
+        ${addrLine ? `<div class="meta-line">${esc(addrLine)}</div>` : ""}
+        ${settings.phone ? `<div class="meta-line">${esc(settings.phone)}</div>` : ""}
+        ${settings.email ? `<div class="meta-line">${esc(settings.email)}</div>` : ""}
+        ${settings.siret ? `<div class="meta-line" style="margin-top:3pt;font-size:10px;color:#B99A6B">SIRET ${esc(settings.siret)}</div>` : ""}
       </div>
-      <div class="info-pair" style="margin-top:6px">
-        <span class="info-label">Valable jusqu'au</span>
-        <span class="info-value">${fmtDate(quote.expires_at)}</span>
+      <div class="meta-col">
+        <div class="meta-col-lbl">Destinataire</div>
+        ${quote.client_name ? `<div class="client-name">${esc(quote.client_name)}</div>` : "<div class=\"client-name\" style=\"color:#B99A6B\">Client</div>"}
+        ${quote.client_address ? `<div class="meta-line">${esc(quote.client_address)}</div>` : ""}
+        ${quote.client_email ? `<div class="meta-line">${esc(quote.client_email)}</div>` : ""}
+        ${quote.client_phone ? `<div class="meta-line">${esc(quote.client_phone)}</div>` : ""}
+      </div>
+      <div class="meta-col">
+        <div class="info-pair">
+          <span class="info-lbl">Date d'émission</span>
+          <span class="info-val">${fmtDate(quote.issued_at)}</span>
+        </div>
+        <div class="info-pair">
+          <span class="info-lbl">Valable jusqu'au</span>
+          <span class="info-val">${fmtDate(quote.expires_at)}</span>
+          <div class="info-sub">${validityDays} jours</div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Title block -->
-  ${(quote.title || quote.description) ? `
-  <div class="title-block">
-    ${quote.title ? `<div class="quote-title">${esc(quote.title)}</div>` : ""}
-    ${quote.description ? `<div class="quote-desc">${esc(quote.description)}</div>` : ""}
-  </div>` : ""}
+    <!-- Objet -->
+    ${(quote.title || quote.description) ? `
+    <div class="object-block">
+      ${quote.title ? `<div class="object-title">${esc(quote.title)}</div>` : ""}
+      ${quote.description ? `<div class="object-desc">${esc(quote.description)}</div>` : ""}
+    </div>` : ""}
 
-  <!-- Items table -->
-  <table class="items-table">
-    <thead>
-      <tr>
-        <th>Prestation</th>
-        <th class="num-head">Qté</th>
-        <th class="num-head">Prix unit. HT</th>
-        <th class="num-head">TVA</th>
-        <th class="num-head">Total HT</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${lineItemsHtml}
-    </tbody>
-  </table>
-
-  <!-- Totals -->
-  <div class="totals-wrapper">
-    <div class="totals-box">
-      <div class="total-row">
-        <span class="total-label">Sous-total HT</span>
-        <span class="total-value">${fmtEur(quote.subtotal_ht)}</span>
+    <!-- Prestations -->
+    <div class="items-section">
+      <div class="sec">
+        <span class="sec-lbl">Prestations</span>
+        <div class="sec-rule"></div>
       </div>
-      ${hasDiscount ? discountLine : ""}
-      ${hasTva ? `<div class="total-row">
-        <span class="total-label">TVA</span>
-        <span class="total-value">${fmtEur(quote.total_tva)}</span>
+      ${lineItems.length === 0 ? `<div style="font-size:11px;color:#B99A6B;padding:6pt 0;font-style:italic">Aucune prestation renseignée</div>` : `
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Désignation</th>
+            <th class="num-head">Qté</th>
+            <th class="num-head">Prix unit. HT</th>
+            <th class="num-head">TVA</th>
+            <th class="num-head">Total HT</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lineItemsHtml}
+        </tbody>
+      </table>`}
+    </div>
+
+    <!-- Totaux -->
+    <div class="totaux-wrap">
+      <div class="totaux-box">
+        <div class="total-row">
+          <span class="total-lbl">Sous-total HT</span>
+          <span class="total-val">${safeFmtEur(quote.subtotal_ht)}</span>
+        </div>
+        ${hasDiscount ? `<div class="total-row">
+          <span class="total-lbl dim">Remise</span>
+          <span class="total-val dim">${discountLabel}</span>
+        </div>` : ""}
+        ${hasTva ? `<div class="total-row">
+          <span class="total-lbl">TVA</span>
+          <span class="total-val">${safeFmtEur(quote.total_tva)}</span>
+        </div>` : ""}
+        <div class="total-row main-row">
+          <span class="total-lbl big">Total TTC</span>
+          <span class="total-val big">${safeFmtEur(quote.total_ttc)}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conditions + Notes -->
+    ${(quote.conditions || settings.pdf_quote_conditions || quote.notes) ? `
+    <div class="bottom-blocks">
+      ${(quote.conditions || settings.pdf_quote_conditions) ? `
+      <div class="bottom-block">
+        <div class="bb-lbl">Conditions</div>
+        <div class="bb-text">${esc(quote.conditions || settings.pdf_quote_conditions)}</div>
       </div>` : ""}
-      <div class="total-row main-row">
-        <span class="total-label big">Total TTC</span>
-        <span class="total-value big">${fmtEur(quote.total_ttc)}</span>
+      ${quote.notes ? `
+      <div class="bottom-block">
+        <div class="bb-lbl">Notes</div>
+        <div class="bb-text">${esc(quote.notes)}</div>
+      </div>` : ""}
+    </div>` : ""}
+
+    <!-- Signature client -->
+    <div class="signature-block">
+      <div class="sig-header">
+        <span class="sig-title">Bon pour accord</span>
+        <span class="sig-mention">Signature précédée de la mention « Bon pour accord »</span>
+      </div>
+      <div class="sig-fields">
+        <div class="sig-field">
+          <span class="sig-field-lbl">Date</span>
+        </div>
+        <div class="sig-field">
+          <span class="sig-field-lbl">Signature du client</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Footer blocks -->
-  ${(quote.conditions || quote.notes || settings.pdf_quote_conditions) ? `
-  <div class="footer-blocks">
-    ${(quote.conditions || settings.pdf_quote_conditions) ? `
-    <div class="footer-block">
-      <div class="fb-title">Conditions</div>
-      <div class="fb-text">${esc(quote.conditions || settings.pdf_quote_conditions)}</div>
-    </div>` : ""}
-    ${quote.notes ? `
-    <div class="footer-block">
-      <div class="fb-title">Notes</div>
-      <div class="fb-text">${esc(quote.notes)}</div>
-    </div>` : ""}
-  </div>` : ""}
+  </div><!-- /body -->
 
-  <!-- Doc footer -->
+  <!-- Footer -->
   <footer class="doc-footer">
     <div class="footer-brand">${esc(settings.company_name)}</div>
-    <div>
-      ${settings.pdf_footer_text ? `<div class="footer-contact">${esc(settings.pdf_footer_text)}</div>` : ""}
-      ${settings.siret ? `<div class="footer-siret">SIRET ${esc(settings.siret)}</div>` : ""}
+    <div class="footer-info">
+      ${settings.pdf_footer_text ? `<div>${esc(settings.pdf_footer_text)}</div>` : ""}
+      ${settings.siret ? `<div>SIRET ${esc(settings.siret)}</div>` : ""}
+      ${settings.website ? `<div>${esc(settings.website)}</div>` : ""}
     </div>
   </footer>
 
