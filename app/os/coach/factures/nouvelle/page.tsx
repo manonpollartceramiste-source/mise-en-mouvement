@@ -28,7 +28,7 @@ export default async function NouvelleFacturePage({
   let defaultValues: Record<string, unknown> = {};
   if (from_quote) {
     const quote = await getQuoteById(from_quote);
-    if (quote && (profile.roles.includes("admin") || quote.coach_id === profile.id)) {
+    if (quote && ((profile.roles ?? []).includes("admin") || quote.coach_id === profile.id)) {
       defaultValues = {
         client_name: quote.client_name,
         client_email: quote.client_email,
