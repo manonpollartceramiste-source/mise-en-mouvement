@@ -57,15 +57,18 @@ export function generateQuoteHtml(
     ? `−${quote.discount_pct}%`
     : `−${safeFmtEur(quote.discount_amount)}`;
 
-  const addrParts = [settings.address, [settings.postal_code, settings.city].filter(Boolean).join(" ")].filter(Boolean);
+  const addrParts = [settings.address || "2 place du marché", [settings.postal_code || "34560", settings.city || "Poussan"].filter(Boolean).join(" ")].filter(Boolean);
   const addrLine = addrParts.join(", ");
-  const contactLine = [settings.phone, settings.email].filter(Boolean).join(" · ");
+  const emailDisplay = settings.email || "contact@mise-en-mouvement.fr";
+  const contactLine = [settings.phone, emailDisplay].filter(Boolean).join(" · ");
 
   const logoHtml = logoSrc
     ? `<img src="${esc(logoSrc)}" alt="${esc(settings.company_name)}" class="hd-logo" />`
     : "";
 
   const validityDays = Number(quote.validity_days) || 30;
+  const hasTvaRow = Number(quote.total_tva) > 0;
+  const defaultLegalMention = hasTvaRow ? "" : "TVA non applicable, art. 293 B du CGI";
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -85,6 +88,10 @@ body{
   -webkit-print-color-adjust:exact;
   print-color-adjust:exact;
 }
+@media screen{
+  body{background:#6B6B6B;display:flex;justify-content:center;padding:32px 16px;min-height:100vh}
+  .page{box-shadow:0 6px 40px rgba(0,0,0,0.40)}
+}
 
 /* ── PAGE ── */
 .page{
@@ -102,9 +109,9 @@ body{
 }
 .hd-brand{display:flex;align-items:center;gap:10pt}
 .hd-logo{
-  height:32px;width:auto;max-width:100px;
+  height:46px;width:auto;max-width:130px;
   object-fit:contain;object-position:left center;
-  filter:brightness(0) invert(1) opacity(0.9);
+  filter:brightness(0) invert(1) opacity(0.92);
   flex-shrink:0;
 }
 .hd-sep{width:0.5pt;height:24px;background:rgba(185,154,107,0.4);flex-shrink:0}
@@ -236,25 +243,26 @@ body{
   margin-bottom:7mm;
 }
 .totaux-box{
-  background:#1F1812;
+  background:#EDE6DB;
+  border:0.8pt solid #C8B89A;
   border-radius:10pt;
   padding:5mm 6mm;
-  min-width:58mm;
+  min-width:62mm;
 }
 .total-row{
   display:flex;justify-content:space-between;align-items:center;
   gap:16pt;margin-bottom:3pt;
 }
 .total-row.main-row{
-  border-top:0.5pt solid rgba(185,154,107,0.3);
+  border-top:0.8pt solid #C8B89A;
   padding-top:6pt;margin-top:4pt;margin-bottom:0;
 }
-.total-lbl{font-size:11px;color:rgba(240,232,218,0.6)}
-.total-val{font-size:11px;color:#F0E8DA;font-weight:500;white-space:nowrap}
-.total-lbl.dim{color:rgba(240,232,218,0.4)}
-.total-val.dim{color:rgba(240,232,218,0.4)}
-.total-lbl.big{font-size:13px;color:#F0E8DA;font-weight:700}
-.total-val.big{font-size:18px;color:#F0E8DA;font-weight:700}
+.total-lbl{font-size:11px;color:#7A6A58}
+.total-val{font-size:11px;color:#2B2018;font-weight:500;white-space:nowrap}
+.total-lbl.dim{color:#B8A898}
+.total-val.dim{color:#B8A898}
+.total-lbl.big{font-size:13px;color:#1F1812;font-weight:700}
+.total-val.big{font-size:18px;color:#1F1812;font-weight:700}
 .total-val.gold{color:#B99A6B}
 
 /* ── BLOCS BAS ── */
@@ -343,7 +351,7 @@ body{
         <div class="meta-company">${esc(settings.company_name)}</div>
         ${addrLine ? `<div class="meta-line">${esc(addrLine)}</div>` : ""}
         ${settings.phone ? `<div class="meta-line">${esc(settings.phone)}</div>` : ""}
-        ${settings.email ? `<div class="meta-line">${esc(settings.email)}</div>` : ""}
+        <div class="meta-line">${esc(emailDisplay)}</div>
         ${settings.siret ? `<div class="meta-line" style="margin-top:3pt;font-size:10px;color:#B99A6B">SIRET ${esc(settings.siret)}</div>` : ""}
       </div>
       <div class="meta-col">
@@ -418,20 +426,23 @@ body{
       </div>
     </div>
 
-    <!-- Conditions + Notes -->
-    ${(quote.conditions || settings.pdf_quote_conditions || quote.notes) ? `
-    <div class="bottom-blocks">
-      ${(quote.conditions || settings.pdf_quote_conditions) ? `
+    <!-- Conditions + Notes + Mentions -->
+    ${(() => {
+      const conditionsText = quote.conditions || settings.pdf_quote_conditions || `Devis valable ${validityDays} jours à compter de la date d'émission.`;
+      const legalText = defaultLegalMention || "";
+      const notesText = quote.notes || "";
+      if (!conditionsText && !legalText && !notesText) return "";
+      return `<div class="bottom-blocks">
       <div class="bottom-block">
         <div class="bb-lbl">Conditions</div>
-        <div class="bb-text">${esc(quote.conditions || settings.pdf_quote_conditions)}</div>
-      </div>` : ""}
-      ${quote.notes ? `
-      <div class="bottom-block">
+        <div class="bb-text">${esc(conditionsText)}${legalText ? `<br/><br/><em>${esc(legalText)}</em>` : ""}</div>
+      </div>
+      ${notesText ? `<div class="bottom-block">
         <div class="bb-lbl">Notes</div>
-        <div class="bb-text">${esc(quote.notes)}</div>
+        <div class="bb-text">${esc(notesText)}</div>
       </div>` : ""}
-    </div>` : ""}
+    </div>`;
+    })()}
 
     <!-- Signature client -->
     <div class="signature-block">
