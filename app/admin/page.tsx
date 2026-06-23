@@ -92,6 +92,18 @@ const sections: Section[] = [
     description: "Créer les clients, les rattacher à un coach et gérer leurs bilans",
     href: "/os/client",
   },
+  {
+    id: "personnalisation",
+    label: "Personnalisation PDF",
+    description: "Branding, identité entreprise, textes PDF, séance découverte",
+    href: "/admin/personnalisation",
+  },
+  {
+    id: "medias",
+    label: "Médiathèque",
+    description: "Photos et vidéos du site — upload, catégories, activation",
+    href: "/admin/medias",
+  },
 ];
 
 export default async function AdminDashboard() {

@@ -20,6 +20,8 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { label: "Disponibilités", href: "/os/coach/disponibilites" },
     { label: "Mes clients", href: "/os/coach/clients" },
     { label: "Bilan mouvement", href: "/os/coach/bilan-mouvement" },
+    { label: "Devis", href: "/os/coach/devis" },
+    { label: "Factures", href: "/os/coach/factures" },
     { label: "Paramètres", href: "/os/coach/settings" },
   ],
   admin: [

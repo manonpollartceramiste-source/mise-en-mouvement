@@ -18,44 +18,313 @@ import { loadTexts } from "@/lib/content/texts.server";
 import { textOrDefault, type SiteTexts } from "@/lib/content/texts";
 import { loadImages } from "@/lib/content/images.server";
 import { getGalleryPhotos, type SiteImages } from "@/lib/content/images";
+import { getDiscoverySessionSettings } from "@/lib/billing/server";
+import { getMediaItems } from "@/lib/billing/server";
+import type { DiscoverySessionSettings, MediaItem } from "@/lib/billing/types";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [coaches, texts, images, visibleAvis] = await Promise.all([
+  const [coaches, texts, images, visibleAvis, discovery, mediaItems] = await Promise.all([
     loadActiveCoaches(),
     loadTexts(),
     loadImages(),
     loadVisibleTestimonials(),
+    getDiscoverySessionSettings(),
+    getMediaItems(true),
   ]);
+  const heroMedias = mediaItems.filter((m) => m.category === "hero");
+  const galleryMedias = mediaItems.filter(
+    (m) => m.category === "cabinet" || m.category === "ambiance" || m.category === "seance",
+  );
   return (
     <>
       <PremiumBackground src={images.background} />
       <Header />
       <main className="flex-1">
-        <Hero texts={texts} heroImage={images.hero} />
+        <Hero texts={texts} heroImage={images.hero} heroMedia={heroMedias[0] ?? null} />
         <Approche texts={texts} />
+        <SeanceDecouverte discovery={discovery} />
+        <CommentCaSePasseSection />
         <CoachsPreview coaches={coaches} images={images} texts={texts} />
-        <CabinetSection images={images} />
+        <CabinetSection images={images} galleryMedias={galleryMedias} />
         <Piliers texts={texts} />
         <AvisPreview texts={texts} testimonials={visibleAvis} />
-        <CTAFinal texts={texts} />
+        <FAQSection />
+        <CTAFinal texts={texts} discovery={discovery} />
       </main>
       <Footer />
     </>
   );
 }
 
+// ── Séance Découverte ──────────────────────────────────────────
+
+function SeanceDecouverte({ discovery }: { discovery: DiscoverySessionSettings }) {
+  const steps = discovery.session_steps.length > 0
+    ? discovery.session_steps
+    : [
+        "Échange sur votre quotidien et vos objectifs",
+        "Observation et analyse de vos mouvements",
+        "Bilan mouvement personnalisé",
+        "Recommandations concrètes et plan d'action",
+      ];
+  const benefits = discovery.benefits.length > 0
+    ? discovery.benefits
+    : [
+        "Vous comprenez pourquoi vous avez mal",
+        "Vous identifiez vos priorités de travail",
+        "Vous repartez avec un plan concret",
+        "Vous recevez votre bilan PDF personnalisé",
+      ];
+
+  return (
+    <Section className="relative overflow-hidden bg-ink-900">
+      {/* Texture subtile */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 20% 50%, #beb09c 0%, transparent 60%), radial-gradient(circle at 80% 20%, #a89a89 0%, transparent 55%)",
+        }}
+      />
+      <Container className="relative">
+        <div className="grid gap-14 lg:grid-cols-2 lg:items-center">
+          {/* Texte */}
+          <div>
+            <Reveal>
+              <p className="text-xs uppercase tracking-[0.25em] text-taupe-400">
+                Premier pas
+              </p>
+              <h2 className="mt-5 font-serif text-4xl leading-tight text-sand-50 sm:text-5xl">
+                {discovery.title}
+              </h2>
+              <p className="mt-3 text-lg text-taupe-300 italic">
+                {discovery.subtitle}
+              </p>
+            </Reveal>
+
+            {/* Prix + durée */}
+            <Reveal delay={0.1}>
+              <div className="mt-8 flex items-center gap-6">
+                <div className="text-center">
+                  <p className="font-serif text-5xl font-light text-sand-50">
+                    {discovery.price}€
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-widest text-taupe-400">
+                    la séance
+                  </p>
+                </div>
+                <div className="h-12 w-px bg-taupe-700" />
+                <div className="text-center">
+                  <p className="font-serif text-5xl font-light text-sand-50">
+                    {discovery.duration_min}&nbsp;<span className="text-3xl">min</span>
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-widest text-taupe-400">
+                    d&apos;analyse
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+
+            {discovery.description && (
+              <Reveal delay={0.15}>
+                <p className="mt-8 text-base leading-relaxed text-taupe-300">
+                  {discovery.description}
+                </p>
+              </Reveal>
+            )}
+
+            <Reveal delay={0.2}>
+              <div className="mt-10">
+                <Button href="/reservation" variant="primary">
+                  {discovery.cta_label}
+                </Button>
+              </div>
+            </Reveal>
+          </div>
+
+          {/* Étapes + bénéfices */}
+          <div className="space-y-6">
+            <Reveal delay={0.1}>
+              <div className="rounded-2xl border border-taupe-700 bg-taupe-800/50 p-6">
+                <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-taupe-400">
+                  Déroulé de la séance
+                </p>
+                <ol className="space-y-3">
+                  {steps.map((step, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-taupe-600 font-serif text-xs text-taupe-400">
+                        {i + 1}
+                      </span>
+                      <span className="text-sm leading-relaxed text-sand-200">{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.2}>
+              <div className="rounded-2xl border border-taupe-700 bg-taupe-800/50 p-6">
+                <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-taupe-400">
+                  Ce que vous repartez avec
+                </p>
+                <ul className="space-y-2.5">
+                  {benefits.map((b, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-taupe-400" />
+                      <span className="text-sm leading-relaxed text-sand-200">{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </Container>
+    </Section>
+  );
+}
+
+// ── Comment ça se passe ────────────────────────────────────────
+
+function CommentCaSePasseSection() {
+  const steps = [
+    {
+      num: "01",
+      title: "L'échange",
+      body: "On commence par un moment d'écoute : votre quotidien, vos douleurs, vos objectifs. Pas de jugement, juste de la curiosité.",
+    },
+    {
+      num: "02",
+      title: "L'observation",
+      body: "Nous analysons comment votre corps bouge — posture, mobilité, équilibre, compensation. Une lecture précise de votre profil de mouvement.",
+    },
+    {
+      num: "03",
+      title: "Le bilan",
+      body: "Vous comprenez vos points forts et vos axes prioritaires. On met des mots clairs sur ce qui se passe dans votre corps.",
+    },
+    {
+      num: "04",
+      title: "La mise en mouvement",
+      body: "Quelques exercices adaptés pour que vous ressentez immédiatement la différence. Votre corps comprend en bougeant.",
+    },
+    {
+      num: "05",
+      title: "Les recommandations",
+      body: "Vous repartez avec un plan concret, priorisé, et un bilan PDF récapitulatif. Un vrai point de départ.",
+    },
+  ];
+
+  return (
+    <Section className="border-t border-taupe-300/30">
+      <Container>
+        <Reveal>
+          <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
+            La méthode
+          </p>
+          <h2 className="mt-5 max-w-2xl font-serif text-3xl leading-tight text-ink-900 sm:text-4xl">
+            Comment se déroule{" "}
+            <span className="italic text-taupe-600">votre séance ?</span>
+          </h2>
+        </Reveal>
+
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+          {steps.map((step, i) => (
+            <Reveal key={step.num} delay={i * 0.08}>
+              <div className="flex h-full flex-col rounded-2xl border border-taupe-300/30 bg-white p-6">
+                <span className="font-serif text-3xl text-taupe-300">{step.num}</span>
+                <h3 className="mt-3 font-serif text-lg text-ink-900">{step.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-taupe-600">{step.body}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </Container>
+    </Section>
+  );
+}
+
+// ── FAQ ────────────────────────────────────────────────────────
+
+const FAQ_ITEMS = [
+  {
+    q: "Est-ce adapté si je ne suis pas sportif ?",
+    a: "Absolument. La séance découverte est pensée pour tout le monde, quel que soit votre niveau. Notre approche s'adapte à votre corps, pas l'inverse. Vous n'avez pas besoin d'être sportif pour bouger mieux.",
+  },
+  {
+    q: "Est-ce que c'est une consultation médicale ?",
+    a: "Non. Nous sommes coachs mouvement, pas médecins ni kinésithérapeutes. Notre rôle est d'analyser vos mouvements, d'identifier des compensations, et de vous proposer des exercices adaptés. En cas de pathologie, nous travaillons en complémentarité avec votre équipe médicale.",
+  },
+  {
+    q: "Combien de temps dure une séance discovery ?",
+    a: "La séance découverte dure environ 1 heure. C'est suffisant pour faire un vrai bilan de mouvement complet et vous donner des pistes concrètes. Pas trop long pour que vous puissiez repartir avec de l'énergie.",
+  },
+  {
+    q: "Que se passe-t-il pendant la séance découverte ?",
+    a: "On échange sur votre quotidien et vos objectifs, on observe comment vous bougez naturellement, on fait un bilan complet, on teste quelques exercices, et on trace votre plan de progression. Vous repartez avec votre bilan PDF personnalisé.",
+  },
+  {
+    q: "Faut-il prévoir une tenue particulière ?",
+    a: "Oui : venez avec des vêtements confortables dans lesquels vous pouvez bouger librement — legging, short, t-shirt. Des chaussettes suffisent, pas besoin de chaussures de sport spécifiques.",
+  },
+  {
+    q: "Et après la séance découverte ?",
+    a: "Rien d'obligatoire. Vous repartez avec votre bilan et vos recommandations. Si vous souhaitez aller plus loin, nous vous proposons des formules de suivi adaptées à vos objectifs et votre rythme de vie.",
+  },
+];
+
+function FAQSection() {
+  return (
+    <Section className="border-t border-taupe-300/30 bg-sand-100/40">
+      <Container>
+        <Reveal>
+          <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
+            Vos questions
+          </p>
+          <h2 className="mt-5 max-w-2xl font-serif text-3xl leading-tight text-ink-900 sm:text-4xl">
+            Questions fréquentes
+          </h2>
+        </Reveal>
+
+        <div className="mt-12 max-w-3xl space-y-4">
+          {FAQ_ITEMS.map((item, i) => (
+            <Reveal key={item.q} delay={i * 0.06}>
+              <details className="group rounded-2xl border border-taupe-300/40 bg-white">
+                <summary className="flex cursor-pointer items-center justify-between gap-4 px-6 py-5 text-sm font-medium text-ink-900 marker:content-none hover:text-taupe-700">
+                  {item.q}
+                  <span className="shrink-0 text-taupe-400 transition-transform duration-300 group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <div className="border-t border-taupe-300/30 px-6 pb-5 pt-4">
+                  <p className="text-sm leading-relaxed text-taupe-600">{item.a}</p>
+                </div>
+              </details>
+            </Reveal>
+          ))}
+        </div>
+      </Container>
+    </Section>
+  );
+}
+
+// ── Hero ───────────────────────────────────────────────────────
+
 function Hero({
   texts,
   heroImage,
+  heroMedia,
 }: {
   texts: SiteTexts;
   heroImage: string | null;
+  heroMedia: MediaItem | null;
 }) {
   const metas = [texts.heroMeta1, texts.heroMeta2, texts.heroMeta3].filter(
     (m) => m && m.trim().length > 0,
   );
-  const showImage = Boolean(heroImage);
+  const effectiveHeroImage = heroMedia?.file_url ?? heroImage;
+  const showImage = Boolean(effectiveHeroImage);
   return (
     <Section className="relative overflow-hidden pt-24 sm:pt-32">
       <HeroDecor />
@@ -114,12 +383,12 @@ function Hero({
               </FadeIn>
             )}
           </div>
-          {showImage && heroImage && (
+          {showImage && effectiveHeroImage && (
             <FadeIn delay={0.2}>
               <div className="group relative overflow-hidden rounded-3xl shadow-[0_40px_100px_-30px_rgba(78,70,59,0.45)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={heroImage}
+                  src={effectiveHeroImage}
                   alt=""
                   className="aspect-[4/5] w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
                   loading="eager"
@@ -302,17 +571,25 @@ function AvisPreview({
   );
 }
 
-function CabinetSection({ images }: { images: SiteImages }) {
+function CabinetSection({
+  images,
+  galleryMedias,
+}: {
+  images: SiteImages;
+  galleryMedias: MediaItem[];
+}) {
   const cabinetPhotos = getGalleryPhotos(images, "cabinet-");
   const ambiancePhotos = getGalleryPhotos(images, "ambiance-");
 
-  // Exclude hero and background to avoid showing the same photo twice
   const excludeUrls = new Set(
     [images.hero, images.background].filter((u): u is string => u !== null),
   );
-  const allPhotos = [...cabinetPhotos, ...ambiancePhotos]
-    .filter((url) => !excludeUrls.has(url))
-    .slice(0, 6);
+  const legacyPhotos = [...cabinetPhotos, ...ambiancePhotos]
+    .filter((url) => !excludeUrls.has(url));
+
+  // Prefer mediathèque medias, fallback to legacy photos
+  const mediaUrls = galleryMedias.map((m) => m.file_url);
+  const allPhotos = (mediaUrls.length > 0 ? mediaUrls : legacyPhotos).slice(0, 6);
 
   if (allPhotos.length === 0) return null;
 
@@ -355,7 +632,13 @@ function EditorialGallery({ photos }: { photos: string[] }) {
   );
 }
 
-function CTAFinal({ texts }: { texts: SiteTexts }) {
+function CTAFinal({
+  texts,
+  discovery,
+}: {
+  texts: SiteTexts;
+  discovery: DiscoverySessionSettings;
+}) {
   return (
     <Section className="border-t border-taupe-300/30 bg-sand-100/60">
       <Container>
@@ -370,10 +653,18 @@ function CTAFinal({ texts }: { texts: SiteTexts }) {
                 topGap="mt-4"
                 className="text-base leading-relaxed text-taupe-700"
               />
+              <p className="mt-4 text-sm font-medium text-taupe-600">
+                Séance découverte — {discovery.price} €
+              </p>
             </div>
-            <Button href="/reservation" variant="primary">
-              {textOrDefault(texts, "ctaFinalButton")}
-            </Button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button href="/reservation" variant="primary">
+                {discovery.cta_label}
+              </Button>
+              <Button href="/offres" variant="secondary">
+                {textOrDefault(texts, "ctaFinalButton")}
+              </Button>
+            </div>
           </div>
         </Reveal>
       </Container>
