@@ -15,6 +15,7 @@ const errorMessages: Record<string, string> = {
     "La base Supabase n’est pas encore configurée sur ce site.",
   "missing-fields": "Email et mot de passe requis.",
   unauthorized: "Cet email n’est pas autorisé à accéder à l’admin.",
+  session: "Session expirée ou invalide. Reconnectez-vous.",
 };
 
 type SearchParams = Promise<{ error?: string }>;

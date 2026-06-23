@@ -113,7 +113,8 @@ export default async function AdminDashboard() {
 
   const user = await getCurrentUser();
   if (!user) {
-    redirect("/admin/login");
+    console.error("[admin/page] getCurrentUser() returned null — session invalide ou non autorisée");
+    redirect("/admin/login?error=session");
   }
 
   const settings = await loadSettings();

@@ -8,19 +8,22 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const FALLBACK_ADMIN_EMAILS =
-  "manonpollart.ceramiste@gmail.com,dorian34.hebert@gmail.com";
+// Ces deux emails ont TOUJOURS accès admin, indépendamment de la variable ADMIN_EMAILS.
+const ALWAYS_ADMIN_EMAILS = [
+  "manonpollart.ceramiste@gmail.com",
+  "dorian34.hebert@gmail.com",
+];
 
 export function isSupabaseConfigured(): boolean {
   return Boolean(url && anonKey);
 }
 
 function getAdminEmails(): string[] {
-  const raw = process.env.ADMIN_EMAILS ?? FALLBACK_ADMIN_EMAILS;
-  return raw
+  const fromEnv = (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
+  return [...new Set([...ALWAYS_ADMIN_EMAILS.map((e) => e.toLowerCase()), ...fromEnv])];
 }
 
 export function isAuthorizedAdmin(email: string | null | undefined): boolean {
