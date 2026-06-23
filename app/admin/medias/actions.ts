@@ -3,11 +3,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
-import {
-  createMediaItem,
-  updateMediaItem,
-  deleteMediaItem,
-} from "@/lib/billing/server";
+import { createMediaItem, updateMediaItem, deleteMediaItem } from "@/lib/billing/server";
 import type { MediaCategory } from "@/lib/billing/types";
 
 async function requireAdmin() {
@@ -20,7 +16,7 @@ const ALLOWED_TYPES = new Set([
   "image/jpeg", "image/png", "image/webp", "image/gif", "image/avif",
   "video/mp4", "video/webm", "video/quicktime",
 ]);
-const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+const MAX_SIZE_BYTES = 50 * 1024 * 1024;
 
 export async function uploadMediaAction(formData: FormData) {
   await requireAdmin();
@@ -48,15 +44,31 @@ export async function uploadMediaAction(formData: FormData) {
     .getPublicUrl(uploadData.path);
 
   const fileType = file.type.startsWith("video/") ? "video" : "image";
+  const siteLocation = (formData.get("site_location") as string) || "footer-ambiance";
+
+  // Dériver la category legacy depuis site_location pour compatibilité
+  const categoryMap: Record<string, MediaCategory> = {
+    hero: "hero",
+    cabinet: "cabinet",
+    coachs: "coach",
+    decouverte: "seance",
+    temoignages: "temoignage",
+    exercices: "exercices",
+  };
+  const category: MediaCategory = categoryMap[siteLocation] ?? "ambiance";
 
   await createMediaItem({
     title: (formData.get("title") as string) || file.name,
-    description: (formData.get("description") as string) || "",
+    description: "",
     file_url: urlData.publicUrl,
     file_type: fileType,
-    category: ((formData.get("category") as string) || "ambiance") as MediaCategory,
+    category,
+    site_location: siteLocation,
+    usage_type: (formData.get("usage_type") as string) || "image-principale",
+    alt_text: (formData.get("alt_text") as string) || "",
+    caption: (formData.get("caption") as string) || "",
     is_active: true,
-    sort_order: 0,
+    sort_order: Number(formData.get("sort_order") || 0),
   });
 
   redirect("/admin/medias?uploaded=1");
@@ -68,11 +80,24 @@ export async function updateMediaAction(formData: FormData) {
   const id = formData.get("id") as string;
   if (!id) redirect("/admin/medias");
 
+  const siteLocation = (formData.get("site_location") as string) || "footer-ambiance";
+  const categoryMap: Record<string, MediaCategory> = {
+    hero: "hero",
+    cabinet: "cabinet",
+    coachs: "coach",
+    decouverte: "seance",
+    temoignages: "temoignage",
+    exercices: "exercices",
+  };
+  const category: MediaCategory = categoryMap[siteLocation] ?? "ambiance";
+
   await updateMediaItem(id, {
     title: (formData.get("title") as string) || "",
-    description: (formData.get("description") as string) || "",
-    category: ((formData.get("category") as string) || "ambiance") as MediaCategory,
-    is_active: formData.get("is_active") === "true",
+    category,
+    site_location: siteLocation,
+    usage_type: (formData.get("usage_type") as string) || "image-principale",
+    alt_text: (formData.get("alt_text") as string) || "",
+    caption: (formData.get("caption") as string) || "",
     sort_order: Number(formData.get("sort_order") || 0),
   });
 
@@ -89,7 +114,6 @@ export async function deleteMediaAction(formData: FormData) {
     const supabase = await getSupabaseServer();
     try {
       const parsed = new URL(fileUrl);
-      // URL pattern: /storage/v1/object/public/site-media/<path>
       const marker = "/site-media/";
       const idx = parsed.pathname.indexOf(marker);
       const storagePath = idx !== -1 ? parsed.pathname.slice(idx + marker.length) : null;

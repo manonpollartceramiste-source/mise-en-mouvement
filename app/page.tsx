@@ -32,10 +32,14 @@ export default async function Home() {
     getDiscoverySessionSettings(),
     getMediaItems(true),
   ]);
-  const heroMedias = mediaItems.filter((m) => m.category === "hero");
-  const galleryMedias = mediaItems.filter(
-    (m) => m.category === "cabinet" || m.category === "ambiance" || m.category === "seance",
-  );
+
+  // Filtrage par site_location (nouveau système) avec fallback sur category (legacy)
+  const byLoc = (loc: string) => mediaItems.filter((m) => m.site_location === loc);
+  const heroMedias    = byLoc("hero").length    > 0 ? byLoc("hero")    : mediaItems.filter((m) => m.category === "hero");
+  const cabinetMedias = byLoc("cabinet").length > 0 ? byLoc("cabinet") : mediaItems.filter((m) => m.category === "cabinet" || m.category === "ambiance");
+  const exercicesMedias  = byLoc("exercices");
+  const avantApresMedias = byLoc("avant-apres");
+
   return (
     <>
       <PremiumBackground src={images.background} />
@@ -46,7 +50,9 @@ export default async function Home() {
         <SeanceDecouverte discovery={discovery} />
         <CommentCaSePasseSection />
         <CoachsPreview coaches={coaches} images={images} texts={texts} />
-        <CabinetSection images={images} galleryMedias={galleryMedias} />
+        <CabinetSection images={images} galleryMedias={cabinetMedias} />
+        {exercicesMedias.length > 0 && <ExercicesSection medias={exercicesMedias} />}
+        {avantApresMedias.length > 0 && <AvantApresSection medias={avantApresMedias} />}
         <Piliers texts={texts} />
         <AvisPreview texts={texts} testimonials={visibleAvis} />
         <FAQSection />
@@ -629,6 +635,91 @@ function EditorialGallery({ photos }: { photos: string[] }) {
         </Reveal>
       ))}
     </div>
+  );
+}
+
+function ExercicesSection({ medias }: { medias: MediaItem[] }) {
+  return (
+    <Section className="border-t border-taupe-300/30">
+      <Container>
+        <Reveal>
+          <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
+            En mouvement
+          </p>
+          <h2 className="mt-4 max-w-xl font-serif text-3xl leading-tight text-ink-900 sm:text-4xl">
+            Des exercices <span className="italic text-taupe-600">adaptés à votre corps.</span>
+          </h2>
+        </Reveal>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {medias.slice(0, 6).map((m, i) => (
+            <Reveal key={m.id} delay={i * 0.08}>
+              <div className="overflow-hidden rounded-2xl bg-sand-100">
+                {m.file_type === "video" ? (
+                  <video
+                    src={m.file_url}
+                    className="aspect-video w-full object-cover"
+                    muted
+                    loop
+                    playsInline
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={m.file_url}
+                    alt={m.alt_text || m.title}
+                    className="aspect-video w-full object-cover"
+                    loading="lazy"
+                  />
+                )}
+                {m.caption && (
+                  <p className="px-4 py-2 text-xs text-taupe-500">{m.caption}</p>
+                )}
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </Container>
+    </Section>
+  );
+}
+
+function AvantApresSection({ medias }: { medias: MediaItem[] }) {
+  if (medias.length < 2) return null;
+  const pairs = [];
+  for (let i = 0; i + 1 < medias.length; i += 2) {
+    pairs.push([medias[i], medias[i + 1]]);
+  }
+  return (
+    <Section className="border-t border-taupe-300/30 bg-sand-100/40">
+      <Container>
+        <Reveal>
+          <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
+            Transformation
+          </p>
+          <h2 className="mt-4 max-w-xl font-serif text-3xl leading-tight text-ink-900 sm:text-4xl">
+            Avant / <span className="italic text-taupe-600">Après</span>
+          </h2>
+        </Reveal>
+        <div className="mt-10 space-y-8">
+          {pairs.map(([before, after], i) => (
+            <Reveal key={i} delay={i * 0.1}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="overflow-hidden rounded-2xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={before.file_url} alt={before.alt_text || "Avant"} className="w-full object-cover" loading="lazy" />
+                  <p className="mt-2 text-center text-xs uppercase tracking-wider text-taupe-500">Avant</p>
+                </div>
+                <div className="overflow-hidden rounded-2xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={after.file_url} alt={after.alt_text || "Après"} className="w-full object-cover" loading="lazy" />
+                  <p className="mt-2 text-center text-xs uppercase tracking-wider text-taupe-500">Après</p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </Container>
+    </Section>
   );
 }
 

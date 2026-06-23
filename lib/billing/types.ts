@@ -123,6 +123,38 @@ export type MediaCategory =
   | "exercices"
   | "ambiance";
 
+export type SiteLocation =
+  | "hero"
+  | "decouverte"
+  | "cabinet"
+  | "coachs"
+  | "comment-ca-se-passe"
+  | "exercices"
+  | "temoignages"
+  | "avant-apres"
+  | "footer-ambiance";
+
+export const SITE_LOCATIONS: { value: string; label: string; description: string }[] = [
+  { value: "hero",                label: "Hero page d'accueil",        description: "Image principale du bandeau hero" },
+  { value: "decouverte",          label: "Section Séance Découverte",   description: "Visuels de la section séance découverte" },
+  { value: "cabinet",             label: "Galerie cabinet",             description: "Photos du cabinet affichées en galerie" },
+  { value: "coachs",              label: "Section Coachs",              description: "Photos et visuels des coachs" },
+  { value: "comment-ca-se-passe", label: "Section Comment ça se passe", description: "Visuels illustrant les étapes de la méthode" },
+  { value: "exercices",           label: "Section Exercices",           description: "Photos et vidéos d'exercices" },
+  { value: "temoignages",         label: "Témoignages",                 description: "Visuels associés aux témoignages clients" },
+  { value: "avant-apres",         label: "Avant / Après",               description: "Photos de comparaison avant / après" },
+  { value: "footer-ambiance",     label: "Footer / Ambiance",           description: "Visuels de fond et d'ambiance générale" },
+];
+
+export const USAGE_TYPES: { value: string; label: string }[] = [
+  { value: "image-principale", label: "Image principale" },
+  { value: "image-secondaire", label: "Image secondaire" },
+  { value: "video-principale", label: "Vidéo principale" },
+  { value: "video-courte",     label: "Vidéo courte" },
+  { value: "vignette",         label: "Vignette" },
+  { value: "fond-section",     label: "Fond de section" },
+];
+
 export type MediaItem = {
   id: string;
   title: string;
@@ -130,10 +162,28 @@ export type MediaItem = {
   file_url: string;
   file_type: "image" | "video";
   category: MediaCategory;
+  site_location: string;
+  usage_type: string;
+  alt_text: string;
+  caption: string;
   is_active: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;
+};
+
+export type MediaItemInsert = {
+  title: string;
+  description: string;
+  file_url: string;
+  file_type: "image" | "video";
+  category: MediaCategory;
+  site_location?: string;
+  usage_type?: string;
+  alt_text?: string;
+  caption?: string;
+  is_active: boolean;
+  sort_order: number;
 };
 
 // ─── Helpers ─────────────────────────────────────────────────

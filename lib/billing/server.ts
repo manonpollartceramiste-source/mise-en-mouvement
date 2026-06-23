@@ -8,6 +8,7 @@ import type {
   SiteSettings,
   DiscoverySessionSettings,
   MediaItem,
+  MediaItemInsert,
 } from "./types";
 
 // ─── Quotes ───────────────────────────────────────────────────
@@ -252,20 +253,19 @@ export async function getMediaItems(activeOnly = true): Promise<MediaItem[]> {
   return (data ?? []) as MediaItem[];
 }
 
-export async function getMediaByCategory(category: string): Promise<MediaItem[]> {
+export async function getMediaByLocation(location: string): Promise<MediaItem[]> {
   const supabase = await getSupabaseServer();
   const { data } = await supabase
     .from("media_library")
     .select("*")
-    .eq("category", category)
+    .eq("site_location", location)
     .eq("is_active", true)
-    .order("sort_order");
+    .order("sort_order")
+    .order("created_at", { ascending: false });
   return (data ?? []) as MediaItem[];
 }
 
-export async function createMediaItem(
-  item: Omit<MediaItem, "id" | "created_at" | "updated_at">,
-): Promise<MediaItem | null> {
+export async function createMediaItem(item: MediaItemInsert): Promise<MediaItem | null> {
   const supabase = await getSupabaseServer();
   const { data } = await supabase
     .from("media_library")
