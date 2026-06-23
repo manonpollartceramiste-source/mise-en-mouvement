@@ -16,23 +16,36 @@ type Params = Promise<{ id: string }>;
 
 export default async function ModifierDevisPage({ params }: { params: Params }) {
   const { id } = await params;
-  const profile = await getOsProfileWithRole("coach");
+
+  let profile;
+  try {
+    profile = await getOsProfileWithRole("coach");
+  } catch (err) {
+    console.error("[QUOTE_DETAIL_ERROR] modifier getOsProfileWithRole", err);
+    redirect("/os/login");
+  }
   if (!profile) redirect("/os/login");
 
-  const quote = await getQuoteById(id);
+  let quote;
+  try {
+    quote = await getQuoteById(id);
+  } catch (err) {
+    console.error("[QUOTE_DETAIL_ERROR] modifier getQuoteById", err);
+    redirect("/os/coach/devis");
+  }
   if (!quote) notFound();
 
-  const isAdmin = profile.roles.includes("admin");
+  const isAdmin = (profile.roles ?? []).includes("admin");
   if (!isAdmin && quote.coach_id !== profile.id) notFound();
 
   return (
-    <OsShell profile={profile} title={`Modifier ${quote.number}`}>
+    <OsShell profile={profile} title={`Modifier ${quote.number ?? ""}`}>
       <div className="mb-8">
         <p className="text-xs uppercase tracking-[0.25em] text-taupe-400">
           Devis / Modifier
         </p>
         <h2 className="mt-1 font-serif text-3xl text-ink-900">
-          Modifier le devis {quote.number}
+          Modifier le devis {quote.number ?? ""}
         </h2>
       </div>
 
@@ -43,18 +56,18 @@ export default async function ModifierDevisPage({ params }: { params: Params }) 
           action={updateQuoteAction}
           submitLabel="Enregistrer les modifications"
           defaultValues={{
-            client_name: quote.client_name,
-            client_email: quote.client_email,
-            client_phone: quote.client_phone,
-            client_address: quote.client_address,
-            title: quote.title,
-            description: quote.description,
-            line_items: quote.line_items,
-            discount_pct: quote.discount_pct,
-            discount_amount: quote.discount_amount,
-            notes: quote.notes,
-            conditions: quote.conditions,
-            validity_days: quote.validity_days,
+            client_name: quote.client_name ?? "",
+            client_email: quote.client_email ?? "",
+            client_phone: quote.client_phone ?? "",
+            client_address: quote.client_address ?? "",
+            title: quote.title ?? "",
+            description: quote.description ?? "",
+            line_items: Array.isArray(quote.line_items) ? quote.line_items : [],
+            discount_pct: quote.discount_pct ?? 0,
+            discount_amount: quote.discount_amount ?? 0,
+            notes: quote.notes ?? "",
+            conditions: quote.conditions ?? "",
+            validity_days: quote.validity_days ?? 30,
           }}
         />
       </div>

@@ -216,8 +216,9 @@ export function makeLineItem(partial: Partial<LineItem> = {}): LineItem {
   };
 }
 
-export function fmtEur(n: number): string {
-  return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+export function fmtEur(n: number | string | null | undefined): string {
+  const num = Number(n ?? 0);
+  return (isNaN(num) ? 0 : num).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
 }
 
 export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
