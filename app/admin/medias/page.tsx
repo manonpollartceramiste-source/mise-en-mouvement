@@ -8,10 +8,10 @@ import { SITE_LOCATIONS, USAGE_TYPES } from "@/lib/billing/types";
 import type { MediaItem, MediaStatus } from "@/lib/billing/types";
 import {
   uploadMediaAction,
-  deleteMediaAction,
   updateMediaAction,
   setMediaStatusAction,
 } from "./actions";
+import { DeleteButton } from "./DeleteButton";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -41,10 +41,14 @@ const DISPLAY_GROUPS = [
 ];
 
 const STATUS_META: Record<MediaStatus, { label: string; cls: string; dot: string }> = {
-  draft:     { label: "Brouillon",  cls: "bg-amber-50 text-amber-700 border-amber-200",    dot: "bg-amber-400" },
-  published: { label: "Publié",     cls: "bg-green-50 text-green-700 border-green-200",    dot: "bg-green-500" },
-  archived:  { label: "Archivé",    cls: "bg-sand-100 text-taupe-500 border-taupe-200",    dot: "bg-taupe-400" },
+  draft:     { label: "Brouillon",  cls: "bg-amber-50 text-amber-700 border-amber-200",  dot: "bg-amber-400" },
+  published: { label: "Publié",     cls: "bg-green-50 text-green-700 border-green-200",  dot: "bg-green-500" },
+  archived:  { label: "Archivé",    cls: "bg-sand-100 text-taupe-500 border-taupe-200",  dot: "bg-taupe-400" },
 };
+
+function getStatus(media: MediaItem): MediaStatus {
+  return (media.status as MediaStatus) ?? "published";
+}
 
 export default async function MediasPage({
   searchParams,
@@ -67,8 +71,8 @@ export default async function MediasPage({
 
   const previewMedia = preview ? medias.find((m) => m.id === preview) : null;
 
-  const draftCount = medias.filter((m) => m.status === "draft").length;
-  const publishedCount = medias.filter((m) => m.status === "published").length;
+  const draftCount = medias.filter((m) => getStatus(m) === "draft").length;
+  const publishedCount = medias.filter((m) => getStatus(m) === "published").length;
 
   return (
     <main className="min-h-screen bg-sand-50">
@@ -98,7 +102,7 @@ export default async function MediasPage({
                 {previewMedia.alt_text && <>Alt : {previewMedia.alt_text} · </>}
                 {previewMedia.usage_type} · {previewMedia.file_type}
               </p>
-              {previewMedia.status !== "published" && (
+              {getStatus(previewMedia) !== "published" && (
                 <form action={setMediaStatusAction}>
                   <input type="hidden" name="id" value={previewMedia.id} />
                   <input type="hidden" name="status" value="published" />
@@ -466,12 +470,13 @@ function MediaDisplay({
 function MediaCard({ media }: { media: MediaItem }) {
   const locMeta = SITE_LOCATIONS.find((l) => l.value === media.site_location);
   const usageMeta = USAGE_TYPES.find((u) => u.value === media.usage_type);
-  const statusMeta = STATUS_META[media.status ?? "draft"];
+  const status = getStatus(media);
+  const statusMeta = STATUS_META[status];
 
   return (
     <div
       className={`rounded-2xl border bg-white overflow-hidden transition-all ${
-        media.status === "archived"
+        status === "archived"
           ? "border-taupe-200/30 opacity-55"
           : "border-taupe-300/40"
       }`}
@@ -547,7 +552,7 @@ function MediaCard({ media }: { media: MediaItem }) {
           </Link>
 
           {/* Publier / Dépublier */}
-          {media.status === "published" ? (
+          {status === "published" ? (
             <form action={setMediaStatusAction} className="flex-1">
               <input type="hidden" name="id" value={media.id} />
               <input type="hidden" name="status" value="draft" />
@@ -575,7 +580,7 @@ function MediaCard({ media }: { media: MediaItem }) {
         {/* Actions secondaires */}
         <div className="flex items-center justify-between gap-2">
           {/* Archiver / Restaurer */}
-          {media.status !== "archived" ? (
+          {status !== "archived" ? (
             <form action={setMediaStatusAction}>
               <input type="hidden" name="id" value={media.id} />
               <input type="hidden" name="status" value="archived" />
@@ -594,19 +599,7 @@ function MediaCard({ media }: { media: MediaItem }) {
           )}
 
           {/* Supprimer */}
-          <form action={deleteMediaAction}>
-            <input type="hidden" name="id" value={media.id} />
-            <input type="hidden" name="file_url" value={media.file_url} />
-            <button
-              type="submit"
-              onClick={(e) => {
-                if (!confirm("Supprimer ce média définitivement ?")) e.preventDefault();
-              }}
-              className="text-xs text-red-400 hover:text-red-600 transition-colors"
-            >
-              Supprimer
-            </button>
-          </form>
+          <DeleteButton id={media.id} fileUrl={media.file_url} />
         </div>
 
         {/* Édition inline */}

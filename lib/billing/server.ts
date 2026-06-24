@@ -301,34 +301,58 @@ export async function updateDiscoverySessionSettings(
 
 // ─── Media library ────────────────────────────────────────────
 
-// adminView = true → tous statuts (admin) ; false → published + is_active (site public)
+// Colonnes de base garanties (migration 0020 seulement)
+const BASE_COLUMNS = ["id", "title", "description", "file_url", "file_type", "category", "is_active", "sort_order", "created_at", "updated_at"] as const;
+
+// adminView = true → tous statuts (admin) ; false → filtre en JS après SELECT
 export async function getMediaItems(adminView = false): Promise<MediaItem[]> {
   const supabase = adminView ? getSupabaseAdmin() : await getSupabaseServer();
-  let q = supabase
+  // Pas de filtre sur status en DB : la colonne peut ne pas exister encore.
+  // On filtre en mémoire après le SELECT.
+  const { data, error } = await supabase
     .from("media_library")
     .select("*")
+    .eq("is_active", true)
     .order("sort_order")
     .order("created_at", { ascending: false });
-  if (!adminView) {
-    q = q.eq("status", "published").eq("is_active", true);
-  }
-  const { data, error } = await q;
   if (error) console.error("[getMediaItems]", error.message);
-  return (data ?? []) as MediaItem[];
+  let items = (data ?? []) as MediaItem[];
+  if (!adminView) {
+    // Avant migration : status undefined → on laisse passer (is_active suffit)
+    // Après migration : on filtre published uniquement
+    items = items.filter((m) => m.status === undefined || m.status === null || m.status === "published");
+  }
+  return items;
 }
 
 export async function getMediaByLocation(location: string): Promise<MediaItem[]> {
-  const { data, error } = await (await getSupabaseServer())
+  const supabase = await getSupabaseServer();
+  // site_location peut ne pas exister avant migration 0027
+  const { data, error } = await supabase
     .from("media_library")
     .select("*")
-    .eq("site_location", location)
-    .eq("status", "published")
     .eq("is_active", true)
     .order("sort_order")
     .order("created_at", { ascending: false });
   if (error) console.error("[getMediaByLocation]", error.message);
-  return (data ?? []) as MediaItem[];
+  const items = (data ?? []) as MediaItem[];
+  return items.filter((m) => {
+    const locMatch = !m.site_location || m.site_location === location;
+    const statusOk = m.status === undefined || m.status === null || m.status === "published";
+    return locMatch && statusOk;
+  });
 }
+
+// Colonnes de base seulement — pour l'INSERT avant migration complète
+type BaseInsert = {
+  title: string;
+  description: string;
+  file_url: string;
+  file_type: "image" | "video";
+  category: import("./types").MediaCategory;
+  is_active: boolean;
+  sort_order: number;
+};
 
 export async function createMediaItem(item: MediaItemInsert): Promise<MediaItem | null> {
   const { data, error } = await getSupabaseAdmin()
@@ -336,8 +360,32 @@ export async function createMediaItem(item: MediaItemInsert): Promise<MediaItem 
     .insert(item)
     .select()
     .single();
-  if (error) console.error("[createMediaItem]", error.message);
-  return data as MediaItem | null;
+
+  if (!error) return data as MediaItem | null;
+
+  console.error("[createMediaItem]", error.message);
+
+  // Fallback : la migration n'est pas encore appliquée → on insère avec les colonnes de base
+  if (error.message.includes("column") || error.message.includes("schema cache")) {
+    const base: BaseInsert = {
+      title: item.title,
+      description: item.description,
+      file_url: item.file_url,
+      file_type: item.file_type,
+      category: item.category,
+      is_active: item.is_active,
+      sort_order: item.sort_order,
+    };
+    const { data: d2, error: e2 } = await getSupabaseAdmin()
+      .from("media_library")
+      .insert(base)
+      .select()
+      .single();
+    if (e2) console.error("[createMediaItem fallback]", e2.message);
+    return d2 as MediaItem | null;
+  }
+
+  return null;
 }
 
 export async function updateMediaItem(
@@ -350,8 +398,30 @@ export async function updateMediaItem(
     .eq("id", id)
     .select()
     .single();
-  if (error) console.error("[updateMediaItem]", error.message);
-  return data as MediaItem | null;
+
+  if (!error) return data as MediaItem | null;
+
+  console.error("[updateMediaItem]", error.message);
+
+  // Fallback : filtrer les colonnes inexistantes
+  if (error.message.includes("column") || error.message.includes("schema cache")) {
+    const safe: Partial<BaseInsert> = {};
+    if (patch.title !== undefined)      safe.title = patch.title;
+    if (patch.description !== undefined) safe.description = patch.description;
+    if (patch.is_active !== undefined)  safe.is_active = patch.is_active;
+    if (patch.sort_order !== undefined) safe.sort_order = patch.sort_order;
+    if (patch.category !== undefined)   safe.category = patch.category;
+    const { data: d2, error: e2 } = await getSupabaseAdmin()
+      .from("media_library")
+      .update(safe)
+      .eq("id", id)
+      .select()
+      .single();
+    if (e2) console.error("[updateMediaItem fallback]", e2.message);
+    return d2 as MediaItem | null;
+  }
+
+  return null;
 }
 
 export async function deleteMediaItem(id: string): Promise<void> {
