@@ -60,11 +60,10 @@ export async function updateCalendarSessionAction(
     duration_min: number;
   },
 ): Promise<{ error?: string }> {
-  const profile = await guardCoach();
+  await guardCoach();
   const supabase = await getSupabaseServer();
-  const isAdmin = (profile.roles ?? []).includes("admin");
 
-  const q = supabase
+  const { error } = await supabase
     .from("sessions")
     .update({
       status: updates.status,
@@ -75,7 +74,6 @@ export async function updateCalendarSessionAction(
     })
     .eq("id", sessionId);
 
-  const { error } = await (isAdmin ? q : q.eq("coach_id", profile.id));
   if (error) return { error: error.message };
   return {};
 }
@@ -84,16 +82,14 @@ export async function moveSessionAction(
   sessionId: string,
   newScheduledAt: string,
 ): Promise<{ error?: string }> {
-  const profile = await guardCoach();
+  await guardCoach();
   const supabase = await getSupabaseServer();
-  const isAdmin = (profile.roles ?? []).includes("admin");
 
-  const q = supabase
+  const { error } = await supabase
     .from("sessions")
     .update({ scheduled_at: newScheduledAt })
     .eq("id", sessionId);
 
-  const { error } = await (isAdmin ? q : q.eq("coach_id", profile.id));
   if (error) return { error: error.message };
   return {};
 }
@@ -101,13 +97,14 @@ export async function moveSessionAction(
 export async function deleteSessionAction(
   sessionId: string,
 ): Promise<{ error?: string }> {
-  const profile = await guardCoach();
+  await guardCoach();
   const supabase = await getSupabaseServer();
-  const isAdmin = (profile.roles ?? []).includes("admin");
 
-  const q = supabase.from("sessions").delete().eq("id", sessionId);
+  const { error } = await supabase
+    .from("sessions")
+    .delete()
+    .eq("id", sessionId);
 
-  const { error } = await (isAdmin ? q : q.eq("coach_id", profile.id));
   if (error) return { error: error.message };
   return {};
 }

@@ -576,21 +576,18 @@ export function CalendarClient({
                       const top = sessionTopPx(s);
                       const height = sessionHeightPx(s);
                       const isDragging = draggedId === s.id;
-                      const isOwnSession = s.coach_id === currentCoachId;
 
                       return (
                         <div
                           key={s.id}
-                          draggable={isOwnSession}
-                          onDragStart={() => isOwnSession && onDragStart(s.id)}
+                          draggable
+                          onDragStart={() => onDragStart(s.id)}
                           onDragEnd={onDragEnd}
                           onClick={() => setDetailSession(s)}
                           className={`absolute left-0.5 right-0.5 z-10 overflow-hidden rounded-lg border px-1.5 py-1 transition-all select-none ${cardColor} ${
                             isDragging
                               ? "cursor-grabbing opacity-40 shadow-none"
-                              : isOwnSession
-                                ? "cursor-pointer hover:z-20 hover:shadow-lg hover:-translate-y-px hover:scale-[1.01]"
-                                : "cursor-default opacity-90 hover:z-20 hover:shadow-md"
+                              : "cursor-pointer hover:z-20 hover:shadow-lg hover:-translate-y-px hover:scale-[1.01]"
                           }`}
                           style={{ top, height }}
                           title={`${s.client_display_name} · ${s.duration_min} min · ${cfg.label}${s.coach_display_name ? ` · ${s.coach_display_name}` : ""}`}
@@ -675,7 +672,7 @@ export function CalendarClient({
           Réservations en ligne
         </span>
         <span className="ml-auto hidden text-[11px] text-taupe-400 sm:block">
-          Couleur = coach · Cliquer pour créer · Glisser pour déplacer vos séances
+          Couleur = coach · Cliquer pour créer · Glisser pour déplacer
         </span>
       </div>
 
@@ -701,7 +698,6 @@ export function CalendarClient({
             key="detail"
             session={detailSession}
             sessions={sessions}
-            currentCoachId={currentCoachId}
             onClose={() => setDetailSession(null)}
             onSaved={() => {
               setDetailSession(null);
@@ -923,19 +919,16 @@ function CreateModal({
 function DetailModal({
   session,
   sessions,
-  currentCoachId,
   onClose,
   onSaved,
   onDeleted,
 }: {
   session: SessionWithClient;
   sessions: SessionWithClient[];
-  currentCoachId: string;
   onClose: () => void;
   onSaved: () => void;
   onDeleted: () => void;
 }) {
-  const isOwnSession = session.coach_id === currentCoachId;
   const initDate = new Date(session.scheduled_at);
   const [datetimeStr, setDatetimeStr] = useState(toDatetimeLocal(initDate));
   const [duration, setDuration] = useState(session.duration_min);
@@ -1023,11 +1016,6 @@ function DetailModal({
               </button>
             </div>
           </div>
-          {!isOwnSession && (
-            <p className="mt-2 rounded-lg bg-taupe-50 px-3 py-1.5 text-xs text-taupe-600">
-              Séance d&apos;un autre coach — lecture seule.
-            </p>
-          )}
         </div>
 
         <form onSubmit={handleSave} className="space-y-4 px-6 py-5">
@@ -1044,13 +1032,12 @@ function DetailModal({
                   <button
                     key={s}
                     type="button"
-                    onClick={() => isOwnSession && setStatus(s)}
-                    disabled={!isOwnSession}
+                    onClick={() => setStatus(s)}
                     className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
                       active
                         ? `${c.badge} scale-105 shadow-sm`
                         : "border-taupe-300/40 text-taupe-500 hover:border-taupe-400/60 hover:text-ink-900"
-                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                    }`}
                   >
                     <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
                     {c.label}
@@ -1109,9 +1096,9 @@ function DetailModal({
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-1">
-            {/* Delete — only own sessions */}
+            {/* Delete */}
             <div>
-              {isOwnSession && (!deleteConfirm ? (
+              {!deleteConfirm ? (
                 <button
                   type="button"
                   onClick={() => setDeleteConfirm(true)}
@@ -1137,7 +1124,7 @@ function DetailModal({
                     {isPending ? "Suppression…" : "Confirmer"}
                   </button>
                 </div>
-              ))}
+              )}
             </div>
 
             {/* Save */}
@@ -1145,15 +1132,13 @@ function DetailModal({
               <button type="button" onClick={onClose} className={btnSecondary}>
                 Fermer
               </button>
-              {isOwnSession && (
-                <button
-                  type="submit"
-                  disabled={isPending || !hasChanges}
-                  className={btnPrimary}
-                >
-                  {isPending ? "Enregistrement…" : "Enregistrer"}
-                </button>
-              )}
+              <button
+                type="submit"
+                disabled={isPending || !hasChanges}
+                className={btnPrimary}
+              >
+                {isPending ? "Enregistrement…" : "Enregistrer"}
+              </button>
             </div>
           </div>
         </form>
