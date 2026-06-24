@@ -301,11 +301,14 @@ function PremiumScoreRow({
   value,
   onChange,
   description,
+  negative = false,
 }: {
   label: string;
   value: number | null;
   onChange: (v: number) => void;
   description?: string;
+  /** true = indicateur négatif (stress, douleur) : haut = mauvais → rouge */
+  negative?: boolean;
 }) {
   const buttons = Array.from({ length: 11 }, (_, i) => i);
 
@@ -313,9 +316,26 @@ function PremiumScoreRow({
     if (value !== i) {
       return "border border-taupe-200 bg-white text-taupe-400 hover:border-taupe-400 hover:text-ink-900 transition-all";
     }
+    if (negative) {
+      // indicateur négatif : bas = bon (vert), haut = mauvais (rouge)
+      if (i <= 3) return "bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-200 scale-110 transition-all";
+      if (i <= 6) return "bg-amber-500 border-amber-500 text-white shadow-sm shadow-amber-200 scale-110 transition-all";
+      return "bg-red-500 border-red-500 text-white shadow-sm shadow-red-200 scale-110 transition-all";
+    }
+    // indicateur positif : bas = mauvais (rouge), haut = bon (vert)
     if (i <= 3) return "bg-red-500 border-red-500 text-white shadow-sm shadow-red-200 scale-110 transition-all";
     if (i <= 6) return "bg-amber-500 border-amber-500 text-white shadow-sm shadow-amber-200 scale-110 transition-all";
     return "bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-200 scale-110 transition-all";
+  }
+
+  function valueCls(v: number): string {
+    if (negative) {
+      // haut = mauvais
+      if (v >= 7) return "text-red-500";
+      if (v >= 4) return "text-amber-600";
+      return "text-emerald-600";
+    }
+    return scoreColor(v * 10);
   }
 
   return (
@@ -325,7 +345,7 @@ function PremiumScoreRow({
         <div className="flex items-baseline gap-2">
           {description && <span className="text-xs text-taupe-400">{description}</span>}
           {value !== null && (
-            <span className={`text-base font-bold ${scoreColor(value * 10)}`}>
+            <span className={`text-base font-bold ${valueCls(value)}`}>
               {value}/10
             </span>
           )}
@@ -1000,6 +1020,7 @@ export function BilanForm({
                 description="0 = nul · 10 = maximal"
                 value={form.stress_score}
                 onChange={(v) => set("stress_score", v)}
+                negative
               />
               <div className="h-px bg-taupe-100" />
               <PremiumScoreRow
@@ -1014,6 +1035,7 @@ export function BilanForm({
                 description="0 = aucune · 10 = intense"
                 value={form.pain_score}
                 onChange={(v) => set("pain_score", v)}
+                negative
               />
             </div>
           </Card>
