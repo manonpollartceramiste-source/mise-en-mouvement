@@ -905,7 +905,7 @@ function renderWhyAxes(axes: BilanPdfData["axes"]): string {
 // ─── Feuille de route personnalisée (page 3, élément principal) ───────────────
 
 function renderRoadmap(d: BilanPdfData): string {
-  const { mainGoal, frequency, nextAction, axes, topPriorities } = d;
+  const { mainGoal, frequency, nextAction, axes, topPriorities, importantNotes, painEvolution } = d;
 
   const sortedAxes = [...(axes ?? [])].sort((a, b) => (a.value / a.max) - (b.value / b.max));
   const weakAxes   = sortedAxes.filter(a => a.max > 0 && a.value / a.max < 0.75);
@@ -959,11 +959,27 @@ function renderRoadmap(d: BilanPdfData): string {
       </div>`
     : "";
 
+  const importantNotesHtml = importantNotes
+    ? `<div class="roadmap-action" style="margin-top:5pt;padding-top:5pt;border-top:0.4pt solid rgba(184,149,106,0.2)">
+        <div class="roadmap-action-lbl">Notes importantes</div>
+        <div class="roadmap-action-val">${esc(importantNotes)}</div>
+      </div>`
+    : "";
+
+  const painEvolutionHtml = painEvolution
+    ? `<div class="roadmap-action" style="margin-top:5pt;padding-top:5pt;border-top:0.4pt solid rgba(184,149,106,0.2)">
+        <div class="roadmap-action-lbl">Évolution des douleurs</div>
+        <div class="roadmap-action-val">${esc(painEvolution)}</div>
+      </div>`
+    : "";
+
   return `<div class="roadmap">
     ${sec("Votre feuille de route")}
     ${metaHtml}
     ${projHtml}
     ${actionHtml}
+    ${importantNotesHtml}
+    ${painEvolutionHtml}
   </div>`;
 }
 
@@ -1280,16 +1296,26 @@ function renderComposition(bc: NonNullable<BilanPdfData["bodyComposition"]>): st
   </div>`;
 }
 
-// ─── Recommandations coach (page 3) ───────────────────────────────────────────
+// ─── Suites & recommandations coach (page 3) ─────────────────────────────────
 
 function renderRecommandations(
   rec: string[],
+  nextAction: string | null,
   axes: BilanPdfData["axes"],
   tests: BilanPdfData["tests"],
 ): string {
-  if (!rec?.length) return "";
+  if (!rec?.length && !nextAction) return "";
 
-  const chips = `<div class="rec-chips">${rec.map(r => `<span class="rec-chip">${esc(r)}</span>`).join("")}</div>`;
+  const nextActionHtml = nextAction
+    ? `<div style="margin-bottom:6pt;padding:5pt 8pt;background:rgba(184,149,106,0.08);border-left:2pt solid #B8956A;border-radius:2pt">
+        <div style="font-size:8px;font-weight:700;color:#A89070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2pt">Prochaine action</div>
+        <div style="font-size:9.5px;color:#1E1812;line-height:1.4">${esc(nextAction)}</div>
+      </div>`
+    : "";
+
+  const chips = rec?.length
+    ? `<div class="rec-chips">${rec.map(r => `<span class="rec-chip">${esc(r)}</span>`).join("")}</div>`
+    : "";
 
   const sortedAxes = [...(axes ?? [])].sort((a, b) => {
     const pA = a.max > 0 ? a.value / a.max : 0;
@@ -1304,14 +1330,15 @@ function renderRecommandations(
     detailText = `Priorité : ${weakAxes[0].label.toLowerCase()} et ${weakAxes[1].label.toLowerCase()}${hasComps ? " — compensations à corriger" : ""}.`;
   } else if (weakAxes.length === 1) {
     detailText = `Priorité : ${weakAxes[0].label.toLowerCase()}${hasComps ? " — compensations à corriger" : ""}.`;
-  } else {
+  } else if (rec?.length) {
     detailText = "Profil équilibré — consolider les acquis et progresser vers l'excellence.";
   }
 
   return `<div class="p3-section">
-    ${sec("Recommandations coach")}
+    ${sec("Suites &amp; recommandations")}
+    ${nextActionHtml}
     ${chips}
-    <div class="rec-detail">${esc(detailText)}</div>
+    ${detailText ? `<div class="rec-detail">${esc(detailText)}</div>` : ""}
   </div>`;
 }
 
@@ -1713,7 +1740,7 @@ export function generateBilanHtml(
     ${hasRoadmap ? renderRoadmap(d) : ""}
     ${hasWhyAxes ? renderWhyAxes(d.axes) : ""}
     ${hasComp ? renderComposition(d.bodyComposition!) : ""}
-    ${hasRec  ? renderRecommandations(d.activeRec ?? [], d.axes, d.tests) : ""}
+    ${(hasRec || d.nextAction) ? renderRecommandations(d.activeRec ?? [], d.nextAction, d.axes, d.tests) : ""}
     ${renderTrajectoire()}
     ${renderQuotePremium()}
   </div>

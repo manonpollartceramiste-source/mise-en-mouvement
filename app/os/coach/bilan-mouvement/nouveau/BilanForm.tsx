@@ -253,6 +253,13 @@ function scoreLabel(s: number): string {
   return "À travailler";
 }
 
+function axisInterp(pct: number): { label: string; cls: string } {
+  if (pct >= 75) return { label: "Point fort",    cls: "bg-emerald-100 text-emerald-700 border-emerald-200" };
+  if (pct >= 50) return { label: "Bon niveau",    cls: "bg-amber-100 text-amber-700 border-amber-200" };
+  if (pct >= 25) return { label: "À développer",  cls: "bg-orange-100 text-orange-700 border-orange-200" };
+  return            { label: "Prioritaire",       cls: "bg-red-100 text-red-700 border-red-200" };
+}
+
 // ─── ScoreGauge ───────────────────────────────────────────────
 
 function ScoreGauge({ score, size = 96 }: { score: number; size?: number }) {
@@ -378,9 +385,16 @@ function PremiumStepper({
         </div>
         <div className="flex items-baseline justify-between">
           <span className="text-xs text-taupe-400">0</span>
-          <span className={`text-sm font-bold ${scoreColor(pct)}`}>
-            {current}/{max}
-          </span>
+          <div className="flex items-center gap-2">
+            {value !== null && value > 0 && (
+              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${axisInterp(pct).cls}`}>
+                {axisInterp(pct).label}
+              </span>
+            )}
+            <span className={`text-sm font-bold ${scoreColor(pct)}`}>
+              {current}/{max}
+            </span>
+          </div>
           <span className="text-xs text-taupe-400">{max}</span>
         </div>
       </div>

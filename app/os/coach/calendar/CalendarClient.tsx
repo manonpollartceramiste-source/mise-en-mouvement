@@ -688,6 +688,7 @@ export function CalendarClient({
             clients={clients}
             sessions={sessions}
             bookings={liveBookings}
+            currentCoachId={currentCoachId}
             onClose={() => setCreateSlot(null)}
             onSuccess={() => {
               setCreateSlot(null);
@@ -761,6 +762,7 @@ function CreateModal({
   clients,
   sessions,
   bookings,
+  currentCoachId,
   onClose,
   onSuccess,
 }: {
@@ -768,6 +770,7 @@ function CreateModal({
   clients: Profile[];
   sessions: SessionWithClient[];
   bookings: Booking[];
+  currentCoachId: string;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -787,9 +790,11 @@ function CreateModal({
     return isNaN(d.getTime()) ? initDate : d;
   })();
 
+  const ownSessions = sessions.filter(s => s.coach_id === currentCoachId);
+  const ownBookings = bookings.filter(b => b.coach_id === currentCoachId);
   const conflict =
-    checkConflict(sessions, selectedDate, duration) ||
-    checkBookingConflict(bookings, selectedDate, duration);
+    checkConflict(ownSessions, selectedDate, duration) ||
+    checkBookingConflict(ownBookings, selectedDate, duration);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -948,7 +953,8 @@ function DetailModal({
     return isNaN(d.getTime()) ? initDate : d;
   })();
 
-  const conflict = checkConflict(sessions, selectedDate, duration, session.id);
+  const coachSessions = sessions.filter(s => s.coach_id === session.coach_id);
+  const conflict = checkConflict(coachSessions, selectedDate, duration, session.id);
   const hasChanges =
     datetimeStr !== toDatetimeLocal(initDate) ||
     duration !== session.duration_min ||
