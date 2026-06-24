@@ -30,7 +30,7 @@ export default async function Home() {
     loadImages(),
     loadVisibleTestimonials(),
     getDiscoverySessionSettings(),
-    getMediaItems(true),
+    getMediaItems(false), // false = adminView → site public, filtre status='published'
   ]);
 
   // Filtrage par site_location (nouveau système) avec fallback sur category (legacy)

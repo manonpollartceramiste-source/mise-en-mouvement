@@ -1,5 +1,5 @@
 import "server-only";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
 import type {
   Quote,
   QuoteInsert,
@@ -301,37 +301,42 @@ export async function updateDiscoverySessionSettings(
 
 // ─── Media library ────────────────────────────────────────────
 
-export async function getMediaItems(activeOnly = true): Promise<MediaItem[]> {
-  const supabase = await getSupabaseServer();
+// adminView = true → tous statuts (admin) ; false → published + is_active (site public)
+export async function getMediaItems(adminView = false): Promise<MediaItem[]> {
+  const supabase = adminView ? getSupabaseAdmin() : await getSupabaseServer();
   let q = supabase
     .from("media_library")
     .select("*")
     .order("sort_order")
     .order("created_at", { ascending: false });
-  if (activeOnly) q = q.eq("is_active", true);
-  const { data } = await q;
+  if (!adminView) {
+    q = q.eq("status", "published").eq("is_active", true);
+  }
+  const { data, error } = await q;
+  if (error) console.error("[getMediaItems]", error.message);
   return (data ?? []) as MediaItem[];
 }
 
 export async function getMediaByLocation(location: string): Promise<MediaItem[]> {
-  const supabase = await getSupabaseServer();
-  const { data } = await supabase
+  const { data, error } = await (await getSupabaseServer())
     .from("media_library")
     .select("*")
     .eq("site_location", location)
+    .eq("status", "published")
     .eq("is_active", true)
     .order("sort_order")
     .order("created_at", { ascending: false });
+  if (error) console.error("[getMediaByLocation]", error.message);
   return (data ?? []) as MediaItem[];
 }
 
 export async function createMediaItem(item: MediaItemInsert): Promise<MediaItem | null> {
-  const supabase = await getSupabaseServer();
-  const { data } = await supabase
+  const { data, error } = await getSupabaseAdmin()
     .from("media_library")
     .insert(item)
     .select()
     .single();
+  if (error) console.error("[createMediaItem]", error.message);
   return data as MediaItem | null;
 }
 
@@ -339,17 +344,20 @@ export async function updateMediaItem(
   id: string,
   patch: Partial<Omit<MediaItem, "id" | "created_at" | "updated_at">>,
 ): Promise<MediaItem | null> {
-  const supabase = await getSupabaseServer();
-  const { data } = await supabase
+  const { data, error } = await getSupabaseAdmin()
     .from("media_library")
     .update(patch)
     .eq("id", id)
     .select()
     .single();
+  if (error) console.error("[updateMediaItem]", error.message);
   return data as MediaItem | null;
 }
 
 export async function deleteMediaItem(id: string): Promise<void> {
-  const supabase = await getSupabaseServer();
-  await supabase.from("media_library").delete().eq("id", id);
+  const { error } = await getSupabaseAdmin()
+    .from("media_library")
+    .delete()
+    .eq("id", id);
+  if (error) console.error("[deleteMediaItem]", error.message);
 }

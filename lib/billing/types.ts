@@ -172,6 +172,8 @@ export const USAGE_TYPES: { value: string; label: string }[] = [
   { value: "fond-section",     label: "Fond de section" },
 ];
 
+export type MediaStatus = "draft" | "published" | "archived";
+
 export type MediaItem = {
   id: string;
   title: string;
@@ -184,6 +186,7 @@ export type MediaItem = {
   alt_text: string;
   caption: string;
   is_active: boolean;
+  status: MediaStatus;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -200,6 +203,7 @@ export type MediaItemInsert = {
   alt_text?: string;
   caption?: string;
   is_active: boolean;
+  status?: MediaStatus;
   sort_order: number;
 };
 

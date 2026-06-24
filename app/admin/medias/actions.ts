@@ -76,6 +76,7 @@ export async function uploadMediaAction(formData: FormData) {
     alt_text: (formData.get("alt_text") as string) || "",
     caption: (formData.get("caption") as string) || "",
     is_active: true,
+    status: "draft",
     sort_order: Number(formData.get("sort_order") || 0),
   });
 
@@ -146,5 +147,19 @@ export async function toggleMediaAction(formData: FormData) {
   const current = formData.get("is_active") === "true";
 
   await updateMediaItem(id, { is_active: !current });
+  redirect("/admin/medias");
+}
+
+export async function setMediaStatusAction(formData: FormData) {
+  await requireAdmin();
+
+  const id = formData.get("id") as string;
+  const status = formData.get("status") as "draft" | "published" | "archived";
+
+  if (!id || !["draft", "published", "archived"].includes(status)) {
+    redirect("/admin/medias");
+  }
+
+  await updateMediaItem(id, { status });
   redirect("/admin/medias");
 }
