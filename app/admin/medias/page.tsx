@@ -25,6 +25,7 @@ type SearchParams = Promise<{
   error?: string;
   detail?: string;
   preview?: string;
+  media?: string;
 }>;
 
 const DISPLAY_GROUPS = [
@@ -53,6 +54,13 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
 
+// Locations qui méritent des controls (vidéos explicatives/témoignages)
+const CONTROLS_LOCS = new Set(["temoignages", "exercices", "decouverte", "comment-ca-se-passe", "avant-apres"]);
+
+function videoNeedsControls(media: MediaItem): boolean {
+  return CONTROLS_LOCS.has(media.site_location ?? "");
+}
+
 export default async function MediasPage({
   searchParams,
 }: {
@@ -61,7 +69,7 @@ export default async function MediasPage({
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
 
-  const { uploaded, deleted, saved, error, detail, preview } = await searchParams;
+  const { uploaded, deleted, saved, error, detail, preview, media: mediaType } = await searchParams;
   const medias = await getMediaItems(true);
 
   const grouped = new Map<string, MediaItem[]>();
@@ -180,7 +188,11 @@ export default async function MediasPage({
           <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-medium text-red-700">Type non supporté. Utilisez JPG, PNG, WebP, GIF, MP4, WebM ou MOV.</div>
         )}
         {error === "size" && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-medium text-red-700">Fichier trop volumineux (limite : 50 Mo).</div>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-medium text-red-700">
+            {mediaType === "video"
+              ? "Vidéo trop lourde — limite 200 Mo. Compressez la vidéo avant l'upload (HandBrake, iMovie, etc.)"
+              : "Image trop lourde — limite 20 Mo."}
+          </div>
         )}
 
         {/* ── Formulaire upload ─────────────────────────────── */}
@@ -432,7 +444,7 @@ function PreviewLayout({ media }: { media: MediaItem }) {
         <div className="grid grid-cols-3 gap-2">
           <div className="overflow-hidden rounded-xl col-span-2">
             {media.file_type === "video" ? (
-              <video src={media.file_url} className="aspect-video w-full object-cover" autoPlay muted loop playsInline />
+              <video src={media.file_url} className="aspect-video w-full object-cover" autoPlay muted loop playsInline controls />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={media.file_url} alt={media.alt_text || media.title} className="aspect-video w-full object-cover" />
@@ -505,11 +517,24 @@ function MediaCard({ media }: { media: MediaItem }) {
       {/* Thumbnail avec hover zoom */}
       <div className="relative aspect-[4/3] overflow-hidden bg-sand-100">
         {media.file_type === "video" ? (
-          <video
-            src={media.file_url}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            muted
-          />
+          <>
+            <video
+              src={media.file_url}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              muted
+              loop
+              playsInline
+              preload="metadata"
+            />
+            {/* Bouton play centré */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/85 shadow-md backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:bg-white/95">
+                <svg className="h-4 w-4 translate-x-0.5 text-ink-900" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.344-5.891a1.5 1.5 0 000-2.54L6.3 2.84z" />
+                </svg>
+              </div>
+            </div>
+          </>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img

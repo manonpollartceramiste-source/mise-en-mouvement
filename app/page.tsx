@@ -392,13 +392,24 @@ function Hero({
           {showImage && effectiveHeroImage && (
             <FadeIn delay={0.2}>
               <div className="group relative overflow-hidden rounded-3xl shadow-[0_40px_100px_-30px_rgba(78,70,59,0.45)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={effectiveHeroImage}
-                  alt=""
-                  className="aspect-[4/5] w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
-                  loading="eager"
-                />
+              {heroMedia?.file_type === "video" ? (
+                  <video
+                    src={effectiveHeroImage}
+                    className="aspect-[4/5] w-full object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={effectiveHeroImage}
+                    alt=""
+                    className="aspect-[4/5] w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
+                    loading="eager"
+                  />
+                )}
                 {/* Voile dégradé en bas pour fondre avec le fond */}
                 <div
                   className="pointer-events-none absolute inset-0"
@@ -594,10 +605,12 @@ function CabinetSection({
     .filter((url) => !excludeUrls.has(url));
 
   // Prefer mediathèque medias, fallback to legacy photos
-  const mediaUrls = galleryMedias.map((m) => m.file_url);
-  const allPhotos = (mediaUrls.length > 0 ? mediaUrls : legacyPhotos).slice(0, 6);
+  type GalleryItem = { file_url: string; file_type?: string; alt_text?: string };
+  const galleryItems: GalleryItem[] = galleryMedias.length > 0
+    ? galleryMedias.slice(0, 6)
+    : legacyPhotos.slice(0, 6).map((url) => ({ file_url: url }));
 
-  if (allPhotos.length === 0) return null;
+  if (galleryItems.length === 0) return null;
 
   return (
     <Section className="border-t border-taupe-300/30">
@@ -611,26 +624,30 @@ function CabinetSection({
             <span className="italic text-taupe-600">pour votre progression.</span>
           </h2>
         </Reveal>
-        <EditorialGallery photos={allPhotos} />
+        <EditorialGallery items={galleryItems} />
       </Container>
     </Section>
   );
 }
 
-function EditorialGallery({ photos }: { photos: string[] }) {
-  const visible = photos.slice(0, 3);
+function EditorialGallery({ items }: { items: Array<{ file_url: string; file_type?: string; alt_text?: string }> }) {
+  const visible = items.slice(0, 3);
   if (visible.length === 0) return null;
 
   return (
     <div className="mt-12 flex flex-wrap gap-6">
-      {visible.map((url, i) => (
-        <Reveal key={url} delay={i * 0.11}>
+      {visible.map((item, i) => (
+        <Reveal key={item.file_url} delay={i * 0.11}>
           <div
             className="img-gallery-editorial"
             style={{ width: 168, height: 236 }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={url} alt="" loading="lazy" />
+            {item.file_type === "video" ? (
+              <video src={item.file_url} className="h-full w-full object-cover" autoPlay muted loop playsInline />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={item.file_url} alt={item.alt_text || ""} loading="lazy" />
+            )}
           </div>
         </Reveal>
       ))}
@@ -658,6 +675,7 @@ function ExercicesSection({ medias }: { medias: MediaItem[] }) {
                   <video
                     src={m.file_url}
                     className="aspect-video w-full object-cover"
+                    autoPlay
                     muted
                     loop
                     playsInline
@@ -705,13 +723,21 @@ function AvantApresSection({ medias }: { medias: MediaItem[] }) {
             <Reveal key={i} delay={i * 0.1}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="overflow-hidden rounded-2xl">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={before.file_url} alt={before.alt_text || "Avant"} className="w-full object-cover" loading="lazy" />
+                  {before.file_type === "video" ? (
+                    <video src={before.file_url} className="w-full object-cover" autoPlay muted loop playsInline />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={before.file_url} alt={before.alt_text || "Avant"} className="w-full object-cover" loading="lazy" />
+                  )}
                   <p className="mt-2 text-center text-xs uppercase tracking-wider text-taupe-500">Avant</p>
                 </div>
                 <div className="overflow-hidden rounded-2xl">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={after.file_url} alt={after.alt_text || "Après"} className="w-full object-cover" loading="lazy" />
+                  {after.file_type === "video" ? (
+                    <video src={after.file_url} className="w-full object-cover" autoPlay muted loop playsInline />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={after.file_url} alt={after.alt_text || "Après"} className="w-full object-cover" loading="lazy" />
+                  )}
                   <p className="mt-2 text-center text-xs uppercase tracking-wider text-taupe-500">Après</p>
                 </div>
               </div>
