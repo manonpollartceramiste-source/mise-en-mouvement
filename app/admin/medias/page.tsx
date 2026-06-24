@@ -24,6 +24,7 @@ type SearchParams = Promise<{
   deleted?: string;
   saved?: string;
   error?: string;
+  detail?: string;
 }>;
 
 const DISPLAY_GROUPS = [
@@ -46,7 +47,7 @@ export default async function MediasPage({
   const user = await getCurrentUser();
   if (!user) redirect("/admin/login");
 
-  const { uploaded, deleted, saved, error } = await searchParams;
+  const { uploaded, deleted, saved, error, detail } = await searchParams;
   const medias = await getMediaItems(false);
 
   const grouped = new Map<string, MediaItem[]>();
@@ -91,8 +92,13 @@ export default async function MediasPage({
           </div>
         )}
         {error === "upload" && (
-          <div className="rounded-xl bg-red-50 px-5 py-3 text-sm font-medium text-red-700">
-            Erreur upload — vérifiez que le bucket Supabase &quot;site-media&quot; existe et est public.
+          <div className="rounded-xl bg-red-50 px-5 py-3 text-sm font-medium text-red-700 space-y-1">
+            <p>Erreur upload — bucket : <code className="font-mono">site-media</code></p>
+            {detail && (
+              <p className="font-mono text-xs font-normal text-red-600 break-all">
+                Supabase : {decodeURIComponent(detail)}
+              </p>
+            )}
           </div>
         )}
         {error === "no-file" && (

@@ -1,8 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/supabase/server";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getCurrentUser, getSupabaseAdmin } from "@/lib/supabase/server";
 import { createMediaItem, updateMediaItem, deleteMediaItem } from "@/lib/billing/server";
 import type { MediaCategory } from "@/lib/billing/types";
 
@@ -26,25 +25,34 @@ export async function uploadMediaAction(formData: FormData) {
   if (!ALLOWED_TYPES.has(file!.type)) redirect("/admin/medias?error=type");
   if (file!.size > MAX_SIZE_BYTES) redirect("/admin/medias?error=size");
 
-  const supabase = await getSupabaseServer();
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const supabaseAdmin = getSupabaseAdmin();
+  const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase();
+  const slug = file.name
+    .replace(/\.[^.]+$/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60) || "media";
+  const siteLocation = (formData.get("site_location") as string) || "footer-ambiance";
+  const storagePath = `${siteLocation}/${Date.now()}-${slug}.${ext}`;
 
-  const { data: uploadData, error: uploadError } = await supabase.storage
+  const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
     .from("site-media")
-    .upload(filename, file, { contentType: file.type, upsert: false });
+    .upload(storagePath, file, { contentType: file.type, upsert: false });
 
   if (uploadError || !uploadData) {
-    console.error("[Media Upload] Erreur:", uploadError);
-    redirect("/admin/medias?error=upload");
+    const msg = uploadError?.message ?? "unknown";
+    console.error(
+      `[Media Upload] ERREUR\n  bucket: site-media\n  path: ${storagePath}\n  size: ${file.size} bytes\n  type: ${file.type}\n  supabase: ${msg}`,
+    );
+    redirect(`/admin/medias?error=upload&detail=${encodeURIComponent(msg)}`);
   }
 
-  const { data: urlData } = supabase.storage
+  const { data: urlData } = supabaseAdmin.storage
     .from("site-media")
     .getPublicUrl(uploadData.path);
 
   const fileType = file.type.startsWith("video/") ? "video" : "image";
-  const siteLocation = (formData.get("site_location") as string) || "footer-ambiance";
 
   // Dériver la category legacy depuis site_location pour compatibilité
   const categoryMap: Record<string, MediaCategory> = {
@@ -111,14 +119,16 @@ export async function deleteMediaAction(formData: FormData) {
   const fileUrl = formData.get("file_url") as string;
 
   if (fileUrl) {
-    const supabase = await getSupabaseServer();
     try {
       const parsed = new URL(fileUrl);
       const marker = "/site-media/";
       const idx = parsed.pathname.indexOf(marker);
       const storagePath = idx !== -1 ? parsed.pathname.slice(idx + marker.length) : null;
       if (storagePath) {
-        await supabase.storage.from("site-media").remove([storagePath]);
+        const { error: delErr } = await getSupabaseAdmin().storage
+          .from("site-media")
+          .remove([storagePath]);
+        if (delErr) console.error("[Media Delete] Storage:", delErr.message);
       }
     } catch {
       // URL malformée — on ignore, la DB sera nettoyée quand même
