@@ -15,6 +15,10 @@ export type SiteSettings = {
   ctaUrl: string;
   footerText: string;
   copyright: string;
+  /** URL publique du logo (Supabase Storage). Null = fallback /logo.png. */
+  logoUrl: string | null;
+  /** URL publique de l'image de fond premium. Null = pas d'arrière-plan. */
+  backgroundUrl: string | null;
 };
 
 export const siteSettingsSchema = z.object({
@@ -32,6 +36,8 @@ export const siteSettingsSchema = z.object({
   ctaUrl: z.string().min(1),
   footerText: z.string(),
   copyright: z.string(),
+  logoUrl: z.string().nullable().default(null),
+  backgroundUrl: z.string().nullable().default(null),
 }) satisfies z.ZodType<SiteSettings>;
 
 export const defaultSettings: SiteSettings = {
@@ -49,6 +55,8 @@ export const defaultSettings: SiteSettings = {
   ctaUrl: "/reservation",
   footerText: "Coaching sportif premium, réathlétisation, pilates.",
   copyright: "© {year} {companyName}",
+  logoUrl: null,
+  backgroundUrl: null,
 };
 
 export function formatCopyright(template: string, companyName: string): string {

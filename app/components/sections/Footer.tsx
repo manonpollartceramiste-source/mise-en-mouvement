@@ -2,8 +2,6 @@ import Link from "next/link";
 import { Fragment } from "react";
 import { Container } from "@/app/components/ui/Container";
 import { nav } from "@/lib/content/site";
-import { loadImages } from "@/lib/content/images.server";
-import { getLogoSrc } from "@/lib/content/images";
 import { loadTexts } from "@/lib/content/texts.server";
 import { loadSettings } from "@/lib/content/settings.server";
 import { formatCopyright } from "@/lib/content/settings";
@@ -11,12 +9,11 @@ import { formatCopyright } from "@/lib/content/settings";
 const allLinks = [{ href: "/", label: "Accueil" }, ...nav];
 
 export async function Footer() {
-  const [images, texts, settings] = await Promise.all([
-    loadImages(),
+  const [texts, settings] = await Promise.all([
     loadTexts(),
     loadSettings(),
   ]);
-  const logoSrc = getLogoSrc(images);
+  const logoSrc = settings.logoUrl || "/logo.png";
   const email = settings.email;
   const siteName = settings.companyName || texts.siteName;
   const footerTagline = settings.footerText;

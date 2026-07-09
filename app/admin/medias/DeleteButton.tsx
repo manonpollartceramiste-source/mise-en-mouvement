@@ -2,11 +2,20 @@
 
 import { deleteMediaAction } from "./actions";
 
-export function DeleteButton({ id, fileUrl }: { id: string; fileUrl: string }) {
+export function DeleteButton({
+  id,
+  fileUrl,
+  storagePath,
+}: {
+  id: string;
+  fileUrl: string;
+  storagePath?: string | null;
+}) {
   return (
     <form action={deleteMediaAction}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="file_url" value={fileUrl} />
+      <input type="hidden" name="storage_path" value={storagePath ?? ""} />
       <button
         type="submit"
         onClick={(e) => {

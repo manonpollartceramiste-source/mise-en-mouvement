@@ -27,6 +27,8 @@ import {
   setCoachPasswordAction,
   sendTestEmailAction,
   adminDisconnectGcalAction,
+  uploadCoachPhotoAction,
+  clearCoachPhotoAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -222,6 +224,44 @@ function CoachCard({
             </button>
           </form>
         )}
+      </div>
+
+      {/* Photo du coach */}
+      <div className="border-t border-taupe-200/60 p-6">
+        <p className="mb-4 text-xs font-medium uppercase tracking-widest text-taupe-400">
+          Photo
+        </p>
+        <div className="flex items-center gap-6">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-taupe-200/40 bg-sand-100">
+            {coach.photo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={coach.photo_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="font-serif text-2xl text-taupe-400">{coach.initials}</span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <form action={uploadCoachPhotoAction}>
+              <input type="hidden" name="coachId" value={coach.id} />
+              <label className="block space-y-1.5">
+                <span className="text-xs text-taupe-500">Uploader une photo</span>
+                <input type="file" name="file" accept="image/jpeg,image/png,image/webp"
+                  className="block text-sm text-ink-900 file:mr-3 file:rounded-full file:border-0 file:bg-taupe-700 file:px-4 file:py-1.5 file:text-xs file:font-medium file:text-sand-50 hover:file:bg-taupe-800" />
+              </label>
+              <button type="submit" className="mt-2 rounded-full bg-taupe-700 px-4 py-1.5 text-xs font-medium text-sand-50 hover:bg-taupe-800">
+                Enregistrer →
+              </button>
+            </form>
+            {coach.photo_url && (
+              <form action={clearCoachPhotoAction} className="self-end">
+                <input type="hidden" name="coachId" value={coach.id} />
+                <button type="submit" className="text-xs text-red-700 hover:text-red-900">
+                  Retirer la photo
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Public profile */}

@@ -2,18 +2,15 @@ import Link from "next/link";
 import { Container } from "@/app/components/ui/Container";
 import { Button } from "@/app/components/ui/Button";
 import { nav } from "@/lib/content/site";
-import { loadImages } from "@/lib/content/images.server";
-import { getLogoSrc } from "@/lib/content/images";
 import { loadTexts } from "@/lib/content/texts.server";
 import { loadSettings } from "@/lib/content/settings.server";
 
 export async function Header() {
-  const [images, texts, settings] = await Promise.all([
-    loadImages(),
+  const [texts, settings] = await Promise.all([
     loadTexts(),
     loadSettings(),
   ]);
-  const logoSrc = getLogoSrc(images);
+  const logoSrc = settings.logoUrl || "/logo.png";
   const siteName = settings.companyName || texts.siteName;
 
   return (

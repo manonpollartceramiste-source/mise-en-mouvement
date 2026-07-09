@@ -8,7 +8,6 @@ import { Footer } from "@/app/components/sections/Footer";
 import { FadeIn } from "@/app/components/motion/FadeIn";
 import { Reveal } from "@/app/components/motion/Reveal";
 import { loadActiveCoaches } from "@/lib/content/coaches.server";
-import { loadImages } from "@/lib/content/images.server";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +18,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CoachsPage() {
-  const [coaches, images] = await Promise.all([
-    loadActiveCoaches(),
-    loadImages(),
-  ]);
+  const coaches = await loadActiveCoaches();
   return (
     <>
       <Header />
@@ -53,7 +49,7 @@ export default async function CoachsPage() {
         <Section className="border-t border-taupe-300/30 bg-sand-100/40 pt-16">
           <Container className="space-y-32">
             {coaches.map((coach, i) => {
-              const photo = images.coaches[coach.id];
+              const photo = coach.photo_url ?? null;
               return (
               <Reveal key={coach.id}>
                 <article

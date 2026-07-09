@@ -90,7 +90,13 @@ const sections: Section[] = [
     id: "os-clients",
     label: "Comptes clients OS",
     description: "Créer les clients, les rattacher à un coach et gérer leurs bilans",
-    href: "/os/client",
+    href: "/admin/os-clients",
+  },
+  {
+    id: "os-coachs",
+    label: "Comptes coachs OS",
+    description: "Inviter les coachs, gérer leurs accès à l'espace coach",
+    href: "/admin/os-coachs",
   },
   {
     id: "personnalisation",
@@ -161,8 +167,7 @@ export default async function AdminDashboard() {
           Que souhaitez-vous modifier ?
         </h2>
         <p className="mt-3 max-w-xl text-sm text-taupe-600">
-          Les éditeurs seront activés progressivement. Pour l’instant, l’espace
-          admin est en place et la base Supabase est connectée.
+          Toutes les sections sont actives. Cliquez sur une carte pour modifier le contenu.
         </p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

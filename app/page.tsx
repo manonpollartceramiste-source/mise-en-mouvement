@@ -16,41 +16,38 @@ import { type Testimonial } from "@/lib/content/testimonials";
 import { loadVisibleTestimonials } from "@/lib/content/testimonials.server";
 import { loadTexts } from "@/lib/content/texts.server";
 import { textOrDefault, type SiteTexts } from "@/lib/content/texts";
-import { loadImages } from "@/lib/content/images.server";
-import { getGalleryPhotos, type SiteImages } from "@/lib/content/images";
-import { getDiscoverySessionSettings } from "@/lib/billing/server";
-import { getMediaItems } from "@/lib/billing/server";
+import { loadSettings } from "@/lib/content/settings.server";
+import { getDiscoverySessionSettings, getMediaItems } from "@/lib/billing/server";
 import type { DiscoverySessionSettings, MediaItem } from "@/lib/billing/types";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [coaches, texts, images, visibleAvis, discovery, mediaItems] = await Promise.all([
+  const [coaches, texts, settings, visibleAvis, discovery, mediaItems] = await Promise.all([
     loadActiveCoaches(),
     loadTexts(),
-    loadImages(),
+    loadSettings(),
     loadVisibleTestimonials(),
     getDiscoverySessionSettings(),
-    getMediaItems(false), // false = adminView → site public, filtre status='published'
+    getMediaItems(false),
   ]);
 
-  // Filtrage par site_location (nouveau système) avec fallback sur category (legacy)
   const byLoc = (loc: string) => mediaItems.filter((m) => m.site_location === loc);
-  const heroMedias    = byLoc("hero").length    > 0 ? byLoc("hero")    : mediaItems.filter((m) => m.category === "hero");
-  const cabinetMedias = byLoc("cabinet").length > 0 ? byLoc("cabinet") : mediaItems.filter((m) => m.category === "cabinet" || m.category === "ambiance");
+  const heroMedias       = byLoc("hero");
+  const cabinetMedias    = byLoc("cabinet");
   const exercicesMedias  = byLoc("exercices");
   const avantApresMedias = byLoc("avant-apres");
 
   return (
     <>
-      <PremiumBackground src={images.background} />
+      <PremiumBackground src={settings.backgroundUrl ?? null} />
       <Header />
       <main className="flex-1">
-        <Hero texts={texts} heroImage={images.hero} heroMedia={heroMedias[0] ?? null} />
+        <Hero texts={texts} heroMedia={heroMedias[0] ?? null} />
         <Approche texts={texts} />
         <SeanceDecouverte discovery={discovery} />
         <CommentCaSePasseSection />
-        <CoachsPreview coaches={coaches} images={images} texts={texts} />
-        <CabinetSection images={images} galleryMedias={cabinetMedias} />
+        <CoachsPreview coaches={coaches} texts={texts} />
+        <CabinetSection galleryMedias={cabinetMedias} />
         {exercicesMedias.length > 0 && <ExercicesSection medias={exercicesMedias} />}
         {avantApresMedias.length > 0 && <AvantApresSection medias={avantApresMedias} />}
         <Piliers texts={texts} />
@@ -319,17 +316,15 @@ function FAQSection() {
 
 function Hero({
   texts,
-  heroImage,
   heroMedia,
 }: {
   texts: SiteTexts;
-  heroImage: string | null;
   heroMedia: MediaItem | null;
 }) {
   const metas = [texts.heroMeta1, texts.heroMeta2, texts.heroMeta3].filter(
     (m) => m && m.trim().length > 0,
   );
-  const effectiveHeroImage = heroMedia?.file_url ?? heroImage;
+  const effectiveHeroImage = heroMedia?.file_url ?? null;
   const showImage = Boolean(effectiveHeroImage);
   return (
     <Section className="relative overflow-hidden pt-24 sm:pt-32">
@@ -465,11 +460,9 @@ function Approche({ texts }: { texts: SiteTexts }) {
 
 function CoachsPreview({
   coaches,
-  images,
   texts,
 }: {
   coaches: Coach[];
-  images: SiteImages;
   texts: SiteTexts;
 }) {
   return (
@@ -493,7 +486,7 @@ function CoachsPreview({
         <div className="grid gap-6 md:grid-cols-2">
           {coaches.map((coach, i) => (
             <Reveal key={coach.id} delay={i * 0.1}>
-              <CoachCard coach={coach} photoUrl={images.coaches[coach.id]} />
+              <CoachCard coach={coach} photoUrl={coach.photo_url ?? null} />
             </Reveal>
           ))}
         </div>
@@ -589,28 +582,12 @@ function AvisPreview({
 }
 
 function CabinetSection({
-  images,
   galleryMedias,
 }: {
-  images: SiteImages;
   galleryMedias: MediaItem[];
 }) {
-  const cabinetPhotos = getGalleryPhotos(images, "cabinet-");
-  const ambiancePhotos = getGalleryPhotos(images, "ambiance-");
-
-  const excludeUrls = new Set(
-    [images.hero, images.background].filter((u): u is string => u !== null),
-  );
-  const legacyPhotos = [...cabinetPhotos, ...ambiancePhotos]
-    .filter((url) => !excludeUrls.has(url));
-
-  // Prefer mediathèque medias, fallback to legacy photos
-  type GalleryItem = { file_url: string; file_type?: string; alt_text?: string };
-  const galleryItems: GalleryItem[] = galleryMedias.length > 0
-    ? galleryMedias.slice(0, 6)
-    : legacyPhotos.slice(0, 6).map((url) => ({ file_url: url }));
-
-  if (galleryItems.length === 0) return null;
+  if (galleryMedias.length === 0) return null;
+  const galleryItems = galleryMedias.slice(0, 6);
 
   return (
     <Section className="border-t border-taupe-300/30">

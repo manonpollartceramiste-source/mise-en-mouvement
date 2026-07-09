@@ -25,6 +25,8 @@ export type Coach = {
   osProfileId?: string;
   /** Email personnel pour recevoir les notifications de réservation. Peut différer de l'email de connexion OS. */
   notification_email?: string;
+  /** URL publique de la photo du coach (Supabase Storage). Null = avatar initiales. */
+  photo_url?: string | null;
 };
 
 export const coachSchema = z.object({
@@ -44,6 +46,7 @@ export const coachSchema = z.object({
   email: z.string().optional(),
   osProfileId: z.string().optional(),
   notification_email: z.string().optional(),
+  photo_url: z.string().nullable().optional(),
 }) satisfies z.ZodType<Coach>;
 
 export const coachArraySchema = z.array(coachSchema);

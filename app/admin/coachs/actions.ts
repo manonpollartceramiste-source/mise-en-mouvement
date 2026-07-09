@@ -15,8 +15,16 @@ import {
   getOsProfileByEmail,
   setOsUserPassword,
 } from "@/lib/supabase/admin-actions";
-import { getSupabaseAdmin } from "@/lib/supabase/server";
+import {
+  getCurrentUser,
+  getSupabaseAdmin,
+  isSupabaseConfigured,
+} from "@/lib/supabase/server";
 import { sendCoachTestEmail } from "@/lib/email/send-booking-emails";
+
+const BUCKET = "site-media";
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const REVALIDATE_PATHS = [
   "/",
@@ -69,6 +77,8 @@ export async function coachAction(formData: FormData) {
 
     const notificationEmailRaw = String(formData.get("notification_email") ?? "").trim();
 
+    const existingCoach = all.find((c) => c.id === id);
+
     const candidate: Coach = {
       id,
       name: String(formData.get("name") ?? "").trim(),
@@ -86,6 +96,7 @@ export async function coachAction(formData: FormData) {
       email: emailRaw || undefined,
       osProfileId: osProfileIdRaw || undefined,
       notification_email: notificationEmailRaw || undefined,
+      photo_url: existingCoach?.photo_url ?? undefined,
     };
 
     const parsed = coachSchema.safeParse(candidate);
@@ -266,4 +277,60 @@ export async function adminDisconnectGcalAction(formData: FormData) {
 
   if (error) fail(`Erreur lors de la déconnexion : ${error.message}`);
   done("Google Agenda déconnecté.");
+}
+
+/** Upload la photo d'un coach vers Supabase Storage et la sauvegarde dans son profil. */
+export async function uploadCoachPhotoAction(formData: FormData) {
+  if (!isSupabaseConfigured()) fail("Supabase non configuré.");
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+
+  const coachId = String(formData.get("coachId") ?? "").trim();
+  if (!coachId) fail("Identifiant coach manquant.");
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) fail("Aucun fichier sélectionné.");
+  if (file.size > MAX_PHOTO_BYTES)
+    fail(`Fichier trop lourd (${(file.size / 1024 / 1024).toFixed(1)} Mo). Maximum : 10 Mo.`);
+  if (!ALLOWED_PHOTO_TYPES.includes(file.type))
+    fail(`Format non supporté (${file.type || "inconnu"}). Utilisez JPG, PNG ou WEBP.`);
+
+  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = `coach-${coachId}-${Date.now()}.${ext}`;
+  const admin = getSupabaseAdmin();
+  const buf = new Uint8Array(await file.arrayBuffer());
+
+  const { error: upErr } = await admin.storage
+    .from(BUCKET)
+    .upload(path, buf, { contentType: file.type, upsert: false });
+  if (upErr) fail(`Upload échoué : ${upErr.message}`);
+
+  const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
+  const publicUrl = data.publicUrl;
+
+  const all = await loadCoaches();
+  const next = all.map((c) => c.id === coachId ? { ...c, photo_url: publicUrl } : c);
+  const valid = coachArraySchema.safeParse(next);
+  if (!valid.success) fail("Validation échouée.");
+  const res = await saveContentKey("coaches", valid.data, REVALIDATE_PATHS);
+  if (!res.ok) fail(`Sauvegarde échouée : ${res.error}`);
+
+  done(`Photo de ${coachId} mise à jour.`);
+}
+
+/** Supprime la photo d'un coach. */
+export async function clearCoachPhotoAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+
+  const coachId = String(formData.get("coachId") ?? "").trim();
+  if (!coachId) fail("Identifiant coach manquant.");
+
+  const all = await loadCoaches();
+  const next = all.map((c) => c.id === coachId ? { ...c, photo_url: null } : c);
+  const valid = coachArraySchema.safeParse(next);
+  if (!valid.success) fail("Validation échouée.");
+  const res = await saveContentKey("coaches", valid.data, REVALIDATE_PATHS);
+  if (!res.ok) fail(res.error);
+  done("Photo retirée.");
 }

@@ -7,7 +7,7 @@ import {
 import { loadSettings } from "@/lib/content/settings.server";
 import { AdminShell, FlashMessages } from "../_components/AdminShell";
 import { Field, SubmitButton, Textarea } from "../_components/Fields";
-import { saveSettings } from "./actions";
+import { saveSettings, uploadLogoAction, uploadBackgroundAction, clearIdentityAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +38,83 @@ export default async function AdminSettingsPage({
       intro="Identité, contact, réseaux et éléments globaux du site. Ces informations alimentent le header, le footer, la page contact, les mentions légales et les boutons CTA."
     >
       <FlashMessages saved={params.saved} error={params.error} />
+
+      {/* ── Identité visuelle (logo + arrière-plan) ──────────── */}
+      <div className="space-y-6 rounded-2xl border border-taupe-300/40 bg-white p-6">
+        <h2 className="font-serif text-xl text-ink-900">Identité visuelle</h2>
+
+        {/* Logo */}
+        <div className="rounded-xl border border-taupe-200/60 p-5">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <h3 className="font-medium text-ink-900">Logo du site</h3>
+              <p className="text-xs text-taupe-500">Affiché dans le header et le footer. PNG ou SVG recommandé.</p>
+            </div>
+            {settings.logoUrl && (
+              <form action={clearIdentityAction}>
+                <input type="hidden" name="slot" value="logo" />
+                <button type="submit" className="text-xs text-red-700 hover:text-red-900">Retirer</button>
+              </form>
+            )}
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="flex h-20 w-32 items-center justify-center overflow-hidden rounded-xl border border-taupe-200/40 bg-sand-100/50">
+              {settings.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={settings.logoUrl} alt="Logo actuel" className="h-full w-full object-contain" />
+              ) : (
+                <span className="text-center text-xs text-taupe-400">Aucun logo</span>
+              )}
+            </div>
+            <form action={uploadLogoAction}>
+              <label className="block space-y-1.5">
+                <span className="text-xs text-taupe-500">Remplacer</span>
+                <input type="file" name="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="block text-sm text-ink-900 file:mr-3 file:rounded-full file:border-0 file:bg-taupe-700 file:px-4 file:py-1.5 file:text-xs file:font-medium file:text-sand-50 hover:file:bg-taupe-800" />
+              </label>
+              <button type="submit" className="mt-3 rounded-full bg-taupe-700 px-4 py-1.5 text-xs font-medium text-sand-50 hover:bg-taupe-800">
+                Uploader →
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Arrière-plan premium */}
+        <div className="rounded-xl border border-taupe-200/60 p-5">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <h3 className="font-medium text-ink-900">Arrière-plan premium</h3>
+              <p className="text-xs text-taupe-500">Photo de fond affichée discrètement derrière toutes les sections. 1920×1080 px minimum.</p>
+            </div>
+            {settings.backgroundUrl && (
+              <form action={clearIdentityAction}>
+                <input type="hidden" name="slot" value="background" />
+                <button type="submit" className="text-xs text-red-700 hover:text-red-900">Retirer</button>
+              </form>
+            )}
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="flex h-20 w-32 items-center justify-center overflow-hidden rounded-xl border border-taupe-200/40 bg-sand-100/50">
+              {settings.backgroundUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={settings.backgroundUrl} alt="Arrière-plan actuel" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-center text-xs text-taupe-400">Aucun fond</span>
+              )}
+            </div>
+            <form action={uploadBackgroundAction}>
+              <label className="block space-y-1.5">
+                <span className="text-xs text-taupe-500">Remplacer</span>
+                <input type="file" name="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="block text-sm text-ink-900 file:mr-3 file:rounded-full file:border-0 file:bg-taupe-700 file:px-4 file:py-1.5 file:text-xs file:font-medium file:text-sand-50 hover:file:bg-taupe-800" />
+              </label>
+              <button type="submit" className="mt-3 rounded-full bg-taupe-700 px-4 py-1.5 text-xs font-medium text-sand-50 hover:bg-taupe-800">
+                Uploader →
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
 
       <form
         action={saveSettings}
