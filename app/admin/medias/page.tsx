@@ -5,11 +5,10 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { getMediaItems } from "@/lib/billing/server";
 import { SITE_LOCATIONS, USAGE_TYPES } from "@/lib/billing/types";
 import type { MediaItem, MediaStatus } from "@/lib/billing/types";
-
-type MediaRow = MediaItem & { storage_path?: string | null };
 import { updateMediaAction, setMediaStatusAction } from "./actions";
 import { DeleteButton } from "./DeleteButton";
 import { UploadClient } from "./UploadClient";
+import { MediaRenderer } from "@/app/components/ui/MediaRenderer";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -64,9 +63,9 @@ export default async function MediasPage({
   if (!user) redirect("/admin/login");
 
   const { uploaded, deleted, saved, error, preview } = await searchParams;
-  const medias = await getMediaItems(true) as MediaRow[];
+  const medias = await getMediaItems(true) as MediaItem[];
 
-  const grouped = new Map<string, MediaRow[]>();
+  const grouped = new Map<string, MediaItem[]>();
   for (const loc of DISPLAY_GROUPS) grouped.set(loc, []);
   for (const m of medias) {
     const loc = m.site_location || "footer-ambiance";
@@ -218,40 +217,7 @@ export default async function MediasPage({
   );
 }
 
-// ── Prévisualisation contextuelle — dimensions alignées sur le site public ──
-
-function MediaEl({
-  media,
-  className,
-  controls = false,
-}: {
-  media: MediaItem;
-  className?: string;
-  controls?: boolean;
-}) {
-  if (media.file_type === "video") {
-    return (
-      <video
-        src={media.file_url}
-        className={className ?? "h-full w-full object-cover"}
-        autoPlay
-        muted
-        loop
-        playsInline
-        controls={controls}
-        preload="metadata"
-      />
-    );
-  }
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={media.file_url}
-      alt={media.alt_text || media.title}
-      className={className ?? "h-full w-full object-cover"}
-    />
-  );
-}
+// ── Prévisualisation contextuelle — mêmes composants et ratios que le site public ──
 
 function PreviewLayout({ media }: { media: MediaItem }) {
   const loc = media.site_location;
@@ -261,7 +227,7 @@ function PreviewLayout({ media }: { media: MediaItem }) {
       <div>
         <p className="mb-3 text-xs text-taupe-500">Rendu hero — image à droite du titre, ratio 4/5</p>
         <div className="relative overflow-hidden rounded-3xl shadow-[0_20px_60px_-15px_rgba(78,70,59,0.35)]" style={{ maxWidth: 300 }}>
-          <MediaEl media={media} className="aspect-[4/5] w-full object-cover" />
+          <MediaRenderer media={media} className="aspect-[4/5] w-full" autoPlay sizes="300px" />
           <div
             className="pointer-events-none absolute inset-0"
             style={{ background: "linear-gradient(to bottom, transparent 60%, rgba(247,242,232,0.55) 100%)" }}
@@ -279,8 +245,8 @@ function PreviewLayout({ media }: { media: MediaItem }) {
         <h2 className="mb-5 font-serif text-xl text-ink-900">Un espace pensé <em className="text-taupe-600">pour votre progression.</em></h2>
         {/* Mêmes dimensions que EditorialGallery sur le site public */}
         <div className="flex flex-wrap gap-6">
-          <div className="overflow-hidden rounded-2xl" style={{ width: 168, height: 236 }}>
-            <MediaEl media={media} />
+          <div className="img-gallery-editorial" style={{ width: 168, height: 236 }}>
+            <MediaRenderer media={media} className="h-full w-full" autoPlay sizes="168px" />
           </div>
           <div className="overflow-hidden rounded-2xl bg-sand-100 flex items-center justify-center text-taupe-300 text-xs" style={{ width: 168, height: 236 }}>
             Photo 2
@@ -299,7 +265,7 @@ function PreviewLayout({ media }: { media: MediaItem }) {
         <p className="mb-5 font-serif text-xl text-ink-900">Vos coachs</p>
         <div className="flex gap-5">
           <div className="w-44 overflow-hidden rounded-2xl border border-taupe-200/40 bg-white shadow-sm">
-            <MediaEl media={media} className="aspect-[3/4] w-full object-cover" />
+            <MediaRenderer media={media} className="aspect-[3/4] w-full" autoPlay sizes="176px" />
             <div className="p-3 text-center">
               <p className="font-serif text-sm text-ink-900">{media.title || "Prénom Coach"}</p>
               <p className="text-[11px] text-taupe-500">Coach certifié</p>
@@ -321,12 +287,12 @@ function PreviewLayout({ media }: { media: MediaItem }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="overflow-hidden rounded-2xl">
-              <MediaEl media={media} className="w-full object-cover" />
+              <MediaRenderer media={media} className="aspect-[4/3] w-full" autoPlay preload="metadata" sizes="50vw" />
             </div>
             <p className="mt-2 text-center text-[11px] uppercase tracking-wider text-taupe-500">Avant</p>
           </div>
           <div>
-            <div className="aspect-[3/4] overflow-hidden rounded-2xl bg-sand-100 flex items-center justify-center text-taupe-300 text-xs">Photo après</div>
+            <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-sand-100 flex items-center justify-center text-taupe-300 text-xs">Photo après</div>
             <p className="mt-2 text-center text-[11px] uppercase tracking-wider text-taupe-500">Après</p>
           </div>
         </div>
@@ -341,7 +307,7 @@ function PreviewLayout({ media }: { media: MediaItem }) {
         <div className="rounded-2xl border border-taupe-200/40 bg-sand-50 p-5">
           <div className="flex items-start gap-4">
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full">
-              <MediaEl media={media} />
+              <MediaRenderer media={media} className="h-full w-full" sizes="48px" />
             </div>
             <div>
               <p className="text-sm italic text-ink-900">
@@ -362,10 +328,12 @@ function PreviewLayout({ media }: { media: MediaItem }) {
         <h2 className="mb-5 font-serif text-xl text-ink-900">Des exercices <em className="text-taupe-600">adaptés à votre corps.</em></h2>
         <div className="grid grid-cols-3 gap-2">
           <div className="col-span-2 overflow-hidden rounded-xl">
-            <MediaEl
+            <MediaRenderer
               media={media}
-              className="aspect-video w-full object-cover"
+              className="aspect-video w-full"
               controls={media.file_type === "video"}
+              autoPlay={media.file_type !== "video"}
+              sizes="(max-width: 768px) 66vw, 400px"
             />
             {media.caption && <p className="px-2 py-1 text-[10px] text-taupe-400">{media.caption}</p>}
           </div>
@@ -383,7 +351,9 @@ function PreviewLayout({ media }: { media: MediaItem }) {
       <div>
         <p className="mb-3 text-xs text-taupe-500">Le média apparaîtra en fond de la zone pied de page.</p>
         <div className="relative h-36 overflow-hidden rounded-2xl">
-          <MediaEl media={media} className="absolute inset-0 h-full w-full object-cover opacity-35" />
+          <div className="absolute inset-0 opacity-35">
+            <MediaRenderer media={media} className="h-full w-full" autoPlay sizes="100vw" />
+          </div>
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-transparent to-sand-50/50">
             <p className="font-serif text-xl text-ink-900">Mise en Mouvement</p>
             <p className="mt-1 text-xs text-taupe-500">coach sportif · bilan mouvement</p>
@@ -400,10 +370,12 @@ function PreviewLayout({ media }: { media: MediaItem }) {
         {SITE_LOCATIONS.find((l) => l.value === loc)?.description ?? "Aperçu du média"}
       </p>
       <div className="overflow-hidden rounded-2xl bg-sand-100">
-        <MediaEl
+        <MediaRenderer
           media={media}
-          className="w-full object-contain max-h-80"
+          className="aspect-video w-full"
           controls={media.file_type === "video"}
+          autoPlay={media.file_type !== "video"}
+          sizes="(max-width: 768px) 100vw, 600px"
         />
       </div>
       {media.caption && <p className="mt-3 text-center text-sm italic text-taupe-500">{media.caption}</p>}
@@ -413,7 +385,7 @@ function PreviewLayout({ media }: { media: MediaItem }) {
 
 // ── Carte média premium ────────────────────────────────────────
 
-function MediaCard({ media }: { media: MediaRow }) {
+function MediaCard({ media }: { media: MediaItem }) {
   const locMeta   = SITE_LOCATIONS.find((l) => l.value === media.site_location);
   const usageMeta = USAGE_TYPES.find((u) => u.value === media.usage_type);
   const status    = getStatus(media);

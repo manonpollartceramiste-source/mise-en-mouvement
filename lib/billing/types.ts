@@ -188,6 +188,7 @@ export type MediaItem = {
   is_active: boolean;
   status: MediaStatus;
   sort_order: number;
+  storage_path?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -205,6 +206,7 @@ export type MediaItemInsert = {
   is_active: boolean;
   status?: MediaStatus;
   sort_order: number;
+  storage_path?: string;
 };
 
 // ─── Helpers ─────────────────────────────────────────────────

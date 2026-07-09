@@ -19,6 +19,7 @@ import { textOrDefault, type SiteTexts } from "@/lib/content/texts";
 import { loadSettings } from "@/lib/content/settings.server";
 import { getDiscoverySessionSettings, getMediaItems } from "@/lib/billing/server";
 import type { DiscoverySessionSettings, MediaItem } from "@/lib/billing/types";
+import { MediaRenderer } from "@/app/components/ui/MediaRenderer";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
@@ -384,27 +385,17 @@ function Hero({
               </FadeIn>
             )}
           </div>
-          {showImage && effectiveHeroImage && (
+          {showImage && heroMedia && (
             <FadeIn delay={0.2}>
               <div className="group relative overflow-hidden rounded-3xl shadow-[0_40px_100px_-30px_rgba(78,70,59,0.45)]">
-              {heroMedia?.file_type === "video" ? (
-                  <video
-                    src={effectiveHeroImage}
-                    className="aspect-[4/5] w-full object-cover"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                  />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={effectiveHeroImage}
-                    alt=""
-                    className="aspect-[4/5] w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
-                    loading="eager"
-                  />
-                )}
+                <MediaRenderer
+                  media={heroMedia}
+                  className="aspect-[4/5] w-full"
+                  imgClassName="transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03]"
+                  priority
+                  autoPlay
+                  sizes="(max-width: 1024px) 100vw, 440px"
+                />
                 {/* Voile dégradé en bas pour fondre avec le fond */}
                 <div
                   className="pointer-events-none absolute inset-0"
@@ -607,7 +598,7 @@ function CabinetSection({
   );
 }
 
-function EditorialGallery({ items }: { items: Array<{ file_url: string; file_type?: string; alt_text?: string }> }) {
+function EditorialGallery({ items }: { items: Pick<MediaItem, "file_url" | "file_type" | "alt_text" | "title">[] }) {
   const visible = items.slice(0, 3);
   if (visible.length === 0) return null;
 
@@ -615,16 +606,14 @@ function EditorialGallery({ items }: { items: Array<{ file_url: string; file_typ
     <div className="mt-12 flex flex-wrap gap-6">
       {visible.map((item, i) => (
         <Reveal key={item.file_url} delay={i * 0.11}>
-          <div
-            className="img-gallery-editorial"
-            style={{ width: 168, height: 236 }}
-          >
-            {item.file_type === "video" ? (
-              <video src={item.file_url} className="h-full w-full object-cover" autoPlay muted loop playsInline />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.file_url} alt={item.alt_text || ""} loading="lazy" />
-            )}
+          <div className="img-gallery-editorial" style={{ width: 168, height: 236 }}>
+            <MediaRenderer
+              media={item}
+              className="h-full w-full"
+              autoPlay
+              preload="metadata"
+              sizes="168px"
+            />
           </div>
         </Reveal>
       ))}
@@ -648,24 +637,13 @@ function ExercicesSection({ medias }: { medias: MediaItem[] }) {
           {medias.slice(0, 6).map((m, i) => (
             <Reveal key={m.id} delay={i * 0.08}>
               <div className="overflow-hidden rounded-2xl bg-sand-100">
-                {m.file_type === "video" ? (
-                  <video
-                    src={m.file_url}
-                    className="aspect-video w-full object-cover"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                  />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={m.file_url}
-                    alt={m.alt_text || m.title}
-                    className="aspect-video w-full object-cover"
-                    loading="lazy"
-                  />
-                )}
+                <MediaRenderer
+                  media={m}
+                  className="aspect-video w-full"
+                  autoPlay
+                  preload="metadata"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
                 {m.caption && (
                   <p className="px-4 py-2 text-xs text-taupe-500">{m.caption}</p>
                 )}
@@ -699,22 +677,28 @@ function AvantApresSection({ medias }: { medias: MediaItem[] }) {
           {pairs.map(([before, after], i) => (
             <Reveal key={i} delay={i * 0.1}>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="overflow-hidden rounded-2xl">
-                  {before.file_type === "video" ? (
-                    <video src={before.file_url} className="w-full object-cover" autoPlay muted loop playsInline />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={before.file_url} alt={before.alt_text || "Avant"} className="w-full object-cover" loading="lazy" />
-                  )}
+                <div>
+                  <div className="overflow-hidden rounded-2xl">
+                    <MediaRenderer
+                      media={before}
+                      className="aspect-[4/3] w-full"
+                      autoPlay
+                      preload="metadata"
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                    />
+                  </div>
                   <p className="mt-2 text-center text-xs uppercase tracking-wider text-taupe-500">Avant</p>
                 </div>
-                <div className="overflow-hidden rounded-2xl">
-                  {after.file_type === "video" ? (
-                    <video src={after.file_url} className="w-full object-cover" autoPlay muted loop playsInline />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={after.file_url} alt={after.alt_text || "Après"} className="w-full object-cover" loading="lazy" />
-                  )}
+                <div>
+                  <div className="overflow-hidden rounded-2xl">
+                    <MediaRenderer
+                      media={after}
+                      className="aspect-[4/3] w-full"
+                      autoPlay
+                      preload="metadata"
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                    />
+                  </div>
                   <p className="mt-2 text-center text-xs uppercase tracking-wider text-taupe-500">Après</p>
                 </div>
               </div>

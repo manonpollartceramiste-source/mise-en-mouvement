@@ -59,6 +59,7 @@ export async function registerMediaAction(
     is_active: true,
     status: "draft",
     sort_order: Number(formData.get("sort_order") || 0),
+    storage_path: storagePath || "",
   });
 
   if (!created) return { error: "Erreur lors de l'enregistrement en base de données" };
