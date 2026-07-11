@@ -1,6 +1,4 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { signOut } from "../login/actions";
 
 export function AdminShell({
   title,
@@ -12,37 +10,16 @@ export function AdminShell({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-sand-50">
-      <header className="border-b border-taupe-300/30 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <Link
-            href="/admin"
-            className="text-xs uppercase tracking-[0.25em] text-taupe-500 transition-colors hover:text-ink-900"
-          >
-            ← Tableau de bord
-          </Link>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-full border border-taupe-300/50 px-4 py-2 text-sm font-medium text-ink-900 transition-all hover:bg-sand-100"
-            >
-              Déconnexion
-            </button>
-          </form>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-5xl px-6 py-12">
-        <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
-          Admin
-        </p>
+    <div className="min-h-full bg-sand-50">
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">Admin</p>
         <h1 className="mt-3 font-serif text-3xl text-ink-900">{title}</h1>
         {intro && (
           <p className="mt-3 max-w-xl text-sm text-taupe-600">{intro}</p>
         )}
         <div className="mt-10">{children}</div>
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }
 

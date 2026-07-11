@@ -13,15 +13,15 @@ const REVALIDATE_PATHS = [
   "/mentions-legales",
   "/confidentialite",
   "/contact",
-  "/admin/mentions-legales",
+  "/admin/outils",
 ];
 
 function fail(reason: string): never {
-  redirect(`/admin/mentions-legales?error=${encodeURIComponent(reason)}`);
+  redirect(`/admin/outils?tab=mentions&error=${encodeURIComponent(reason)}`);
 }
 
 function done(msg: string): never {
-  redirect(`/admin/mentions-legales?saved=${encodeURIComponent(msg)}`);
+  redirect(`/admin/outils?tab=mentions&saved=${encodeURIComponent(msg)}`);
 }
 
 export async function saveLegal(formData: FormData) {

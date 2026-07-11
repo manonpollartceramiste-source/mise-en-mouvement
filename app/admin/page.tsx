@@ -3,7 +3,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser, isSupabaseConfigured } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/content/settings.server";
-import { signOut } from "./login/actions";
+import { loadCoaches } from "@/lib/content/coaches.server";
+import { loadTestimonials } from "@/lib/content/testimonials.server";
+import { getMediaItems } from "@/lib/billing/server";
+import { loadOffers } from "@/lib/content/offers.server";
+import { loadClients } from "@/lib/content/clients.server";
+import type { MediaItem } from "@/lib/billing/types";
 
 export const dynamic = "force-dynamic";
 
@@ -12,106 +17,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type Section = {
-  id: string;
-  label: string;
-  description: string;
-  href?: string;
-};
-
-const sections: Section[] = [
-  {
-    id: "parametres",
-    label: "Paramètres généraux",
-    description: "Identité, contact, réseaux, CTA, footer",
-    href: "/admin/parametres",
-  },
-  {
-    id: "offres",
-    label: "Offres",
-    description: "Tarifs, durées, descriptions",
-    href: "/admin/offres",
-  },
-  {
-    id: "coachs",
-    label: "Coachs du site",
-    description: "Photos, bios, liens Cal.com et SumUp affichés sur le site",
-    href: "/admin/coachs",
-  },
-  {
-    id: "faq",
-    label: "FAQ",
-    description: "Questions et réponses",
-    href: "/admin/faq",
-  },
-  {
-    id: "horaires",
-    label: "Horaires",
-    description: "Jours et plages d’ouverture",
-    href: "/admin/horaires",
-  },
-  {
-    id: "contenus",
-    label: "Textes du site",
-    description: "Hero, sections, CTA",
-    href: "/admin/contenus",
-  },
-  {
-    id: "images",
-    label: "Images",
-    description: "Logo, photos coachs",
-    href: "/admin/images",
-  },
-  {
-    id: "popups",
-    label: "Pop-ups",
-    description: "Annonces ponctuelles, offres de lancement",
-    href: "/admin/popups",
-  },
-  {
-    id: "avis",
-    label: "Avis clients",
-    description: "Témoignages, notes, ordre d'affichage",
-    href: "/admin/avis",
-  },
-  {
-    id: "clients",
-    label: "Demandes clients",
-    description: "Messages, demandes reçues et suivi des contacts",
-    href: "/admin/clients",
-  },
-  {
-    id: "mentions-legales",
-    label: "Mentions légales",
-    description: "Identité, hébergeur, confidentialité",
-    href: "/admin/mentions-legales",
-  },
-  {
-    id: "os-clients",
-    label: "Comptes clients OS",
-    description: "Créer les clients, les rattacher à un coach et gérer leurs bilans",
-    href: "/admin/os-clients",
-  },
-  {
-    id: "os-coachs",
-    label: "Comptes coachs OS",
-    description: "Inviter les coachs, gérer leurs accès à l'espace coach",
-    href: "/admin/os-coachs",
-  },
-  {
-    id: "personnalisation",
-    label: "Personnalisation PDF",
-    description: "Branding, identité entreprise, textes PDF, séance découverte",
-    href: "/admin/personnalisation",
-  },
-  {
-    id: "medias",
-    label: "Médiathèque",
-    description: "Photos et vidéos du site — upload, catégories, activation",
-    href: "/admin/medias",
-  },
-];
-
 export default async function AdminDashboard() {
   if (!isSupabaseConfigured()) {
     redirect("/admin/login?error=supabase-missing");
@@ -119,86 +24,225 @@ export default async function AdminDashboard() {
 
   const user = await getCurrentUser();
   if (!user) {
-    console.error("[admin/page] getCurrentUser() returned null — session invalide ou non autorisée");
     redirect("/admin/login?error=session");
   }
 
-  const settings = await loadSettings();
+  const [settings, coaches, testimonials, medias, offers, clients] =
+    await Promise.all([
+      loadSettings(),
+      loadCoaches(),
+      loadTestimonials(),
+      getMediaItems(true),
+      loadOffers(),
+      loadClients(),
+    ]);
+
+  const activeCoaches = coaches.filter((c) => c.active !== false).length;
+  const publishedMedias = (medias as MediaItem[]).filter(
+    (m) => m.status === "published"
+  ).length;
+  const recentMedias = [...(medias as MediaItem[])]
+    .sort(
+      (a, b) =>
+        new Date(b.created_at ?? 0).getTime() -
+        new Date(a.created_at ?? 0).getTime()
+    )
+    .slice(0, 5);
+  const recentClients = [...clients]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    .slice(0, 5);
+
+  const kpis = [
+    { label: "Coachs actifs", value: activeCoaches, icon: "👥" },
+    { label: "Avis", value: testimonials.length, icon: "⭐" },
+    { label: "Médias publiés", value: publishedMedias, icon: "🖼" },
+    { label: "Offres", value: offers.length, icon: "🏷" },
+    { label: "Demandes", value: clients.length, icon: "📨" },
+  ];
+
+  const quickActions = [
+    {
+      label: "Ajouter un média",
+      description: "Uploader une photo ou vidéo",
+      href: "/admin/medias",
+      icon: "🖼",
+    },
+    {
+      label: "Ajouter un coach",
+      description: "Gérer les coachs du site",
+      href: "/admin/coachs",
+      icon: "👥",
+    },
+    {
+      label: "Modifier les offres",
+      description: "Tarifs, durées, descriptions",
+      href: "/admin/offres",
+      icon: "🏷",
+    },
+    {
+      label: "Modifier les horaires",
+      description: "Jours et plages d'ouverture",
+      href: "/admin/parametres?tab=horaires",
+      icon: "🕐",
+    },
+    {
+      label: "Modifier les textes",
+      description: "Hero, sections, CTA",
+      href: "/admin/contenu?tab=textes",
+      icon: "✏️",
+    },
+    {
+      label: "Gérer les avis",
+      description: "Témoignages et notes",
+      href: "/admin/avis",
+      icon: "⭐",
+    },
+    {
+      label: "Voir les demandes",
+      description: "Messages reçus via contact",
+      href: "/admin/outils",
+      icon: "📨",
+    },
+  ];
 
   return (
-    <main className="min-h-screen bg-sand-50">
-      <header className="border-b border-taupe-300/30 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
-              Espace admin
-            </p>
-            <h1 className="mt-1 font-serif text-2xl text-ink-900">
-              {settings.companyName}
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-taupe-600 sm:inline">
-              {user.email}
-            </span>
-            <Link
-              href="/"
-              className="text-sm text-taupe-600 transition-colors hover:text-ink-900"
-            >
-              Voir le site →
-            </Link>
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 rounded-full border border-taupe-300/50 px-4 py-2 text-sm font-medium text-ink-900 transition-all duration-300 hover:bg-sand-100"
+    <div className="min-h-full bg-sand-50">
+      <div className="mx-auto max-w-6xl space-y-10 px-6 py-10">
+
+        {/* Bannière de bienvenue */}
+        <div className="rounded-3xl border border-taupe-300/40 bg-white p-8">
+          <p className="font-serif text-3xl text-ink-900">
+            Bonjour 👋
+          </p>
+          <p className="mt-2 font-serif text-xl text-taupe-600">
+            {settings.companyName}
+          </p>
+          <p className="mt-1 text-sm text-taupe-400">{user.email}</p>
+        </div>
+
+        {/* KPIs */}
+        <div>
+          <p className="mb-4 text-xs uppercase tracking-[0.2em] text-taupe-500">Vue d'ensemble</p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {kpis.map((kpi) => (
+              <div
+                key={kpi.label}
+                className="rounded-2xl border border-taupe-300/40 bg-white p-5"
               >
-                Déconnexion
-              </button>
-            </form>
+                <span className="text-2xl">{kpi.icon}</span>
+                <p className="mt-3 font-serif text-3xl text-ink-900">
+                  {kpi.value}
+                </p>
+                <p className="mt-1 text-xs text-taupe-500">{kpi.label}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </header>
 
-      <section className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-xs uppercase tracking-[0.25em] text-taupe-500">
-          Sections
-        </p>
-        <h2 className="mt-3 font-serif text-3xl text-ink-900">
-          Que souhaitez-vous modifier ?
-        </h2>
-        <p className="mt-3 max-w-xl text-sm text-taupe-600">
-          Toutes les sections sont actives. Cliquez sur une carte pour modifier le contenu.
-        </p>
-
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {sections.map((s) =>
-            s.href ? (
+        {/* Actions rapides */}
+        <div>
+          <p className="mb-4 text-xs uppercase tracking-[0.2em] text-taupe-500">Actions rapides</p>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {quickActions.map((action) => (
               <Link
-                key={s.id}
-                href={s.href}
-                className="group flex flex-col rounded-2xl border border-taupe-300/40 bg-white p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-taupe-400/60 hover:shadow-[0_18px_40px_-24px_rgba(78,70,59,0.35)]"
+                key={action.href}
+                href={action.href}
+                className="group flex flex-col rounded-2xl border border-taupe-300/40 bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-taupe-400/60 hover:shadow-[0_12px_32px_-12px_rgba(78,70,59,0.25)]"
               >
-                <h3 className="font-serif text-xl text-ink-900">{s.label}</h3>
-                <p className="mt-1 text-sm text-taupe-600">{s.description}</p>
-                <span className="mt-6 inline-flex items-center gap-2 self-start text-xs font-medium text-ink-900">
-                  Modifier <span aria-hidden>→</span>
-                </span>
+                <span className="text-xl">{action.icon}</span>
+                <p className="mt-3 text-sm font-medium text-ink-900">
+                  {action.label}
+                </p>
+                <p className="mt-1 text-xs text-taupe-500">
+                  {action.description}
+                </p>
               </Link>
-            ) : (
-              <article
-                key={s.id}
-                className="flex flex-col rounded-2xl border border-taupe-300/40 bg-white p-6"
-              >
-                <h3 className="font-serif text-xl text-ink-900">{s.label}</h3>
-                <p className="mt-1 text-sm text-taupe-600">{s.description}</p>
-                <span className="mt-6 inline-flex items-center gap-2 self-start rounded-full bg-sand-100 px-3 py-1 text-xs uppercase tracking-wider text-taupe-600">
-                  Bientôt disponible
-                </span>
-              </article>
-            ),
-          )}
+            ))}
+          </div>
         </div>
-      </section>
-    </main>
+
+        {/* Activité récente */}
+        <div>
+          <p className="mb-4 text-xs uppercase tracking-[0.2em] text-taupe-500">Activité récente</p>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Médias récents */}
+            <div className="rounded-2xl border border-taupe-300/40 bg-white p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-serif text-lg text-ink-900">Médias récents</h2>
+                <Link
+                  href="/admin/medias"
+                  className="text-xs text-taupe-500 hover:text-ink-900 transition-colors"
+                >
+                  Voir tout →
+                </Link>
+              </div>
+              {recentMedias.length === 0 ? (
+                <p className="text-sm text-taupe-400">Aucun média pour l'instant.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {recentMedias.map((m) => (
+                    <li key={m.id} className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-ink-900">
+                          {m.title || "Sans titre"}
+                        </p>
+                        <p className="text-xs text-taupe-400">
+                          {m.site_location ?? "—"}
+                        </p>
+                      </div>
+                      {m.created_at && (
+                        <span className="shrink-0 text-xs text-taupe-400">
+                          {new Date(m.created_at).toLocaleDateString("fr-FR", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Demandes récentes */}
+            <div className="rounded-2xl border border-taupe-300/40 bg-white p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-serif text-lg text-ink-900">Demandes récentes</h2>
+                <Link
+                  href="/admin/outils?tab=clients"
+                  className="text-xs text-taupe-500 hover:text-ink-900 transition-colors"
+                >
+                  Voir tout →
+                </Link>
+              </div>
+              {recentClients.length === 0 ? (
+                <p className="text-sm text-taupe-400">Aucune demande pour l'instant.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {recentClients.map((c) => (
+                    <li key={c.id} className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-ink-900">{c.name}</p>
+                        <p className="truncate text-xs text-taupe-400">{c.email}</p>
+                      </div>
+                      <span className="shrink-0 text-xs text-taupe-400">
+                        {new Date(c.createdAt).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 }

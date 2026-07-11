@@ -9,14 +9,14 @@ import {
 } from "@/lib/supabase/server";
 import { popupInputSchema } from "@/lib/content/popups";
 
-const REVALIDATE_PATHS = ["/", "/offres", "/admin/popups"];
+const REVALIDATE_PATHS = ["/", "/offres", "/admin/contenu"];
 
 function fail(reason: string): never {
-  redirect(`/admin/popups?error=${encodeURIComponent(reason)}`);
+  redirect(`/admin/contenu?tab=popups&error=${encodeURIComponent(reason)}`);
 }
 
 function done(msg: string): never {
-  redirect(`/admin/popups?saved=${encodeURIComponent(msg)}`);
+  redirect(`/admin/contenu?tab=popups&saved=${encodeURIComponent(msg)}`);
 }
 
 function emptyToNull(value: FormDataEntryValue | null): string | null {

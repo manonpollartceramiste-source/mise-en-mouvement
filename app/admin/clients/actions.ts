@@ -17,11 +17,11 @@ import {
 import { saveContentKey } from "@/lib/supabase/content";
 
 function fail(reason: string): never {
-  redirect(`/admin/clients?error=${encodeURIComponent(reason)}`);
+  redirect(`/admin/outils?tab=clients&error=${encodeURIComponent(reason)}`);
 }
 
 function done(msg: string): never {
-  redirect(`/admin/clients?saved=${encodeURIComponent(msg)}`);
+  redirect(`/admin/outils?tab=clients&saved=${encodeURIComponent(msg)}`);
 }
 
 export async function setClientStatus(formData: FormData) {
@@ -37,7 +37,7 @@ export async function setClientStatus(formData: FormData) {
   }
   const res = await updateClientStatus(id, status as ClientStatus);
   if (!res.ok) fail(res.error);
-  revalidatePath("/admin/clients");
+  revalidatePath("/admin/outils");
   done("Statut mis à jour.");
 }
 
@@ -49,7 +49,7 @@ export async function removeClient(formData: FormData) {
   if (!id) fail("Identifiant manquant.");
   const res = await deleteClient(id);
   if (!res.ok) fail(res.error);
-  revalidatePath("/admin/clients");
+  revalidatePath("/admin/outils");
   done("Client supprimé.");
 }
 
@@ -62,7 +62,7 @@ export async function saveSheetUrl(formData: FormData) {
   const res = await saveContentKey(
     "clients_settings",
     { googleSheetUrl: value },
-    ["/admin/clients"],
+    ["/admin/outils"],
   );
   if (!res.ok) fail(res.error);
   done(value ? "Lien Google Sheet enregistré." : "Lien retiré.");

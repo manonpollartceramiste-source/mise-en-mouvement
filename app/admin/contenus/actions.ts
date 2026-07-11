@@ -12,15 +12,15 @@ const REVALIDATE_PATHS = [
   "/",
   "/contact",
   "/reservation",
-  "/admin/contenus",
+  "/admin/contenu",
 ];
 
 function fail(reason: string): never {
-  redirect(`/admin/contenus?error=${encodeURIComponent(reason)}`);
+  redirect(`/admin/contenu?tab=textes&error=${encodeURIComponent(reason)}`);
 }
 
 function done(msg: string): never {
-  redirect(`/admin/contenus?saved=${encodeURIComponent(msg)}`);
+  redirect(`/admin/contenu?tab=textes&saved=${encodeURIComponent(msg)}`);
 }
 
 export async function saveTexts(formData: FormData) {

@@ -8,14 +8,14 @@ import {
 } from "@/lib/content/hours";
 import { saveContentKey } from "@/lib/supabase/content";
 
-const REVALIDATE_PATHS = ["/contact", "/admin/horaires"];
+const REVALIDATE_PATHS = ["/contact", "/admin/parametres"];
 
 function fail(reason: string): never {
-  redirect(`/admin/horaires?error=${encodeURIComponent(reason)}`);
+  redirect(`/admin/parametres?tab=horaires&error=${encodeURIComponent(reason)}`);
 }
 
 function done(msg: string): never {
-  redirect(`/admin/horaires?saved=${encodeURIComponent(msg)}`);
+  redirect(`/admin/parametres?tab=horaires&saved=${encodeURIComponent(msg)}`);
 }
 
 export async function saveHours(formData: FormData) {

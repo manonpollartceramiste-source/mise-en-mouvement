@@ -5,14 +5,14 @@ import { faqArraySchema, faqItemSchema, type FaqItem } from "@/lib/content/faq";
 import { loadFaq } from "@/lib/content/faq.server";
 import { saveContentKey } from "@/lib/supabase/content";
 
-const REVALIDATE_PATHS = ["/faq", "/admin/faq"];
+const REVALIDATE_PATHS = ["/faq", "/admin/contenu"];
 
 function fail(reason: string): never {
-  redirect(`/admin/faq?error=${encodeURIComponent(reason)}`);
+  redirect(`/admin/contenu?tab=faq&error=${encodeURIComponent(reason)}`);
 }
 
 function done(msg: string): never {
-  redirect(`/admin/faq?saved=${encodeURIComponent(msg)}`);
+  redirect(`/admin/contenu?tab=faq&saved=${encodeURIComponent(msg)}`);
 }
 
 export async function faqAction(formData: FormData) {
