@@ -16,6 +16,6 @@ export const EMAIL_FROM =
   process.env.EMAIL_FROM ?? "Mise en Mouvement <noreply@mise-en-mouvement.fr>";
 
 export const CABINET_ADDRESS =
-  process.env.CABINET_ADDRESS ?? "Cabinet Mise en Mouvement";
+  process.env.CABINET_ADDRESS ?? "Cabinet Mise en Mouvement, 2 place du Marché, 34560 Poussan";
 
 export const CABINET_ADMIN_EMAIL = process.env.CABINET_ADMIN_EMAIL ?? "";

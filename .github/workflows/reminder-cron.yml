@@ -1,0 +1,43 @@
+name: Rappel J-1 — cron horaire
+
+# Exécution automatique toutes les heures (UTC).
+# La minute 17 évite les pics de charge de début d'heure sur les serveurs GitHub.
+# workflow_dispatch permet un déclenchement manuel depuis l'onglet Actions.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+jobs:
+  send-reminders:
+    name: Envoi des rappels J-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Appel POST /api/cron/reminder
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          HTTP_CODE=$(curl \
+            --silent \
+            --show-error \
+            --max-time 30 \
+            --output /tmp/reminder-response.json \
+            --write-out "%{http_code}" \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            --request GET \
+            "${APP_URL}/api/cron/reminder")
+
+          echo "Statut HTTP : ${HTTP_CODE}"
+          echo "Réponse de l'endpoint :"
+          cat /tmp/reminder-response.json
+          echo ""
+
+          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -ge 300 ]; then
+            echo "Échec : statut HTTP inattendu ${HTTP_CODE}"
+            exit 1
+          fi
+
+          echo "OK — rappels traités avec succès."

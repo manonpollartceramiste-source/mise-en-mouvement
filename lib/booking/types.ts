@@ -49,6 +49,8 @@ export type Booking = {
   google_event_id: string | null;
   force_overlap: boolean;
   overlap_reason: string | null;
+  reminder_sent_at: string | null;
+  reminder_claimed_at: string | null;
   // Joined field — populated by getAllBookingsInRange
   coach_name?: string | null;
   created_at: string;

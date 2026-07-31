@@ -1,8 +1,10 @@
 import "server-only";
 
 import { getResend, EMAIL_FROM, CABINET_ADDRESS, CABINET_ADMIN_EMAIL } from "./resend";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import {
   clientConfirmationEmail,
+  clientReminderEmail,
   coachNotificationEmail,
   coachCancellationEmail,
   coachModificationEmail,
@@ -25,10 +27,29 @@ async function buildEmailData(booking: Booking): Promise<{
   const coach = coaches.find((c) => c.osProfileId === booking.coach_id);
   const offer = offers.find((o) => o.id === booking.offer_id);
 
-  // notification_email → email OS → CABINET_ADMIN_EMAIL
+  // Fallback profiles.email uniquement si coach.email absent du CMS (évite une requête inutile)
+  let profilesEmail: string | undefined;
+  if (!coach?.email?.trim()) {
+    const { data: profile } = await getSupabaseAdmin()
+      .from("profiles")
+      .select("email")
+      .eq("id", booking.coach_id)
+      .single();
+    profilesEmail = profile?.email?.trim() || undefined;
+  }
+
+  // proEmail > email CMS > profiles.email (Auth) > CABINET_ADMIN_EMAIL
+  const coachContactEmail =
+    coach?.proEmail?.trim() ||
+    coach?.email?.trim() ||
+    profilesEmail ||
+    CABINET_ADMIN_EMAIL;
+
+  // notification_email > email CMS > profiles.email (Auth) > CABINET_ADMIN_EMAIL
   const notificationRecipient =
     coach?.notification_email?.trim() ||
     coach?.email?.trim() ||
+    profilesEmail ||
     CABINET_ADMIN_EMAIL ||
     null;
 
@@ -38,10 +59,12 @@ async function buildEmailData(booking: Booking): Promise<{
     clientPhone: booking.client_phone ?? null,
     clientNotes: booking.client_notes ?? null,
     coachName: coach?.name ?? "Votre coach",
-    // Email affiché dans l'email client (lien de contact) — priorité : proEmail, email, admin
-    coachEmail: coach?.proEmail || coach?.email || CABINET_ADMIN_EMAIL,
+    coachEmail: coachContactEmail,
     offerName: offer?.name ?? booking.offer_id,
     offerDuration: offer?.duration ?? null,
+    offerTotalCents: offer?.totalCents ?? null,
+    bookingRef: booking.id,
+    durationMin: booking.duration_min,
     startsAt: booking.starts_at,
     endsAt: booking.ends_at,
     cabinetAddress: CABINET_ADDRESS,
@@ -117,6 +140,19 @@ export async function sendBookingModificationToCoach(
   await resend.emails.send({
     from: EMAIL_FROM,
     to: notificationRecipient,
+    subject: tpl.subject,
+    html: tpl.html,
+  });
+}
+
+/** Rappel J-1 envoyé au client. */
+export async function sendClientReminderEmail(booking: Booking): Promise<void> {
+  const { data } = await buildEmailData(booking);
+  const resend = getResend();
+  const tpl = clientReminderEmail(data);
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to: booking.client_email,
     subject: tpl.subject,
     html: tpl.html,
   });
