@@ -85,7 +85,11 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur interne.";
 
-    if (message.includes("Créneau déjà réservé") || message.includes("chevauchement")) {
+    if (
+      message.includes("Créneau déjà réservé") ||
+      message.includes("chevauchement") ||
+      message.includes("séance planifiée")
+    ) {
       return NextResponse.json({ error: message }, { status: 409 });
     }
 

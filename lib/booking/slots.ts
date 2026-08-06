@@ -24,7 +24,7 @@ function parseLocalTime(dateStr: string, timeStr: string, tz: string): Date {
   return new Date(pivot.getTime() + offsetMs);
 }
 
-function hasConflict(
+export function hasConflict(
   slotStart: Date,
   slotEnd: Date,
   unavailabilities: Unavailability[],

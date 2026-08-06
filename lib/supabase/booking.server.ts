@@ -100,6 +100,138 @@ export async function getUnavailabilities(
   return (data ?? []) as Unavailability[];
 }
 
+// ─── Sessions as Unavailabilities ─────────────────────────────────────────────
+// Sessions manuelles créées depuis l'OS — elles bloquent les créneaux publics
+// exactement comme des indisponibilités.
+
+export async function getSessionsAsUnavailabilities(
+  coachId: string,
+  from: Date,
+  to: Date,
+): Promise<Unavailability[]> {
+  const supabase = getSupabaseAdmin();
+
+  // Sessions can be up to 480 min (8 h), so fetch from (from − 8 h) to catch
+  // sessions that started before `from` but end within the window.
+  const fetchFrom = new Date(from.getTime() - 8 * 60 * 60 * 1000);
+
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("id, coach_id, scheduled_at, duration_min, status")
+    .eq("coach_id", coachId)
+    .not("status", "in", '("annulée","no_show")')
+    .gte("scheduled_at", fetchFrom.toISOString())
+    .lt("scheduled_at", to.toISOString());
+
+  if (error) {
+    console.error("[booking.server] getSessionsAsUnavailabilities error:", error.message);
+    throw new Error(error.message);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).flatMap((s: any) => {
+    const startsAt = new Date(s.scheduled_at as string);
+    const endsAt = new Date(startsAt.getTime() + (s.duration_min as number) * 60_000);
+    // Keep only sessions that genuinely overlap with [from, to]
+    if (startsAt >= to || endsAt <= from) return [];
+    return [{
+      id: s.id as string,
+      coach_id: s.coach_id as string,
+      starts_at: s.scheduled_at as string,
+      ends_at: endsAt.toISOString(),
+      label: "Séance planifiée",
+      is_all_day: false,
+      created_at: s.scheduled_at as string,
+    } as Unavailability];
+  });
+}
+
+// All active sessions of ANY coach in a time range (for global conflict check)
+async function getAllSessionsAsUnavailabilities(
+  from: Date,
+  to: Date,
+): Promise<Unavailability[]> {
+  const supabase = getSupabaseAdmin();
+  const fetchFrom = new Date(from.getTime() - 8 * 60 * 60 * 1000);
+
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("id, coach_id, scheduled_at, duration_min, status")
+    .not("status", "in", '("annulée","no_show")')
+    .gte("scheduled_at", fetchFrom.toISOString())
+    .lt("scheduled_at", to.toISOString());
+
+  if (error) {
+    console.error("[booking.server] getAllSessionsAsUnavailabilities error:", error.message);
+    throw new Error(error.message);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).flatMap((s: any) => {
+    const startsAt = new Date(s.scheduled_at as string);
+    const endsAt = new Date(startsAt.getTime() + (s.duration_min as number) * 60_000);
+    if (startsAt >= to || endsAt <= from) return [];
+    return [{
+      id: s.id as string,
+      coach_id: s.coach_id as string,
+      starts_at: s.scheduled_at as string,
+      ends_at: endsAt.toISOString(),
+      label: "Séance planifiée",
+      is_all_day: false,
+      created_at: s.scheduled_at as string,
+    } as Unavailability];
+  });
+}
+
+// ─── Conflict helpers (used by OS calendar actions) ───────────────────────────
+
+/**
+ * Returns true if [startsAt, endsAt[ overlaps any ACTIVE session of the given coach.
+ * Pass excludeSessionId to ignore the session being edited (self-exclusion).
+ */
+export async function hasSessionConflictForCoach(
+  coachId: string,
+  startsAt: Date,
+  endsAt: Date,
+  excludeSessionId?: string,
+): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  // Fetch sessions that could start up to 8 h before endsAt
+  const fetchFrom = new Date(startsAt.getTime() - 8 * 60 * 60 * 1000);
+
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("id, scheduled_at, duration_min")
+    .eq("coach_id", coachId)
+    .not("status", "in", '("annulée","no_show")')
+    .gte("scheduled_at", fetchFrom.toISOString())
+    .lt("scheduled_at", endsAt.toISOString());
+
+  if (error) {
+    console.error("[booking.server] hasSessionConflictForCoach error:", error.message);
+    throw new Error(error.message);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).some((s: any) => {
+    if (excludeSessionId && s.id === excludeSessionId) return false;
+    const sStart = new Date(s.scheduled_at as string);
+    const sEnd = new Date(sStart.getTime() + (s.duration_min as number) * 60_000);
+    return sStart < endsAt && sEnd > startsAt;
+  });
+}
+
+/**
+ * Returns true if [startsAt, endsAt[ overlaps any ACTIVE booking of any coach (global check).
+ */
+export async function hasBookingConflictGlobal(
+  startsAt: Date,
+  endsAt: Date,
+): Promise<boolean> {
+  const bookings = await getAllBookingsInRange(startsAt, endsAt);
+  return bookings.length > 0;
+}
+
 // ─── Bookings ─────────────────────────────────────────────────────────────────
 
 export async function getBookingsInRange(
@@ -220,6 +352,12 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
   const overlapping = await getAllBookingsInRange(startsAt, endsAt);
   if (overlapping.length > 0) {
     throw new Error("Créneau déjà réservé");
+  }
+
+  // Check for sessions created manually from the OS (all coaches)
+  const overlappingSessions = await getAllSessionsAsUnavailabilities(startsAt, endsAt);
+  if (overlappingSessions.length > 0) {
+    throw new Error("Créneau déjà occupé par une séance planifiée");
   }
 
   // Check for unavailabilities

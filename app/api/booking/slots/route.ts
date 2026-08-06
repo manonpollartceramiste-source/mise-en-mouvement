@@ -4,6 +4,7 @@ import {
   getAvailabilityRules,
   getUnavailabilities,
   getBookingsInRange,
+  getSessionsAsUnavailabilities,
 } from "@/lib/supabase/booking.server";
 import { computeSlots } from "@/lib/booking/slots";
 
@@ -91,15 +92,19 @@ export async function GET(req: NextRequest) {
     const fetchFrom = new Date(fromDate.getTime() - bufferMs - 24 * 60 * 60 * 1000);
     const fetchTo = new Date(toDate.getTime() + 24 * 60 * 60 * 1000);
 
-    const [rules, unavailabilities, bookings] = await Promise.all([
+    const [rules, unavailabilities, bookings, sessionUnavailabilities] = await Promise.all([
       getAvailabilityRules(coachId),
       getUnavailabilities(coachId, fetchFrom, fetchTo),
       getBookingsInRange(coachId, fetchFrom, fetchTo),
+      getSessionsAsUnavailabilities(coachId, fetchFrom, fetchTo),
     ]);
+
+    // Sessions from the OS planning block public slots exactly like unavailabilities
+    const allUnavailabilities = [...unavailabilities, ...sessionUnavailabilities];
 
     const slots = computeSlots({
       rules,
-      unavailabilities,
+      unavailabilities: allUnavailabilities,
       bookings,
       settings,
       fromDate: fromStr,

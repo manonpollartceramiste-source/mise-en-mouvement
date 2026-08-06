@@ -124,9 +124,20 @@ function isToday(d: Date): boolean {
   return isSameDay(d, new Date());
 }
 
+// Extract Paris hours/minutes from an ISO string to ensure correct display
+// regardless of the browser's local timezone.
+function parisHourMinute(iso: string): { hours: number; minutes: number } {
+  const d = new Date(iso);
+  const parisStr = d.toLocaleString("sv", { timeZone: "Europe/Paris" });
+  // "sv" locale returns "YYYY-MM-DD HH:MM:SS"
+  const [, timePart] = parisStr.split(" ");
+  const [hStr, mStr] = timePart.split(":");
+  return { hours: parseInt(hStr, 10), minutes: parseInt(mStr, 10) };
+}
+
 function sessionTopPx(s: SessionWithClient): number {
-  const d = new Date(s.scheduled_at);
-  return Math.max(0, (d.getHours() - START_HOUR) * HOUR_PX + (d.getMinutes() / 60) * HOUR_PX);
+  const { hours, minutes } = parisHourMinute(s.scheduled_at);
+  return Math.max(0, (hours - START_HOUR) * HOUR_PX + (minutes / 60) * HOUR_PX);
 }
 
 function sessionHeightPx(s: SessionWithClient): number {
@@ -134,8 +145,8 @@ function sessionHeightPx(s: SessionWithClient): number {
 }
 
 function bookingTopPx(b: Booking): number {
-  const d = new Date(b.starts_at);
-  return Math.max(0, (d.getHours() - START_HOUR) * HOUR_PX + (d.getMinutes() / 60) * HOUR_PX);
+  const { hours, minutes } = parisHourMinute(b.starts_at);
+  return Math.max(0, (hours - START_HOUR) * HOUR_PX + (minutes / 60) * HOUR_PX);
 }
 
 function bookingHeightPx(b: Booking): number {
@@ -698,6 +709,7 @@ export function CalendarClient({
             key="detail"
             session={detailSession}
             sessions={sessions}
+            bookings={liveBookings}
             onClose={() => setDetailSession(null)}
             onSaved={() => {
               setDetailSession(null);
@@ -919,12 +931,14 @@ function CreateModal({
 function DetailModal({
   session,
   sessions,
+  bookings,
   onClose,
   onSaved,
   onDeleted,
 }: {
   session: SessionWithClient;
   sessions: SessionWithClient[];
+  bookings: Booking[];
   onClose: () => void;
   onSaved: () => void;
   onDeleted: () => void;
@@ -947,7 +961,10 @@ function DetailModal({
   })();
 
   const coachSessions = sessions.filter(s => s.coach_id === session.coach_id);
-  const conflict = checkConflict(coachSessions, selectedDate, duration, session.id);
+  const coachBookings = bookings.filter(b => b.coach_id === session.coach_id);
+  const conflict =
+    checkConflict(coachSessions, selectedDate, duration, session.id) ||
+    checkBookingConflict(coachBookings, selectedDate, duration);
   const hasChanges =
     datetimeStr !== toDatetimeLocal(initDate) ||
     duration !== session.duration_min ||
