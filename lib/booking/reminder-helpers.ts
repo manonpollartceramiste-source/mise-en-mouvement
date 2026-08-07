@@ -1,6 +1,8 @@
 // Fonctions pures du cron de rappel — aucune dépendance serveur, testables directement.
 
-export const REMINDER_WINDOW_MIN_HOURS = 22;
+// 12h : fenêtre de rattrapage — absorbe les gaps GitHub Actions jusqu'à 14h sans rappel manqué.
+// (Ancien: 22h — ne tolérait que 4h de gap avant de perdre définitivement des rappels.)
+export const REMINDER_WINDOW_MIN_HOURS = 12;
 export const REMINDER_WINDOW_MAX_HOURS = 26;
 export const REMINDER_CLAIM_EXPIRY_MINUTES = 10;
 export const REMINDER_LATE_BOOKING_MIN_HOURS = 6;
