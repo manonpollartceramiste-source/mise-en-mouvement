@@ -189,6 +189,13 @@ export type MovementAssessment = {
   main_limitation?: string | null;
   // Notes par axe — migration 0011
   axis_notes?: Record<string, string> | null;
+  // FABER test — migration 0034
+  faber_left?: "optimal" | "surveiller" | "ameliorer" | null;
+  faber_right?: "optimal" | "surveiller" | "ameliorer" | null;
+  faber_note?: string | null;
+  // Knee to Wall — migration 0034
+  ktw_left_cm?: number | null;
+  ktw_right_cm?: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -196,4 +203,119 @@ export type MovementAssessment = {
 export type MovementAssessmentWithClient = MovementAssessment & {
   client_display_name: string;
 };
+
+// ─────────────────────────────────────────────────────────────
+// Forfait — modèle financier (migrations 0029–0031)
+// Les types ci-dessous reflètent les nouvelles tables.
+// L'OS actuel (site-premium) continue d'utiliser SessionPack
+// tel quel. Ces types sont utilisés par coach-os uniquement.
+// ─────────────────────────────────────────────────────────────
+
+export type PackStatus = "active" | "completed" | "suspended" | "expired" | "cancelled";
+
+export type PackPaymentStatus = "pending" | "confirmed" | "refunded" | "cancelled";
+
+export type PaymentMethod = "virement" | "carte" | "espèces" | "chèque" | "autre";
+
+export type PackInstalmentStatus = "pending" | "paid" | "cancelled";
+
+export type PackPayment = {
+  id: string;
+  pack_id: string;
+  coach_id: string;
+  client_id: string;
+  amount: number;
+  status: PackPaymentStatus;
+  payment_method: PaymentMethod | null;
+  reference: string | null;
+  paid_at: string | null;
+  refunded_payment_id: string | null;
+  invoice_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PackInstalment = {
+  id: string;
+  pack_id: string;
+  coach_id: string;
+  client_id: string;
+  due_date: string;
+  amount: number;
+  label: string | null;
+  status: PackInstalmentStatus;
+  payment_id: string | null;
+  paid_at: string | null;
+  invoice_id: string | null;
+  created_at: string;
+  updated_at: string;
+  // Calculé à la lecture, jamais stocké en base
+  is_overdue?: boolean;
+};
+
+// SessionPackFull étend SessionPack avec les champs financiers (migration 0031)
+// et les données relationnelles chargées en JOIN.
+// SessionPack existant reste inchangé pour la compatibilité de l'OS actuel.
+export type SessionPackFull = SessionPack & {
+  price_ttc: number | null;
+  status: PackStatus;
+  // Chargés en lecture (JOIN) — absents si non demandés
+  payments?: PackPayment[];
+  instalments?: PackInstalment[];
+  // Calculés par computePackFinancials()
+  net_paid?: number;
+  amount_remaining?: number | null;
+  has_financial_tracking?: boolean;
+};
+
+// ─── Calculs forfait ──────────────────────────────────────────
+
+export type PackFinancials = {
+  has_financial_tracking: boolean;
+  amount_confirmed: number;
+  amount_refunded: number;
+  net_paid: number;
+  price_ttc: number | null;
+  amount_remaining: number | null;
+};
+
+export function computePackFinancials(
+  pack: Pick<SessionPackFull, "price_ttc">,
+  payments: PackPayment[],
+): PackFinancials {
+  if (payments.length === 0) {
+    return {
+      has_financial_tracking: false,
+      amount_confirmed: 0,
+      amount_refunded: 0,
+      net_paid: 0,
+      price_ttc: pack.price_ttc ?? null,
+      amount_remaining: null,
+    };
+  }
+  const amount_confirmed = payments
+    .filter((p) => p.status === "confirmed")
+    .reduce((s, p) => s + p.amount, 0);
+  const amount_refunded = payments
+    .filter((p) => p.status === "refunded")
+    .reduce((s, p) => s + p.amount, 0);
+  const net_paid = amount_confirmed - amount_refunded;
+  const amount_remaining =
+    pack.price_ttc !== null && pack.price_ttc !== undefined
+      ? Math.max(0, pack.price_ttc - net_paid)
+      : null;
+  return {
+    has_financial_tracking: true,
+    amount_confirmed,
+    amount_refunded,
+    net_paid,
+    price_ttc: pack.price_ttc ?? null,
+    amount_remaining,
+  };
+}
+
+export function isInstalmentOverdue(instalment: PackInstalment): boolean {
+  return instalment.status === "pending" && new Date(instalment.due_date) < new Date();
+}
 

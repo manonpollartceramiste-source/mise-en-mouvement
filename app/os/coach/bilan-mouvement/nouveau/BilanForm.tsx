@@ -13,6 +13,7 @@ import {
   type ZonePriorityMap,
 } from "@/lib/os/bilan-payload";
 import { createAssessmentAction, updateAssessmentAction } from "../actions";
+import { computeKtw, KTW_LABELS, KTW_TEXT_COLORS } from "@/lib/os/ktw";
 
 // ─── Constantes ──────────────────────────────────────────────
 
@@ -136,6 +137,29 @@ const SEGMENTAL_FIELDS: Array<{ key: SegmentalFieldKey; label: string }> = [
   { key: "seg_leg_right_kg", label: "Jambe droite" },
   { key: "seg_leg_left_kg",  label: "Jambe gauche" },
   { key: "seg_trunk_kg",     label: "Tronc" },
+];
+
+type FaberResult = "optimal" | "surveiller" | "ameliorer";
+
+const FABER_OPTIONS: { value: FaberResult; label: string; active: string; inactive: string }[] = [
+  {
+    value: "optimal",
+    label: "Optimal",
+    active: "border-emerald-500 bg-emerald-500 text-white shadow-sm shadow-emerald-200",
+    inactive: "border-taupe-200 bg-white text-taupe-600 hover:border-emerald-200 hover:bg-emerald-50",
+  },
+  {
+    value: "surveiller",
+    label: "À surveiller",
+    active: "border-amber-500 bg-amber-500 text-white shadow-sm shadow-amber-200",
+    inactive: "border-taupe-200 bg-white text-taupe-600 hover:border-amber-200 hover:bg-amber-50",
+  },
+  {
+    value: "ameliorer",
+    label: "À améliorer",
+    active: "border-red-500 bg-red-500 text-white shadow-sm shadow-red-200",
+    inactive: "border-taupe-200 bg-white text-taupe-600 hover:border-red-200 hover:bg-red-50",
+  },
 ];
 
 const AXES = [
@@ -607,6 +631,11 @@ function assessmentToFormState(a: MovementAssessment): FormState {
     next_action:           a.next_action ?? "",
     pain_evolution:        a.pain_evolution ?? "",
     main_limitation:       (a as Record<string, unknown>).main_limitation as string ?? "",
+    faber_left:            a.faber_left  ?? null,
+    faber_right:           a.faber_right ?? null,
+    faber_note:            a.faber_note  ?? "",
+    ktw_left_cm:           a.ktw_left_cm  ?? null,
+    ktw_right_cm:          a.ktw_right_cm ?? null,
   };
 }
 
@@ -686,6 +715,11 @@ export function BilanForm({
           next_action: "",
           pain_evolution: "",
           main_limitation: "",
+          faber_left: null,
+          faber_right: null,
+          faber_note: "",
+          ktw_left_cm: null,
+          ktw_right_cm: null,
         };
   });
 
@@ -716,6 +750,8 @@ export function BilanForm({
     (form.stability_score ?? 0) +
     (form.posture_score ?? 0) +
     (form.coordination_score ?? 0);
+
+  const ktwResult = computeKtw(form.ktw_left_cm, form.ktw_right_cm);
 
   // ─── Autosave ──────────────────────────────────────────────
   // draftIdRef : ID du bilan en base (assessmentId en mode édition,
@@ -1139,6 +1175,98 @@ export function BilanForm({
                 </Card>
               );
             })}
+
+          {/* ── FABER ──────────────────────────────────────────── */}
+          <Card className="flex flex-col gap-5 lg:col-span-1">
+            <div>
+              <p className="text-base font-bold text-ink-900">FABER</p>
+              <p className="mt-1 text-sm text-taupe-400">Signe de Patrick — mobilité/souplesse de la hanche</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {(["left", "right"] as const).map((side) => {
+                const key = side === "left" ? "faber_left" : "faber_right";
+                const label = side === "left" ? "Côté gauche" : "Côté droit";
+                return (
+                  <div key={side}>
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-taupe-400">{label}</p>
+                    <div className="space-y-2">
+                      {FABER_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => set(key, form[key] === opt.value ? null : opt.value)}
+                          className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition-all active:scale-95 ${
+                            form[key] === opt.value ? opt.active : opt.inactive
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-taupe-400">
+                Commentaire / observations
+              </label>
+              <TextArea
+                value={form.faber_note}
+                onChange={(v) => set("faber_note", v)}
+                placeholder="Limitation gauche, douleur, asymétrie, compensation observée…"
+                rows={2}
+              />
+            </div>
+          </Card>
+
+          {/* ── Knee to Wall ────────────────────────────────────── */}
+          <Card className="flex flex-col gap-5 lg:col-span-1">
+            <div>
+              <p className="text-base font-bold text-ink-900">Knee to Wall</p>
+              <p className="mt-1 text-sm text-taupe-400">Mobilité de cheville — distance genou/mur</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {(["left", "right"] as const).map((side) => {
+                const key = side === "left" ? "ktw_left_cm" : "ktw_right_cm";
+                const label = side === "left" ? "Jambe gauche" : "Jambe droite";
+                return (
+                  <div key={side}>
+                    <div className="mb-2.5 flex items-baseline justify-between">
+                      <label className="text-base font-semibold text-ink-900">{label}</label>
+                      <span className="text-sm font-medium text-taupe-400">cm</span>
+                    </div>
+                    <NumberInput
+                      value={form[key]}
+                      onChange={(v) => set(key, v)}
+                      placeholder="10,0"
+                      step="0.1"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {ktwResult && (
+              <div className="rounded-2xl border border-taupe-100 bg-sand-50/60 px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-taupe-600">Différence</span>
+                  <span className="text-base font-bold text-ink-900">
+                    {ktwResult.diff.toFixed(1)} cm
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center justify-between border-t border-taupe-100 pt-2">
+                  <span className="text-sm font-medium text-taupe-600">Interprétation</span>
+                  <span className={`text-sm font-bold ${KTW_TEXT_COLORS[ktwResult.interpretation]}`}>
+                    {KTW_LABELS[ktwResult.interpretation]}
+                  </span>
+                </div>
+              </div>
+            )}
+          </Card>
           </div>
         </div>
 

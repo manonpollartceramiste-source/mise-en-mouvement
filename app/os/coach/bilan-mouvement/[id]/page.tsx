@@ -9,6 +9,7 @@ import {
 import { OsShell } from "@/app/os/_components/OsShell";
 import { DeleteBilanButton } from "./DeleteBilanButton";
 import type { AssessmentTestEntry, MovementAssessment } from "@/lib/os/types";
+import { computeKtw, KTW_LABELS, KTW_TEXT_COLORS } from "@/lib/os/ktw";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -412,6 +413,92 @@ export default async function BilanDetailPage({ params }: { params: Params }) {
             </div>
           </div>
         )}
+
+        {/* ── FABER & Knee to Wall ── */}
+        {(assessment.faber_left != null ||
+          assessment.faber_right != null ||
+          assessment.faber_note ||
+          assessment.ktw_left_cm != null ||
+          assessment.ktw_right_cm != null) && (() => {
+          const faberCfg: Record<string, { bg: string; text: string; label: string }> = {
+            optimal:    { bg: "bg-emerald-50", text: "text-emerald-700", label: "Optimal" },
+            surveiller: { bg: "bg-amber-50",   text: "text-amber-700",   label: "À surveiller" },
+            ameliorer:  { bg: "bg-red-50",     text: "text-red-700",     label: "À améliorer" },
+          };
+          const ktwResult = computeKtw(assessment.ktw_left_cm ?? null, assessment.ktw_right_cm ?? null);
+          const hasFaber = assessment.faber_left != null || assessment.faber_right != null || assessment.faber_note;
+          const hasKtw = assessment.ktw_left_cm != null || assessment.ktw_right_cm != null;
+          return (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {hasFaber && (
+                <div className="rounded-2xl border border-taupe-300/40 bg-white p-5">
+                  <p className="mb-4 text-sm font-medium uppercase tracking-wider text-taupe-400">
+                    FABER (Signe de Patrick)
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { side: "Côté gauche", value: assessment.faber_left },
+                      { side: "Côté droit",  value: assessment.faber_right },
+                    ].map(({ side, value }) => (
+                      <div key={side}>
+                        <p className="mb-2 text-xs text-taupe-500">{side}</p>
+                        {value ? (
+                          <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${faberCfg[value]?.bg ?? ""} ${faberCfg[value]?.text ?? ""}`}>
+                            {faberCfg[value]?.label ?? value}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-taupe-400">—</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {assessment.faber_note && (
+                    <p className="mt-3 whitespace-pre-line text-sm text-ink-900">
+                      <span className="font-medium text-taupe-500">Commentaire : </span>
+                      {assessment.faber_note}
+                    </p>
+                  )}
+                </div>
+              )}
+              {hasKtw && (
+                <div className="rounded-2xl border border-taupe-300/40 bg-white p-5">
+                  <p className="mb-4 text-sm font-medium uppercase tracking-wider text-taupe-400">
+                    Knee to Wall
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { side: "Jambe gauche", value: assessment.ktw_left_cm },
+                      { side: "Jambe droite", value: assessment.ktw_right_cm },
+                    ].map(({ side, value }) => (
+                      <div key={side}>
+                        <p className="mb-1 text-xs text-taupe-500">{side}</p>
+                        <p className="text-lg font-bold text-ink-900">
+                          {value != null ? (
+                            <>{value.toFixed(1)}<span className="ml-1 text-sm font-normal text-taupe-400">cm</span></>
+                          ) : "—"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  {ktwResult && (
+                    <div className="mt-4 rounded-xl border border-taupe-100 bg-sand-50 px-4 py-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-taupe-600">Différence</span>
+                        <span className="font-bold text-ink-900">{ktwResult.diff.toFixed(1)} cm</span>
+                      </div>
+                      <div className="mt-1.5 flex items-center justify-between border-t border-taupe-100 pt-1.5 text-sm">
+                        <span className="text-taupe-600">Interprétation</span>
+                        <span className={`font-bold ${KTW_TEXT_COLORS[ktwResult.interpretation]}`}>
+                          {KTW_LABELS[ktwResult.interpretation]}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ── Composition corporelle ── */}
         {(COMPOSITION_FIELDS.some(f => (assessment[f.key] as number | null) !== null) ||

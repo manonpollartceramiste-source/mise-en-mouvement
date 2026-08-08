@@ -205,6 +205,12 @@ async function buildBilanData(id: string, baseUrl: string): Promise<{ data: Bila
       segTrunk:    assessment.seg_trunk_kg     ?? null,
     },
     zonePriorities: assessment.zone_priorities as Record<string, "forte" | "surveillance" | "ras"> | null,
+    // Migration 0034 — FABER & Knee to Wall
+    faberLeft:  (assessment.faber_left  as "optimal" | "surveiller" | "ameliorer" | null | undefined) ?? null,
+    faberRight: (assessment.faber_right as "optimal" | "surveiller" | "ameliorer" | null | undefined) ?? null,
+    faberNote:  (assessment.faber_note  as string | null | undefined) ?? null,
+    ktwLeftCm:  (assessment.ktw_left_cm  as number | null | undefined) ?? null,
+    ktwRightCm: (assessment.ktw_right_cm as number | null | undefined) ?? null,
   };
 
   const slug = clientName

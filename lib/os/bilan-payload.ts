@@ -54,6 +54,13 @@ export type FormState = {
   recommendations: BoolMap;
   zone_priorities: ZonePriorityMap;
   axis_notes: Record<string, string>;
+  // FABER test — migration 0034
+  faber_left: "optimal" | "surveiller" | "ameliorer" | null;
+  faber_right: "optimal" | "surveiller" | "ameliorer" | null;
+  faber_note: string;
+  // Knee to Wall — migration 0034
+  ktw_left_cm: number | null;
+  ktw_right_cm: number | null;
   frequency: "1x/semaine" | "2x/semaine" | "3x/semaine" | "4x/semaine" | "5x/semaine" | null;
   engagement:
     | "J'ai besoin d'être guidé(e) pour démarrer"
@@ -79,6 +86,8 @@ export function buildAssessmentPayload(form: FormState): AssessmentPayload {
     zone_priorities,
     sexe, age,
     main_limitation,
+    faber_left, faber_right, faber_note,
+    ktw_left_cm, ktw_right_cm,
     ...restForm
   } = form;
 
@@ -123,5 +132,12 @@ export function buildAssessmentPayload(form: FormState): AssessmentPayload {
     ...(age  != null ? { age  } : {}),
     // Migration 0015 — limitation principale
     ...(main_limitation ? { main_limitation } : {}),
+    // Migration 0034 — FABER test
+    ...(faber_left  != null ? { faber_left  } : {}),
+    ...(faber_right != null ? { faber_right } : {}),
+    ...(faber_note  ? { faber_note  } : {}),
+    // Migration 0034 — Knee to Wall
+    ...(ktw_left_cm  != null ? { ktw_left_cm  } : {}),
+    ...(ktw_right_cm != null ? { ktw_right_cm } : {}),
   } as AssessmentPayload;
 }

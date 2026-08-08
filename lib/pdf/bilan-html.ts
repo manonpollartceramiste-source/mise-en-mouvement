@@ -56,6 +56,12 @@ export type BilanPdfData = {
   } | null;
   zonePriorities: Record<string, "forte" | "surveillance" | "ras"> | null;
   bodyMapUrl: string;
+  // FABER & Knee to Wall — migration 0034
+  faberLeft?: "optimal" | "surveiller" | "ameliorer" | null;
+  faberRight?: "optimal" | "surveiller" | "ameliorer" | null;
+  faberNote?: string | null;
+  ktwLeftCm?: number | null;
+  ktwRightCm?: number | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1296,6 +1302,88 @@ function renderComposition(bc: NonNullable<BilanPdfData["bodyComposition"]>): st
   </div>`;
 }
 
+// ─── FABER & Knee to Wall (page 2 side column) ───────────────────────────────
+
+function renderFaberAndKtw(d: BilanPdfData): string {
+  const { faberLeft, faberRight, faberNote, ktwLeftCm, ktwRightCm } = d;
+  const hasFaber = faberLeft != null || faberRight != null || faberNote;
+  const hasKtw = ktwLeftCm != null || ktwRightCm != null;
+  if (!hasFaber && !hasKtw) return "";
+
+  const FABER_CFG: Record<string, { bg: string; border: string; text: string; label: string }> = {
+    optimal:    { bg: "#F2FBF6", border: "#A4DEBA", text: "#1A5C38", label: "Optimal" },
+    surveiller: { bg: "#FDF9F2", border: "#E8CFA0", text: "#7A5020", label: "À surveiller" },
+    ameliorer:  { bg: "#FEF4F4", border: "#F0C0C0", text: "#8A2828", label: "À améliorer" },
+  };
+
+  let faberHtml = "";
+  if (hasFaber) {
+    const leftCfg  = faberLeft  ? FABER_CFG[faberLeft]  : null;
+    const rightCfg = faberRight ? FABER_CFG[faberRight] : null;
+    faberHtml = `
+      <div style="font-size:11.5px;font-weight:700;color:#7A6A58;letter-spacing:0.3px;margin-bottom:4pt">FABER — Signe de Patrick</div>
+      <div style="display:flex;gap:10pt">
+        <div style="flex:1">
+          <div style="font-size:9.5px;font-weight:600;color:#A89070;letter-spacing:1px;text-transform:uppercase;margin-bottom:2pt">Côté gauche</div>
+          ${leftCfg
+            ? `<span style="display:inline-block;font-size:11px;font-weight:700;padding:2pt 6pt;border-radius:2pt;background:${leftCfg.bg};border:0.6pt solid ${leftCfg.border};color:${leftCfg.text}">${leftCfg.label}</span>`
+            : `<span style="font-size:11.5px;color:#C0B0A0">—</span>`}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:9.5px;font-weight:600;color:#A89070;letter-spacing:1px;text-transform:uppercase;margin-bottom:2pt">Côté droit</div>
+          ${rightCfg
+            ? `<span style="display:inline-block;font-size:11px;font-weight:700;padding:2pt 6pt;border-radius:2pt;background:${rightCfg.bg};border:0.6pt solid ${rightCfg.border};color:${rightCfg.text}">${rightCfg.label}</span>`
+            : `<span style="font-size:11.5px;color:#C0B0A0">—</span>`}
+        </div>
+      </div>
+      ${faberNote ? `<div style="margin-top:4pt;font-size:12px;color:#7A6A58;font-style:italic;line-height:1.45">${esc(faberNote)}</div>` : ""}
+    `;
+  }
+
+  let ktwHtml = "";
+  if (hasKtw) {
+    let interpHtml = "";
+    if (ktwLeftCm != null && ktwRightCm != null) {
+      const diff = Math.abs(ktwLeftCm - ktwRightCm);
+      const interp = diff < 2
+        ? { label: "Symétrique", color: "#1A5C38" }
+        : diff < 4
+          ? { label: "Légère asymétrie", color: "#7A5020" }
+          : { label: "Asymétrie importante", color: "#8A2828" };
+      interpHtml = `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:4pt;padding-top:4pt;border-top:0.35pt solid #EDE5DA">
+        <span style="font-size:11px;color:#9A8C80">Différence : ${diff.toFixed(1)} cm</span>
+        <span style="font-size:11px;font-weight:700;color:${interp.color}">${interp.label}</span>
+      </div>`;
+    }
+    ktwHtml = `
+      <div style="${hasFaber ? "margin-top:7pt;padding-top:6pt;border-top:0.35pt solid #EDE5DA;" : ""}">
+        <div style="font-size:11.5px;font-weight:700;color:#7A6A58;letter-spacing:0.3px;margin-bottom:4pt">Knee to Wall — Mobilité cheville</div>
+        <div style="display:flex;gap:10pt">
+          <div style="flex:1">
+            <div style="font-size:9.5px;font-weight:600;color:#A89070;letter-spacing:1px;text-transform:uppercase;margin-bottom:2pt">Jambe gauche</div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:19px;font-weight:700;color:#1A1410;line-height:1">
+              ${ktwLeftCm != null ? ktwLeftCm.toFixed(1).replace(".", ",") : "—"}<span style="font-size:11px;font-weight:400;color:#9A8C80;margin-left:1pt">cm</span>
+            </div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:9.5px;font-weight:600;color:#A89070;letter-spacing:1px;text-transform:uppercase;margin-bottom:2pt">Jambe droite</div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:19px;font-weight:700;color:#1A1410;line-height:1">
+              ${ktwRightCm != null ? ktwRightCm.toFixed(1).replace(".", ",") : "—"}<span style="font-size:11px;font-weight:400;color:#9A8C80;margin-left:1pt">cm</span>
+            </div>
+          </div>
+        </div>
+        ${interpHtml}
+      </div>
+    `;
+  }
+
+  return `<div class="card">
+    ${sec("Tests cliniques complémentaires")}
+    ${faberHtml}
+    ${ktwHtml}
+  </div>`;
+}
+
 // ─── Suites & recommandations coach (page 3) ─────────────────────────────────
 
 function renderRecommandations(
@@ -1685,9 +1773,10 @@ export function generateBilanHtml(
     d.bodyComposition.boneMassKg !== null || d.bodyComposition.visceralFat !== null ||
     d.bodyComposition.bmrKcal !== null || d.bodyComposition.metabolicAge !== null
   ));
-  const hasRec     = (d.activeRec?.length ?? 0) > 0;
-  const hasAxes    = (d.axes?.length ?? 0) > 0;
-  const hasRoadmap = !!(d.mainGoal || d.frequency || d.nextAction || hasAxes);
+  const hasRec      = (d.activeRec?.length ?? 0) > 0;
+  const hasAxes     = (d.axes?.length ?? 0) > 0;
+  const hasRoadmap  = !!(d.mainGoal || d.frequency || d.nextAction || hasAxes);
+  const hasFaberKtw = !!(d.faberLeft != null || d.faberRight != null || d.faberNote || d.ktwLeftCm != null || d.ktwRightCm != null);
   const hasWhyAxes = hasAxes && (d.axes ?? []).some(a => a.max > 0 && a.value / a.max < 0.65);
   const totalPages = 4;
 
@@ -1724,6 +1813,7 @@ export function generateBilanHtml(
       <div class="p2-side-col">
         ${hasZones ? renderZones(d.zonePriorities!) : ""}
         ${hasTests ? renderTestsTable(d.tests) : ""}
+        ${hasFaberKtw ? renderFaberAndKtw(d) : ""}
       </div>
     </div>
     <div class="p2-radar">

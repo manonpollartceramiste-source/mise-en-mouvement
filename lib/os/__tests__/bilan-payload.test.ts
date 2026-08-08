@@ -50,6 +50,11 @@ const baseForm: FormState = {
   next_action: "",
   pain_evolution: "",
   main_limitation: "",
+  faber_left: null,
+  faber_right: null,
+  faber_note: "",
+  ktw_left_cm: null,
+  ktw_right_cm: null,
 };
 
 // ─── assessed_at ─────────────────────────────────────────────────────────────
@@ -292,6 +297,73 @@ describe("buildAssessmentPayload — champs fixes", () => {
   });
 });
 
+// ─── Migration 0034 — FABER & Knee to Wall ────────────────────────────────────
+
+describe("buildAssessmentPayload — FABER absent si null (migration 0034)", () => {
+  it("faber_left absent si null", () => {
+    expect(buildAssessmentPayload(baseForm)).not.toHaveProperty("faber_left");
+  });
+
+  it("faber_right absent si null", () => {
+    expect(buildAssessmentPayload(baseForm)).not.toHaveProperty("faber_right");
+  });
+
+  it("faber_note absent si vide", () => {
+    expect(buildAssessmentPayload(baseForm)).not.toHaveProperty("faber_note");
+  });
+
+  it("ktw_left_cm absent si null", () => {
+    expect(buildAssessmentPayload(baseForm)).not.toHaveProperty("ktw_left_cm");
+  });
+
+  it("ktw_right_cm absent si null", () => {
+    expect(buildAssessmentPayload(baseForm)).not.toHaveProperty("ktw_right_cm");
+  });
+});
+
+describe("buildAssessmentPayload — FABER présent si renseigné (migration 0034)", () => {
+  it("faber_left inclus si renseigné", () => {
+    const payload = buildAssessmentPayload({ ...baseForm, faber_left: "optimal" });
+    expect(payload.faber_left).toBe("optimal");
+  });
+
+  it("faber_right inclus si renseigné", () => {
+    const payload = buildAssessmentPayload({ ...baseForm, faber_right: "ameliorer" });
+    expect(payload.faber_right).toBe("ameliorer");
+  });
+
+  it("faber_note inclus si non vide", () => {
+    const payload = buildAssessmentPayload({ ...baseForm, faber_note: "Limitation côté gauche" });
+    expect(payload.faber_note).toBe("Limitation côté gauche");
+  });
+
+  it("ktw_left_cm inclus si renseigné", () => {
+    const payload = buildAssessmentPayload({ ...baseForm, ktw_left_cm: 9.5 });
+    expect(payload.ktw_left_cm).toBe(9.5);
+  });
+
+  it("ktw_right_cm inclus si renseigné", () => {
+    const payload = buildAssessmentPayload({ ...baseForm, ktw_right_cm: 12.0 });
+    expect(payload.ktw_right_cm).toBe(12.0);
+  });
+
+  it("bilan complet avec FABER + KtW inclut tous les champs", () => {
+    const payload = buildAssessmentPayload({
+      ...baseForm,
+      faber_left:  "surveiller",
+      faber_right: "optimal",
+      faber_note:  "Légère tension à gauche",
+      ktw_left_cm:  9.5,
+      ktw_right_cm: 11.0,
+    });
+    expect(payload.faber_left).toBe("surveiller");
+    expect(payload.faber_right).toBe("optimal");
+    expect(payload.faber_note).toBe("Légère tension à gauche");
+    expect(payload.ktw_left_cm).toBe(9.5);
+    expect(payload.ktw_right_cm).toBe(11.0);
+  });
+});
+
 // ─── Pas de duplication de champs ─────────────────────────────────────────────
 
 describe("buildAssessmentPayload — intégrité structurelle", () => {
@@ -324,6 +396,11 @@ describe("buildAssessmentPayload — intégrité structurelle", () => {
       sexe: "homme",
       age: 40,
       main_limitation: "Lombaires",
+      faber_left: "optimal",
+      faber_right: "surveiller",
+      faber_note: "Légère tension droite",
+      ktw_left_cm: 9.5,
+      ktw_right_cm: 11.0,
     };
     const payload = buildAssessmentPayload(full);
     expect(payload.main_goal).toBe("Objectif");
@@ -338,5 +415,10 @@ describe("buildAssessmentPayload — intégrité structurelle", () => {
     expect(payload.sexe).toBe("homme");
     expect(payload.age).toBe(40);
     expect(payload.main_limitation).toBe("Lombaires");
+    expect(payload.faber_left).toBe("optimal");
+    expect(payload.faber_right).toBe("surveiller");
+    expect(payload.faber_note).toBe("Légère tension droite");
+    expect(payload.ktw_left_cm).toBe(9.5);
+    expect(payload.ktw_right_cm).toBe(11.0);
   });
 });
