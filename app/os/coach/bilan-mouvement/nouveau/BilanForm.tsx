@@ -4,64 +4,15 @@ import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import type { Profile, AssessmentTestEntry, MovementAssessment } from "@/lib/os/types";
+import {
+  buildAssessmentPayload,
+  type FormState,
+  type Tests,
+  type BoolMap,
+  type ZonePriority,
+  type ZonePriorityMap,
+} from "@/lib/os/bilan-payload";
 import { createAssessmentAction, updateAssessmentAction } from "../actions";
-
-// ─── Types locaux ────────────────────────────────────────────
-
-type Tests = Record<string, AssessmentTestEntry>;
-type BoolMap = Record<string, boolean>;
-
-type FormState = {
-  client_id: string;
-  assessed_at: string;
-  sexe: "femme" | "homme" | null;
-  age: number | null;
-  energy_score: number | null;
-  stress_score: number | null;
-  sleep_score: number | null;
-  pain_score: number | null;
-  weight_kg: number | null;
-  fat_pct: number | null;
-  muscle_pct: number | null;
-  water_pct: number | null;
-  bone_mass_kg: number | null;
-  visceral_fat: number | null;
-  bmr_kcal: number | null;
-  metabolic_age: number | null;
-  seg_arm_right_kg: number | null;
-  seg_arm_left_kg: number | null;
-  seg_leg_right_kg: number | null;
-  seg_leg_left_kg: number | null;
-  seg_trunk_kg: number | null;
-  main_goal: string;
-  concrete_goal: string;
-  old_injuries: string;
-  operations: string;
-  work_type: "assis" | "debout" | "physique" | "mixte" | null;
-  sport_practiced: string;
-  activity_level: string;
-  sitting_hours_per_day: number | null;
-  pain_zones: string;
-  mobility_score: number | null;
-  stability_score: number | null;
-  posture_score: number | null;
-  coordination_score: number | null;
-  movement_tests: Tests;
-  daily_limitations: BoolMap;
-  recommendations: BoolMap;
-  zone_priorities: ZonePriorityMap;
-  axis_notes: Record<string, string>;
-  frequency: "1x/semaine" | "2x/semaine" | "3x/semaine" | "4x/semaine" | "5x/semaine" | null;
-  engagement:
-    | "J'ai besoin d'être guidé(e) pour démarrer"
-    | "Je suis prêt(e) à progresser régulièrement"
-    | "Je suis pleinement engagé(e) dans ma transformation"
-    | null;
-  important_notes: string;
-  next_action: string;
-  pain_evolution: string;
-  main_limitation: string;
-};
 
 // ─── Constantes ──────────────────────────────────────────────
 
@@ -118,9 +69,6 @@ const RECOMMENDATIONS = [
   { key: "performance", label: "Performance" },
   { key: "gestion_douleur", label: "Gestion douleur" },
 ];
-
-type ZonePriority = "forte" | "surveillance" | "ras";
-type ZonePriorityMap = Record<string, ZonePriority>;
 
 const BODY_ZONES = [
   { key: "dos_haut",          label: "Ceinture scapulaire" },
@@ -769,6 +717,57 @@ export function BilanForm({
     (form.posture_score ?? 0) +
     (form.coordination_score ?? 0);
 
+  // ─── Autosave ──────────────────────────────────────────────
+  // draftIdRef : ID du bilan en base (assessmentId en mode édition,
+  //              ID créé par le premier autosave en mode nouveau/suivi)
+  const draftIdRef = useRef<string | null>(assessmentId ?? null);
+  // saveCountRef : compteur de version — empêche une réponse obsolète
+  //                d'écraser le statut d'une sauvegarde plus récente
+  const saveCountRef = useRef(0);
+  // isCreatingRef : verrou pour éviter deux créations simultanées
+  const isCreatingRef = useRef(false);
+  // initialFormRef : référence de l'état initial pour ignorer le premier rendu
+  const initialFormRef = useRef(form);
+
+  type AutoSaveStatus = "idle" | "saving" | "saved" | "error";
+  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>("idle");
+
+  useEffect(() => {
+    // Ne pas sauvegarder si le formulaire n'a pas été modifié par l'utilisateur
+    if (form === initialFormRef.current) return;
+    // client_id requis pour toute sauvegarde
+    if (!form.client_id) return;
+
+    const saveId = ++saveCountRef.current;
+
+    const timer = setTimeout(async () => {
+      // Si une création est déjà en cours, sauter ce cycle
+      if (!draftIdRef.current && isCreatingRef.current) return;
+
+      setAutoSaveStatus("saving");
+      const payload = buildAssessmentPayload(form);
+
+      let result: { id?: string; error?: string };
+      if (draftIdRef.current) {
+        result = await updateAssessmentAction(draftIdRef.current, payload);
+      } else {
+        isCreatingRef.current = true;
+        result = await createAssessmentAction(payload);
+        isCreatingRef.current = false;
+        if (!result.error && result.id) {
+          draftIdRef.current = result.id;
+        }
+      }
+
+      // Ignorer les résultats de sauvegardes obsolètes
+      if (saveCountRef.current !== saveId) return;
+
+      setAutoSaveStatus(result.error ? "error" : "saved");
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [form]);
+
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -780,76 +779,24 @@ export function BilanForm({
     }
     setError(null);
     startTransition(async () => {
-      // Colonnes issues de migrations postérieures à la table initiale :
-      // envoyées uniquement si non nulles pour éviter les erreurs "column not found"
-      const {
-        axis_notes,
-        weight_kg, fat_pct, muscle_pct, water_pct,
-        bone_mass_kg, visceral_fat, bmr_kcal, metabolic_age,
-        seg_arm_right_kg, seg_arm_left_kg,
-        seg_leg_right_kg, seg_leg_left_kg,
-        seg_trunk_kg,
-        zone_priorities,
-        sexe, age,
-        main_limitation,
-        ...restForm
-      } = form;
-      const payload = {
-        ...restForm,
-        assessed_at: new Date(form.assessed_at).toISOString(),
-        movement_tests: Object.keys(form.movement_tests).length ? form.movement_tests : null,
-        daily_limitations: Object.keys(form.daily_limitations).length ? form.daily_limitations : null,
-        recommendations: Object.keys(form.recommendations).length ? form.recommendations : null,
-        main_goal: form.main_goal || null,
-        concrete_goal: form.concrete_goal || null,
-        old_injuries: form.old_injuries || null,
-        operations: form.operations || null,
-        sport_practiced: form.sport_practiced || null,
-        activity_level: form.activity_level || null,
-        pain_zones: form.pain_zones || null,
-        important_notes: form.important_notes || null,
-        next_action: form.next_action || null,
-        pain_evolution: form.pain_evolution || null,
-        motivation: null,
-        // Migration 0008 — composition corporelle
-        ...(weight_kg     != null ? { weight_kg     } : {}),
-        ...(fat_pct       != null ? { fat_pct       } : {}),
-        ...(muscle_pct    != null ? { muscle_pct    } : {}),
-        ...(water_pct     != null ? { water_pct     } : {}),
-        ...(bone_mass_kg  != null ? { bone_mass_kg  } : {}),
-        ...(visceral_fat  != null ? { visceral_fat  } : {}),
-        ...(bmr_kcal      != null ? { bmr_kcal      } : {}),
-        ...(metabolic_age != null ? { metabolic_age } : {}),
-        // Migration 0009 — zones prioritaires
-        ...(Object.keys(zone_priorities).length > 0 ? { zone_priorities } : {}),
-        // Migration 0010 — masse segmentaire
-        ...(seg_arm_right_kg != null ? { seg_arm_right_kg } : {}),
-        ...(seg_arm_left_kg  != null ? { seg_arm_left_kg  } : {}),
-        ...(seg_leg_right_kg != null ? { seg_leg_right_kg } : {}),
-        ...(seg_leg_left_kg  != null ? { seg_leg_left_kg  } : {}),
-        ...(seg_trunk_kg     != null ? { seg_trunk_kg     } : {}),
-        // Migration 0011 — notes par axe
-        ...(Object.keys(axis_notes).length > 0 ? { axis_notes } : {}),
-        // Migration 0014 — sexe et âge
-        ...(sexe != null ? { sexe } : {}),
-        ...(age  != null ? { age  } : {}),
-        // Migration 0015 — limitation principale
-        ...(main_limitation ? { main_limitation } : {}),
-      };
+      const payload = buildAssessmentPayload(form);
+      // Si l'autosave a déjà créé le brouillon, on met à jour
+      const savedId = draftIdRef.current;
 
-      if (isEditMode) {
-        const result = await updateAssessmentAction(assessmentId!, payload);
+      if (savedId) {
+        const result = await updateAssessmentAction(savedId, payload);
         if (result.error) {
           setError(result.error);
         } else {
-          router.refresh();
-          router.push(`/os/coach/bilan-mouvement/${assessmentId}`);
+          if (isEditMode) router.refresh();
+          router.push(`/os/coach/bilan-mouvement/${savedId}`);
         }
       } else {
         const result = await createAssessmentAction(payload);
         if (result.error) {
           setError(result.error);
         } else if (result.id) {
+          draftIdRef.current = result.id;
           router.push(`/os/coach/bilan-mouvement/${result.id}`);
         }
       }
@@ -875,8 +822,16 @@ export function BilanForm({
             </button>
           ))}
 
-          {/* Score + save in header */}
+          {/* Score + autosave status + save in header */}
           <div className="ml-auto flex shrink-0 items-center gap-3">
+            {/* Indicateur de sauvegarde automatique */}
+            {autoSaveStatus !== "idle" && (
+              <span className={`text-xs ${autoSaveStatus === "error" ? "text-red-500" : "text-taupe-400"}`}>
+                {autoSaveStatus === "saving" && "Sauvegarde…"}
+                {autoSaveStatus === "saved" && "✓ Sauvegardé"}
+                {autoSaveStatus === "error" && "Échec de la sauvegarde"}
+              </span>
+            )}
             <div className="flex flex-col items-end">
               <span className={`text-lg font-bold leading-none tabular-nums ${scoreColor(totalScore)}`}>
                 {totalScore}/80
