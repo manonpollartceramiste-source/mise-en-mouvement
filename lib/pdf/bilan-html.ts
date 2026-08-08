@@ -1272,16 +1272,16 @@ function renderComposition(bc: NonNullable<BilanPdfData["bodyComposition"]>): st
   </div>`).join("");
 
   const segItems = [
-    bc.segArmLeft   !== null ? { v: bc.segArmLeft!.toFixed(1).replace(".", ","),  k: "Bras G."  } : null,
-    bc.segArmRight  !== null ? { v: bc.segArmRight!.toFixed(1).replace(".", ","), k: "Bras D."  } : null,
-    bc.segTrunk     !== null ? { v: bc.segTrunk!.toFixed(1).replace(".", ","),    k: "Tronc"    } : null,
-    bc.segLegLeft   !== null ? { v: bc.segLegLeft!.toFixed(1).replace(".", ","),  k: "Jambe G." } : null,
-    bc.segLegRight  !== null ? { v: bc.segLegRight!.toFixed(1).replace(".", ","), k: "Jambe D." } : null,
+    bc.segArmLeft   !== null ? { v: bc.segArmLeft!.toFixed(1).replace(".", ","),  k: "Bras gauche"   } : null,
+    bc.segArmRight  !== null ? { v: bc.segArmRight!.toFixed(1).replace(".", ","), k: "Bras droit"    } : null,
+    bc.segTrunk     !== null ? { v: bc.segTrunk!.toFixed(1).replace(".", ","),    k: "Tronc"         } : null,
+    bc.segLegLeft   !== null ? { v: bc.segLegLeft!.toFixed(1).replace(".", ","),  k: "Jambe gauche"  } : null,
+    bc.segLegRight  !== null ? { v: bc.segLegRight!.toFixed(1).replace(".", ","), k: "Jambe droite"  } : null,
   ].filter(Boolean) as Array<{ v: string; k: string }>;
 
   const segHtml = segItems.length >= 3 ? `
     <div class="seg-sub-hd">
-      <span class="seg-sub-lbl">Masse segmentaire</span>
+      <span class="seg-sub-lbl">Masse musculaire segmentaire</span>
       <div class="seg-sub-rule"></div>
     </div>
     <div class="seg-row">${segItems.map(it => `<div class="seg-stat">
