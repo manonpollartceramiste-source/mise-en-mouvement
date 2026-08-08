@@ -14,7 +14,7 @@ import type {
  * timezone clock shows for that pivot, compute the offset, then apply it.
  * This correctly handles DST transitions.
  */
-function parseLocalTime(dateStr: string, timeStr: string, tz: string): Date {
+export function parseLocalTime(dateStr: string, timeStr: string, tz: string): Date {
   const normalizedTime = timeStr.slice(0, 5); // "HH:MM" from "HH:MM:SS" or "HH:MM"
   const pivot = new Date(`${dateStr}T${normalizedTime}:00.000Z`);
   // Swedish locale returns "YYYY-MM-DD HH:MM:SS" format — ISO-compatible

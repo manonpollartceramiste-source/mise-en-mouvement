@@ -10,10 +10,13 @@ import type { Booking } from "@/lib/booking/types";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import {
   createCalendarSessionAction,
+  createRecurringSessionsAction,
+  type RecurringSessionResult,
   updateCalendarSessionAction,
   moveSessionAction,
   deleteSessionAction,
 } from "./actions";
+import { getOffer } from "@/lib/content/offers";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -634,6 +637,7 @@ export function CalendarClient({
                       const cardColor = getCoachCardColor(b.coach_id);
                       const top = bookingTopPx(b);
                       const height = bookingHeightPx(b);
+                      const offerName = getOffer(b.offer_id)?.name ?? b.offer_id;
 
                       return (
                         <div
@@ -641,7 +645,7 @@ export function CalendarClient({
                           onClick={() => setDetailBooking(b)}
                           className={`absolute left-0.5 right-0.5 z-10 overflow-hidden rounded-lg border px-1.5 py-1 transition-all select-none cursor-pointer hover:z-20 hover:shadow-lg hover:-translate-y-px hover:scale-[1.01] ${cardColor}`}
                           style={{ top, height, marginLeft: "1px" }}
-                          title={`${b.client_name} · ${b.duration_min} min · ${cfg.label}${b.coach_name ? ` · ${b.coach_name}` : ""}`}
+                          title={`${b.client_name} · ${offerName} · ${b.duration_min} min · ${cfg.label}${b.coach_name ? ` · ${b.coach_name}` : ""}`}
                         >
                           <p className="truncate text-[11px] font-semibold leading-tight">
                             {b.client_name}
@@ -651,7 +655,12 @@ export function CalendarClient({
                               {fmtTime(b.starts_at)} · {b.duration_min} min
                             </p>
                           )}
-                          {height >= 52 && b.coach_name && (
+                          {height >= 52 && (
+                            <p className="truncate text-[10px] opacity-80">
+                              {offerName}
+                            </p>
+                          )}
+                          {height >= 68 && b.coach_name && (
                             <p className="truncate text-[10px] opacity-60">
                               {b.coach_name}
                             </p>
@@ -790,12 +799,22 @@ function CreateModal({
   const [duration, setDuration] = useState(60);
   const [location, setLocation] = useState("");
   const [summary, setSummary] = useState("");
+  const [repeat, setRepeat] = useState<"none" | "weekly">("none");
+  const [repeatUntil, setRepeatUntil] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [recurringResult, setRecurringResult] = useState<RecurringSessionResult | null>(null);
 
   const selectedDate = (() => {
     const d = new Date(datetimeStr);
     return isNaN(d.getTime()) ? initDate : d;
+  })();
+
+  // Minimum date for "repeat until" = day after first occurrence
+  const minRepeatUntil = (() => {
+    const next = new Date(selectedDate);
+    next.setDate(next.getDate() + 7);
+    return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
   })();
 
   const ownSessions = sessions.filter(s => s.coach_id === currentCoachId);
@@ -808,20 +827,47 @@ function CreateModal({
     e.preventDefault();
     if (!clientId) return;
     setError(null);
-    startTransition(async () => {
-      const result = await createCalendarSessionAction({
-        client_id: clientId,
-        scheduled_at: selectedDate.toISOString(),
-        duration_min: duration,
-        location,
-        summary,
-      });
-      if (result.error) {
-        setError(result.error);
+    setRecurringResult(null);
+
+    if (repeat === "weekly") {
+      if (!repeatUntil) {
+        setError("Veuillez indiquer une date de fin de répétition.");
         return;
       }
-      onSuccess();
-    });
+      startTransition(async () => {
+        const res = await createRecurringSessionsAction({
+          client_id: clientId,
+          scheduled_at: selectedDate.toISOString(),
+          duration_min: duration,
+          location,
+          summary,
+          repeat_until: repeatUntil,
+        });
+        if (res.error) {
+          setError(res.error);
+          return;
+        }
+        if (res.result) {
+          setRecurringResult(res.result);
+          onSuccess();
+        }
+      });
+    } else {
+      startTransition(async () => {
+        const result = await createCalendarSessionAction({
+          client_id: clientId,
+          scheduled_at: selectedDate.toISOString(),
+          duration_min: duration,
+          location,
+          summary,
+        });
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
+        onSuccess();
+      });
+    }
   }
 
   return (
@@ -905,8 +951,36 @@ function CreateModal({
             />
           </Field>
 
-          {conflict && <ConflictWarning />}
+          <Field label="Répétition">
+            <select
+              value={repeat}
+              onChange={(e) => setRepeat(e.target.value as "none" | "weekly")}
+              className={inputCls}
+            >
+              <option value="none">Aucune</option>
+              <option value="weekly">Chaque semaine</option>
+            </select>
+          </Field>
+
+          {repeat === "weekly" && (
+            <Field label="Répéter jusqu'au">
+              <input
+                type="date"
+                value={repeatUntil}
+                onChange={(e) => setRepeatUntil(e.target.value)}
+                min={minRepeatUntil}
+                required
+                className={inputCls}
+              />
+            </Field>
+          )}
+
+          {conflict && repeat === "none" && <ConflictWarning />}
           {error && <p className="text-sm text-red-600">{error}</p>}
+
+          {recurringResult && (
+            <RecurringResultSummary result={recurringResult} />
+          )}
 
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className={btnSecondary}>
@@ -917,12 +991,48 @@ function CreateModal({
               disabled={isPending || !clientId || clients.length === 0}
               className={btnPrimary}
             >
-              {isPending ? "Création…" : "Créer la séance"}
+              {isPending
+                ? "Création…"
+                : repeat === "weekly"
+                  ? "Créer les séances"
+                  : "Créer la séance"}
             </button>
           </div>
         </form>
       </div>
     </ModalOverlay>
+  );
+}
+
+// ── Résumé de création récurrente ──────────────────────────────────────────────
+
+function RecurringResultSummary({ result }: { result: RecurringSessionResult }) {
+  return (
+    <div className="rounded-xl border border-taupe-200 bg-sand-50 px-4 py-3 text-sm">
+      <p className="font-medium text-ink-900">
+        {result.created} séance{result.created !== 1 ? "s" : ""} créée{result.created !== 1 ? "s" : ""}.
+      </p>
+      {result.skipped.length > 0 && (
+        <div className="mt-2 space-y-1">
+          <p className="text-xs uppercase tracking-wider text-taupe-500">
+            {result.skipped.length} créneau{result.skipped.length !== 1 ? "x" : ""} ignoré{result.skipped.length !== 1 ? "s" : ""} :
+          </p>
+          {result.skipped.map((s) => (
+            <p key={s.scheduledAt} className="text-taupe-600">
+              {new Intl.DateTimeFormat("fr-FR", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: "Europe/Paris",
+              }).format(new Date(s.scheduledAt))}
+              {" — "}{s.reason}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1267,6 +1377,9 @@ function BookingDetailModal({
               </h3>
               <p className="mt-1 text-sm text-taupe-500">
                 {fmtFull(booking.starts_at)} · {booking.duration_min} min
+              </p>
+              <p className="mt-0.5 text-sm font-medium text-ink-900">
+                {getOffer(booking.offer_id)?.name ?? booking.offer_id}
               </p>
             </div>
             <div className="flex items-center gap-2">
