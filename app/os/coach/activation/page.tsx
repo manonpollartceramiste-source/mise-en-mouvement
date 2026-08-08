@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
+import { PasswordInput } from "@/app/components/ui/PasswordInput";
 
 export default function CoachActivationPage() {
   const router = useRouter();
@@ -64,15 +65,14 @@ export default function CoachActivationPage() {
               >
                 Mot de passe
               </label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
+                name="password"
                 autoComplete="new-password"
                 required
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-full border border-taupe-300/50 bg-sand-50 px-5 py-3 text-base text-ink-900 placeholder:text-taupe-400 focus:border-taupe-600 focus:outline-none focus:ring-2 focus:ring-taupe-500/30"
               />
             </div>
 
@@ -83,15 +83,14 @@ export default function CoachActivationPage() {
               >
                 Confirmer le mot de passe
               </label>
-              <input
+              <PasswordInput
                 id="confirm"
-                type="password"
+                name="confirm"
                 autoComplete="new-password"
                 required
                 minLength={8}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="w-full rounded-full border border-taupe-300/50 bg-sand-50 px-5 py-3 text-base text-ink-900 placeholder:text-taupe-400 focus:border-taupe-600 focus:outline-none focus:ring-2 focus:ring-taupe-500/30"
               />
             </div>
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isSupabaseConfigured, getSupabaseServer } from "@/lib/supabase/server";
 import { osSignIn } from "./actions";
+import { PasswordInput } from "@/app/components/ui/PasswordInput";
 
 export const dynamic = "force-dynamic";
 
@@ -114,13 +115,20 @@ export default async function OsLoginPage({
               autoComplete="email"
               required
             />
-            <LoginField
-              name="password"
-              type="password"
-              label="Mot de passe"
-              autoComplete="current-password"
-              required
-            />
+            <div className="space-y-1.5">
+              <label
+                htmlFor="password"
+                className="text-xs uppercase tracking-wider text-taupe-500"
+              >
+                Mot de passe
+              </label>
+              <PasswordInput
+                id="password"
+                name="password"
+                autoComplete="current-password"
+                required
+              />
+            </div>
 
             <button
               type="submit"

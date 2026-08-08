@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
 import { signIn } from "./actions";
+import { PasswordInput } from "@/app/components/ui/PasswordInput";
 
 export const dynamic = "force-dynamic";
 
@@ -72,13 +73,20 @@ export default async function AdminLoginPage({
               autoComplete="email"
               required
             />
-            <Field
-              name="password"
-              type="password"
-              label="Mot de passe"
-              autoComplete="current-password"
-              required
-            />
+            <div className="space-y-1.5">
+              <label
+                htmlFor="password"
+                className="text-xs uppercase tracking-wider text-taupe-500"
+              >
+                Mot de passe
+              </label>
+              <PasswordInput
+                id="password"
+                name="password"
+                autoComplete="current-password"
+                required
+              />
+            </div>
             <button
               type="submit"
               disabled={!configured}
