@@ -748,15 +748,26 @@ export function BilanForm({
       const payload = buildAssessmentPayload(form);
 
       let result: { id?: string; error?: string };
-      if (draftIdRef.current) {
-        result = await updateAssessmentAction(draftIdRef.current, payload);
-      } else {
-        isCreatingRef.current = true;
-        result = await createAssessmentAction(payload);
-        isCreatingRef.current = false;
-        if (!result.error && result.id) {
-          draftIdRef.current = result.id;
+      try {
+        if (draftIdRef.current) {
+          result = await updateAssessmentAction(draftIdRef.current, payload);
+        } else {
+          isCreatingRef.current = true;
+          result = await createAssessmentAction(payload);
+          isCreatingRef.current = false;
+          if (!result.error && result.id) {
+            draftIdRef.current = result.id;
+            // Mettre à jour l'URL pour que F5 recharge /modifier avec les données sauvegardées
+            window.history.replaceState(
+              null,
+              "",
+              `/os/coach/bilan-mouvement/${result.id}/modifier`,
+            );
+          }
         }
+      } catch {
+        isCreatingRef.current = false;
+        result = { error: "Erreur réseau. Réessayez." };
       }
 
       // Ignorer les résultats de sauvegardes obsolètes
@@ -826,7 +837,11 @@ export function BilanForm({
           <div className="ml-auto flex shrink-0 items-center gap-3">
             {/* Indicateur de sauvegarde automatique */}
             {autoSaveStatus !== "idle" && (
-              <span className={`text-xs ${autoSaveStatus === "error" ? "text-red-500" : "text-taupe-400"}`}>
+              <span className={`shrink-0 text-xs font-medium ${
+                autoSaveStatus === "error" ? "text-red-600" :
+                autoSaveStatus === "saved" ? "text-emerald-600" :
+                "text-taupe-500"
+              }`}>
                 {autoSaveStatus === "saving" && "Sauvegarde…"}
                 {autoSaveStatus === "saved" && "✓ Sauvegardé"}
                 {autoSaveStatus === "error" && "Échec de la sauvegarde"}
