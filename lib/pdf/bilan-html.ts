@@ -362,16 +362,20 @@ body{
   padding:4mm 12mm 4mm;gap:1.5mm;min-height:0;overflow:hidden;
 }
 .p2-upper{display:flex;gap:0;align-items:stretch;flex-shrink:0}
-.p2-obs-col{flex:0 0 56%;padding-right:7mm;display:flex;flex-direction:column}
+.p2-obs-col{flex:0 0 56%;padding-right:7mm;display:flex;flex-direction:column;gap:3.5mm}
 .p2-vsep{width:0.35pt;background:#E4DDD2;flex-shrink:0;align-self:stretch}
 .p2-side-col{flex:1;padding-left:7mm;display:flex;flex-direction:column;gap:3.5mm}
 .p2-radar{flex-shrink:0;display:flex;justify-content:center}
 .p2-radar-page{flex:1;display:flex;align-items:center;justify-content:center;padding:4mm 12mm}
+.p2-radar-split{flex:1;display:flex;flex-direction:column;padding:4mm 12mm 2mm}
+.p2-radar-split-top{flex:1;display:flex;align-items:center;justify-content:center}
+.p2-radar-split-sep{height:0.35pt;background:#E4DDD2;flex-shrink:0;margin:3mm 0}
+.p2-radar-split-bot{flex-shrink:0}
 
 /* ── OBSERVATIONS (page 2) ── */
 .obs{
   padding:7pt 12pt 7pt 14pt;border-left:3pt solid #B8956A;
-  background:#FDFCF9;border-radius:0 6pt 6pt 0;flex:1;
+  background:#FDFCF9;border-radius:0 6pt 6pt 0;flex-shrink:0;
 }
 .obs-text{
   font-family:'Playfair Display',Georgia,serif;font-size:20px;font-style:italic;
@@ -1779,6 +1783,8 @@ export function generateBilanHtml(
   const hasRoadmap  = !!(d.mainGoal || d.frequency || d.nextAction || hasAxes);
   const hasFaberKtw = !!(d.faberLeft != null || d.faberRight != null || d.faberNote || d.ktwLeftCm != null || d.ktwRightCm != null);
   const hasWhyAxes = hasAxes && (d.axes ?? []).some(a => a.max > 0 && a.value / a.max < 0.65);
+  // Trajectoire sur la page radar quand le roadmap est dense (importantNotes, painEvolution, ou composition)
+  const hasTrajectoirePage = hasAxes && (!!d.importantNotes || !!d.painEvolution || hasComp);
   const totalPages = hasAxes ? 5 : 4;
 
   // ── PAGE 1 : 2 colonnes — gauche : diagnostic / droite : score + analyse + plan ──
@@ -1796,7 +1802,6 @@ export function generateBilanHtml(
     <div class="p1-right">
       ${renderProfileLevel(total)}
       ${hasTests ? renderTests(d.tests) : ""}
-      ${hasRessenti ? renderRessenti(d) : ""}
     </div>
   </div>
   ${renderFooter(d.cabinetName, footer1)}
@@ -1809,12 +1814,13 @@ export function generateBilanHtml(
     <div class="p2-upper">
       <div class="p2-obs-col">
         ${renderObservations(d)}
+        ${hasTests ? renderTestsTable(d.tests) : ""}
+        ${hasFaberKtw ? renderFaberAndKtw(d) : ""}
       </div>
       <div class="p2-vsep"></div>
       <div class="p2-side-col">
         ${hasZones ? renderZones(d.zonePriorities!) : ""}
-        ${hasTests ? renderTestsTable(d.tests) : ""}
-        ${hasFaberKtw ? renderFaberAndKtw(d) : ""}
+        ${hasRessenti ? renderRessenti(d) : ""}
       </div>
     </div>
   </div>
@@ -1822,12 +1828,20 @@ export function generateBilanHtml(
 </div>`;
 
   // ── PAGE 3 : Cartographie du mouvement (radar) — page dédiée ─────────────
-  // Extrait de la page 2 pour éviter que le graphique soit coupé par overflow:hidden.
+  // Quand le roadmap est dense, la trajectoire est intégrée ici dans la partie basse.
   const pageRadar = hasAxes ? `<div class="page">
   ${renderMiniHeader(name, d.dateStr, `3 / ${totalPages}`)}
-  <div class="p2-radar-page">
-    ${renderBigRadar(d.axes)}
-  </div>
+  ${hasTrajectoirePage
+    ? `<div class="p2-radar-split">
+        <div class="p2-radar-split-top">${renderBigRadar(d.axes)}</div>
+        <div class="p2-radar-split-sep"></div>
+        <div class="p2-radar-split-bot">
+          ${renderTrajectoire()}
+          ${renderQuotePremium()}
+        </div>
+      </div>`
+    : `<div class="p2-radar-page">${renderBigRadar(d.axes)}</div>`
+  }
   ${renderFooter2(d.cabinetName, `Page 3 / ${totalPages}`)}
 </div>` : "";
 
@@ -1840,8 +1854,8 @@ export function generateBilanHtml(
     ${hasWhyAxes ? renderWhyAxes(d.axes) : ""}
     ${hasComp ? renderComposition(d.bodyComposition!) : ""}
     ${(hasRec || d.nextAction) ? renderRecommandations(d.activeRec ?? [], d.nextAction, d.axes, d.tests) : ""}
-    ${renderTrajectoire()}
-    ${renderQuotePremium()}
+    ${!hasTrajectoirePage ? renderTrajectoire() : ""}
+    ${!hasTrajectoirePage ? renderQuotePremium() : ""}
   </div>
   ${renderFooter2(d.cabinetName, `Page ${p3n} / ${totalPages}`)}
 </div>`;
