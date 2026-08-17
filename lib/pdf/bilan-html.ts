@@ -1351,7 +1351,7 @@ function renderFaberAndKtw(d: BilanPdfData): string {
           ? { label: "Légère asymétrie", color: "#7A5020" }
           : { label: "Asymétrie importante", color: "#8A2828" };
       interpHtml = `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:4pt;padding-top:4pt;border-top:0.35pt solid #EDE5DA">
-        <span style="font-size:11px;color:#9A8C80">Différence : ${diff.toFixed(1)} cm</span>
+        <span style="font-size:11px;color:#9A8C80">Différence : ${diff.toFixed(1).replace(".", ",")} cm</span>
         <span style="font-size:11px;font-weight:700;color:${interp.color}">${interp.label}</span>
       </div>`;
     }
