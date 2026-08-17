@@ -51,6 +51,56 @@ const base: BilanPdfData = {
   bodyMapUrl: "",
 };
 
+// ─── Tests pagination — cartographie du mouvement (radar) ────────────────────
+
+describe("generateBilanHtml — pagination radar", () => {
+  it("produit 5 pages quand les axes sont présents", () => {
+    const html = generateBilanHtml(base);
+    const pageCount = (html.match(/class="page"/g) ?? []).length;
+    expect(pageCount).toBe(5);
+  });
+
+  it("produit 4 pages quand les axes sont absents", () => {
+    const html = generateBilanHtml({ ...base, axes: [] });
+    const pageCount = (html.match(/class="page"/g) ?? []).length;
+    expect(pageCount).toBe(4);
+  });
+
+  it("place la cartographie sur sa propre page dédiée (p2-radar-page)", () => {
+    const html = generateBilanHtml(base);
+    expect(html).toContain("p2-radar-page");
+    // sec() met le label en majuscules
+    expect(html).toContain("CARTOGRAPHIE DU MOUVEMENT");
+  });
+
+  it("le radar n'est pas à l'intérieur de p2-body", () => {
+    const html = generateBilanHtml(base);
+    // p2-body ne doit pas contenir p2-radar-page
+    const p2bodyMatch = html.match(/<div class="p2-body">([\s\S]*?)<\/div>\s*\n\s*<\/div>/);
+    if (p2bodyMatch) {
+      expect(p2bodyMatch[1]).not.toContain("p2-radar-page");
+      expect(p2bodyMatch[1]).not.toContain("Cartographie du mouvement");
+    }
+  });
+
+  it("numérotation cohérente avec 5 pages quand hasAxes", () => {
+    const html = generateBilanHtml(base);
+    expect(html).toContain("Page 2 / 5");
+    expect(html).toContain("Page 3 / 5");
+    expect(html).toContain("Page 4 / 5");
+    expect(html).toContain("Page 5 / 5");
+    expect(html).not.toContain("Page 2 / 4");
+  });
+
+  it("numérotation cohérente avec 4 pages quand pas d'axes", () => {
+    const html = generateBilanHtml({ ...base, axes: [] });
+    expect(html).toContain("Page 2 / 4");
+    expect(html).toContain("Page 3 / 4");
+    expect(html).toContain("Page 4 / 4");
+    expect(html).not.toContain("Page 2 / 5");
+  });
+});
+
 // ─── Tests FABER & Knee to Wall (migration 0034) ──────────────────────────────
 
 describe("generateBilanHtml — FABER & Knee to Wall (migration 0034)", () => {

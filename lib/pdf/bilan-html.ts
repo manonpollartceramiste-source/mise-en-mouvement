@@ -366,6 +366,7 @@ body{
 .p2-vsep{width:0.35pt;background:#E4DDD2;flex-shrink:0;align-self:stretch}
 .p2-side-col{flex:1;padding-left:7mm;display:flex;flex-direction:column;gap:3.5mm}
 .p2-radar{flex-shrink:0;display:flex;justify-content:center}
+.p2-radar-page{flex:1;display:flex;align-items:center;justify-content:center;padding:4mm 12mm}
 
 /* ── OBSERVATIONS (page 2) ── */
 .obs{
@@ -1688,7 +1689,7 @@ function renderBodyMap(d: BilanPdfData, name: string, totalPages: number): strin
   </div>` : "";
 
   return `<div class="page">
-  ${renderMiniHeader(name, d.dateStr, `4 / ${totalPages}`)}
+  ${renderMiniHeader(name, d.dateStr, `${totalPages} / ${totalPages}`)}
   <div class="p4-body">
     <div>
       ${sec("Cartographie corporelle")}
@@ -1778,7 +1779,7 @@ export function generateBilanHtml(
   const hasRoadmap  = !!(d.mainGoal || d.frequency || d.nextAction || hasAxes);
   const hasFaberKtw = !!(d.faberLeft != null || d.faberRight != null || d.faberNote || d.ktwLeftCm != null || d.ktwRightCm != null);
   const hasWhyAxes = hasAxes && (d.axes ?? []).some(a => a.max > 0 && a.value / a.max < 0.65);
-  const totalPages = 4;
+  const totalPages = hasAxes ? 5 : 4;
 
   // ── PAGE 1 : 2 colonnes — gauche : diagnostic / droite : score + analyse + plan ──
   const page1 = `<div class="page">
@@ -1801,7 +1802,7 @@ export function generateBilanHtml(
   ${renderFooter(d.cabinetName, footer1)}
 </div>`;
 
-  // ── PAGE 2 : Observations, zones, tests, cartographie ────────────────────
+  // ── PAGE 2 : Observations, zones, tests ──────────────────────────────────
   const page2 = `<div class="page">
   ${renderMiniHeader(name, d.dateStr, `2 / ${totalPages}`)}
   <div class="p2-body">
@@ -1816,16 +1817,24 @@ export function generateBilanHtml(
         ${hasFaberKtw ? renderFaberAndKtw(d) : ""}
       </div>
     </div>
-    <div class="p2-radar">
-      ${hasAxes ? renderBigRadar(d.axes) : ""}
-    </div>
   </div>
   ${renderFooter2(d.cabinetName, `Page 2 / ${totalPages}`)}
 </div>`;
 
-  // ── PAGE 3 : Feuille de route (principal) → Pourquoi ces axes → Composition ──
-  const page3 = `<div class="page">
+  // ── PAGE 3 : Cartographie du mouvement (radar) — page dédiée ─────────────
+  // Extrait de la page 2 pour éviter que le graphique soit coupé par overflow:hidden.
+  const pageRadar = hasAxes ? `<div class="page">
   ${renderMiniHeader(name, d.dateStr, `3 / ${totalPages}`)}
+  <div class="p2-radar-page">
+    ${renderBigRadar(d.axes)}
+  </div>
+  ${renderFooter2(d.cabinetName, `Page 3 / ${totalPages}`)}
+</div>` : "";
+
+  // ── PAGE 4 (ou 3 si pas d'axes) : Feuille de route → Composition ─────────
+  const p3n = hasAxes ? 4 : 3;
+  const page3 = `<div class="page">
+  ${renderMiniHeader(name, d.dateStr, `${p3n} / ${totalPages}`)}
   <div class="p3-body">
     ${hasRoadmap ? renderRoadmap(d) : ""}
     ${hasWhyAxes ? renderWhyAxes(d.axes) : ""}
@@ -1834,7 +1843,7 @@ export function generateBilanHtml(
     ${renderTrajectoire()}
     ${renderQuotePremium()}
   </div>
-  ${renderFooter2(d.cabinetName, `Page 3 / ${totalPages}`)}
+  ${renderFooter2(d.cabinetName, `Page ${p3n} / ${totalPages}`)}
 </div>`;
 
   const page4 = renderBodyMap(d, name, totalPages);
@@ -1846,6 +1855,6 @@ export function generateBilanHtml(
 <title>Bilan Mouvement — ${esc(name)}</title>
 <style>${CSS}</style>
 </head>
-<body>${page1}${page2}${page3}${page4}</body>
+<body>${page1}${page2}${pageRadar}${page3}${page4}</body>
 </html>`;
 }
